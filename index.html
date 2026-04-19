@@ -99,8 +99,10 @@
   .match-teams .teams-line{font-weight:700;font-size:13px;color:#e8e8f8;}
   .match-teams .score-line{font-family:"Poppins",sans-serif;font-size:18px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:1px;}
   .win-label{font-family:"Poppins",sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;padding:3px 9px;border-radius:20px;text-transform:uppercase;background:rgba(247,148,29,.18);border:1px solid rgba(247,148,29,.45);color:#FFAA44;}
-  .delete-match{background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;padding:4px;}
+  .delete-match{background:none;border:none;cursor:pointer;color:#9898b0;font-size:15px;padding:4px;}
   .delete-match:hover{color:#ff6b6b;}
+  .edit-match{background:none;border:none;cursor:pointer;color:#9898b0;font-size:15px;padding:4px;}
+  .edit-match:hover{color:#FFB347;}
 
   /* LEADERBOARD */
   .lb-table{width:100%;border-collapse:collapse;}
@@ -140,6 +142,31 @@
   .toast{position:fixed;bottom:24px;right:24px;z-index:999;background:#2a2a36;border:1.5px solid rgba(247,148,29,.45);border-radius:12px;padding:12px 18px;font-family:"Poppins",sans-serif;font-size:13px;font-weight:600;color:#f0f0f8;box-shadow:0 8px 24px rgba(0,0,0,.5);transform:translateY(80px);opacity:0;transition:all .3s;}
   .toast.show{transform:translateY(0);opacity:1;}
   @media(max-width:600px){.team-grid{grid-template-columns:1fr;}.vs-div{padding-top:0;}}
+
+  /* EDIT MODAL */
+  .modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:#1e1e28;border:1.5px solid #38384a;border-radius:20px;padding:24px;width:100%;max-width:400px;transform:scale(.92) translateY(16px);transition:transform .25s ease;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+  .modal-overlay.open .modal{transform:scale(1) translateY(0);}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .modal-header h2{font-family:"Poppins",sans-serif;font-size:16px;font-weight:800;color:#fff;}
+  .modal-close{background:rgba(255,255,255,.08);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;color:#9898b0;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+  .modal-close:hover{background:rgba(255,82,82,.2);color:#ff7070;}
+  .modal-teams{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+  .modal-team{flex:1;background:#2a2a36;border-radius:12px;padding:10px;text-align:center;}
+  .modal-team-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;background:linear-gradient(135deg,#F7941D,#E8174A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+  .modal-team-name{font-family:"Poppins",sans-serif;font-size:12px;font-weight:700;color:#e8e8f8;line-height:1.4;}
+  .modal-vs{font-family:"Poppins",sans-serif;font-size:16px;font-weight:900;color:#555;}
+  .score-edit-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+  .score-edit-field{flex:1;text-align:center;}
+  .score-edit-field label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#b0b0c8;margin-bottom:6px;display:block;}
+  .score-edit-input{width:100%;background:#2a2a36;border:2px solid #38384a;border-radius:12px;padding:10px 6px;color:#FFB347;font-family:"Poppins",sans-serif;font-size:32px;font-weight:900;text-align:center;outline:none;transition:border-color .2s;}
+  .score-edit-input:focus{border-color:#F7941D;}
+  .score-edit-sep{font-family:"Poppins",sans-serif;font-size:22px;font-weight:900;color:#444;padding-top:22px;}
+  .modal-winner-preview{background:#2a2a36;border-radius:10px;padding:10px;text-align:center;margin-bottom:18px;min-height:36px;}
+  .modal-winner-preview span{font-family:"Poppins",sans-serif;font-size:13px;font-weight:700;}
+  .modal-actions{display:flex;gap:10px;}
+  .modal-actions .btn{flex:1;}
 </style>
 </head>
 <body>
@@ -265,6 +292,45 @@
     </div>
   </div>
 
+</div><!-- end .app -->
+
+<!-- EDIT SCORE MODAL -->
+<div class="modal-overlay" id="editModalOverlay" onclick="closeEditModal(event)">
+  <div class="modal" id="editModal">
+    <div class="modal-header">
+      <h2>✏️ Edit Skor</h2>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-teams">
+      <div class="modal-team">
+        <div class="modal-team-label">Tim A</div>
+        <div class="modal-team-name" id="editTeamA">—</div>
+      </div>
+      <div class="modal-vs">VS</div>
+      <div class="modal-team">
+        <div class="modal-team-label">Tim B</div>
+        <div class="modal-team-name" id="editTeamB">—</div>
+      </div>
+    </div>
+    <div class="score-edit-row">
+      <div class="score-edit-field">
+        <label>Skor A</label>
+        <input class="score-edit-input" type="number" id="editScoreA" min="0" max="99" oninput="updateWinnerPreview()" />
+      </div>
+      <div class="score-edit-sep">—</div>
+      <div class="score-edit-field">
+        <label>Skor B</label>
+        <input class="score-edit-input" type="number" id="editScoreB" min="0" max="99" oninput="updateWinnerPreview()" />
+      </div>
+    </div>
+    <div class="modal-winner-preview" id="winnerPreview">
+      <span style="color:#9898b0">Masukkan skor untuk melihat pemenang</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveEditScore()">💾 Simpan</button>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -350,10 +416,69 @@ function renderMatchHistory(){
         <div class="teams-line">${m.teamA.join(' & ')} <span style="color:var(--muted)">vs</span> ${m.teamB.join(' & ')}</div>
         <div class="score-line">${m.scoreA} — ${m.scoreB}</div>
       </div>
-      <div><span class="win-label">Tim ${m.winner} Menang</span><div style="font-size:11px;color:var(--muted);text-align:right;margin-top:3px">${m.time}</div></div>
-      <button class="delete-match" onclick="deleteMatch(${m.id})">🗑</button>
+      <div><span class="win-label">Tim ${m.winner} Menang</span><div style="font-size:11px;color:#9898b0;text-align:right;margin-top:3px">${m.time}</div></div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <button class="edit-match" onclick="openEditModal(${m.id})" title="Edit skor">✏️</button>
+        <button class="delete-match" onclick="deleteMatch(${m.id})" title="Hapus">🗑</button>
+      </div>
     </div>`;
   }).join('');
+}
+
+// ── EDIT MODAL ─────────────────────────────────────────────────────────────
+let _editId = null;
+
+function openEditModal(id){
+  const m = state.matches.find(x=>x.id===id);
+  if(!m) return;
+  _editId = id;
+  document.getElementById('editTeamA').textContent = m.teamA.join(' & ');
+  document.getElementById('editTeamB').textContent = m.teamB.join(' & ');
+  document.getElementById('editScoreA').value = m.scoreA;
+  document.getElementById('editScoreB').value = m.scoreB;
+  updateWinnerPreview();
+  document.getElementById('editModalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('editScoreA').focus(),250);
+}
+
+function closeEditModal(e){
+  if(e && e.target!==document.getElementById('editModalOverlay')) return;
+  document.getElementById('editModalOverlay').classList.remove('open');
+  _editId = null;
+}
+
+function updateWinnerPreview(){
+  const sA = parseInt(document.getElementById('editScoreA').value);
+  const sB = parseInt(document.getElementById('editScoreB').value);
+  const el = document.getElementById('winnerPreview');
+  if(isNaN(sA)||isNaN(sB)||sA<0||sB<0){
+    el.innerHTML='<span style="color:#9898b0">Masukkan skor yang valid</span>'; return;
+  }
+  if(sA===sB){
+    el.innerHTML='<span style="color:#ff7070">⚠️ Skor tidak boleh seri!</span>'; return;
+  }
+  const winTeam = sA>sB ? 'A':'B';
+  const m = _editId ? state.matches.find(x=>x.id===_editId) : null;
+  const winName = m ? (winTeam==='A'?m.teamA:m.teamB).join(' & ') : `Tim ${winTeam}`;
+  el.innerHTML=`<span style="background:linear-gradient(135deg,#F7941D,#E8174A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:Poppins;font-weight:800">🏆 ${winName} Menang</span>`;
+}
+
+function saveEditScore(){
+  const sA = parseInt(document.getElementById('editScoreA').value);
+  const sB = parseInt(document.getElementById('editScoreB').value);
+  if(isNaN(sA)||isNaN(sB)||sA<0||sB<0){showToast('⚠️ Masukkan skor yang valid!');return;}
+  if(sA===sB){showToast('⚠️ Skor tidak boleh seri!');return;}
+  const idx = state.matches.findIndex(x=>x.id===_editId);
+  if(idx===-1){showToast('❌ Match tidak ditemukan');return;}
+  state.matches[idx].scoreA = sA;
+  state.matches[idx].scoreB = sB;
+  state.matches[idx].winner = sA>sB?'A':'B';
+  save();
+  renderMatchHistory();
+  renderLeaderboard();
+  document.getElementById('editModalOverlay').classList.remove('open');
+  _editId = null;
+  showToast('✅ Skor berhasil diupdate!');
 }
 
 // ── STATS ──────────────────────────────────────────────────────────────────
