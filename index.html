@@ -364,14 +364,13 @@
 <script>
 // ══════════════════════════════════════════════════════════════════
 // CREDENTIALS — Tambah/edit akun di sini
-// Format: { username: 'password', ... }
+// Format: 'username' : { pass: 'passwordnya', url: 'halaman-tujuan.html' }
 // ══════════════════════════════════════════════════════════════════
 const USERS = {
-  'trialversion' : 'mabar2025',
-  'gsbsd'     : 'gsbsd2025',
-  'trial'     : 'coba123',
-  // Tambah akun baru di sini:
-  // 'namauser' : 'passwordnya',
+  'trial' : { pass: 'coba123', url: 'trialversion.html' },
+  'gsbsd' : { pass: 'gsbsd2025', url: 'komunitas-gsbsd.html' },
+  // Contoh jika nanti ada komunitas baru, tinggal tambah di bawahnya:
+  // 'smash' : { pass: 'smash2025', url: 'komunitas-smash.html' }
 };
 
 // Target halaman setelah login — sesuaikan nama file
