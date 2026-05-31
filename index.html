@@ -394,10 +394,11 @@ function doLogin(e) {
   hideError();
 
   setTimeout(() => {
-    if (USERS[user] && USERS[user] === pass) {
+    // Mengecek apakah user ada, dan passwordnya cocok
+    if (USERS[user] && USERS[user].pass === pass) {
       // SUCCESS
       saveSession(user);
-      showSuccess();
+      showSuccess(USERS[user].url); // Mengarahkan ke URL khusus user tersebut
     } else {
       // FAIL
       btn.disabled = false;
@@ -411,7 +412,7 @@ function doLogin(e) {
       document.getElementById('password').value = '';
       document.getElementById('password').focus();
     }
-  }, 800); // Simulasi network delay
+  }, 800); 
 }
 
 function saveSession(user) {
@@ -425,16 +426,14 @@ function saveSession(user) {
   localStorage.setItem('hm_session', JSON.stringify(data));
 }
 
-function showSuccess() {
+function showSuccess(targetUrl) {
   const overlay = document.getElementById('successOverlay');
   overlay.classList.add('show');
-  // Animate loading bar
   setTimeout(() => {
     document.getElementById('successBarFill').style.width = '100%';
   }, 100);
-  // Redirect
   setTimeout(() => {
-    window.location.href = REDIRECT_URL;
+    window.location.href = targetUrl; // Berpindah halaman
   }, 1800);
 }
 
@@ -443,7 +442,7 @@ function showError(msg) {
   const txt = document.getElementById('errorText');
   txt.textContent = msg;
   el.classList.remove('show');
-  void el.offsetWidth; // force reflow to re-trigger animation
+  void el.offsetWidth; 
   el.classList.add('show');
 }
 function hideError() {
@@ -458,11 +457,9 @@ function togglePassword() {
   btn.textContent = isHidden ? '🙈' : '👁';
 }
 
-// Clear error on typing
 document.getElementById('username').addEventListener('input', hideError);
 document.getElementById('password').addEventListener('input', hideError);
 
-// Auto-check existing session
 (function checkSession() {
   try {
     const raw = localStorage.getItem('hm_session');
@@ -472,12 +469,15 @@ document.getElementById('password').addEventListener('input', hideError);
     if (s.expiresAt && Date.now() > s.expiresAt) {
       localStorage.removeItem('hm_session'); return;
     }
-    // Valid session — skip login
-    showSuccess();
+    // Jika masih ada sesi aktif, langsung arahkan ke halamannya tanpa perlu login lagi
+    if (USERS[s.user]) {
+      showSuccess(USERS[s.user].url);
+    } else {
+      localStorage.removeItem('hm_session');
+    }
   } catch(e) {}
 })();
 
-// Focus username on load
 document.getElementById('username').focus();
 </script>
 </body>
