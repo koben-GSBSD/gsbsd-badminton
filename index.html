@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>HOSTMABAR — Login</title>
+<link href="https://fonts.cdnfonts.com/css/norwester" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   :root {
@@ -11,40 +12,213 @@
     --grad:linear-gradient(135deg,#F7941D 0%,#E8174A 100%);
     --bg:#0f0f13; --surface:#2a2a36; --card:#1e1e28;
     --border:#38384a; --text:#f0f0f8; --muted:#9898b0;
+    --red:#e74c3c; --green:#2ecc71;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{
-    font-family:"Nunito",sans-serif; background:var(--bg); color:var(--text);
-    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+    font-family:"Nunito",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
   }
-  /* Latar Belakang */
+
+  /* AMBIENT BACKGROUND */
   body::before{
-    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
-    background: radial-gradient(ellipse 70% 60% at 20% 20%,rgba(247,148,29,.09) 0%,transparent 60%),
-                radial-gradient(ellipse 60% 50% at 80% 80%,rgba(232,23,74,.08) 0%,transparent 60%);
+    content:"";
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 70% 60% at 20% 20%,rgba(247,148,29,.09) 0%,transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%,rgba(232,23,74,.08) 0%,transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%,rgba(247,148,29,.04) 0%,transparent 70%);
   }
-  .login-wrap{ position:relative; z-index:1; width:100%; max-width:400px; }
-  .brand-title{ font-family:"Poppins",sans-serif; font-size:32px; font-weight:800; color:#ffffff; text-align:center; margin-bottom:24px; letter-spacing:1px; }
-  .login-card{ background:var(--card); border:1px solid var(--border); border-radius:20px; padding:28px 24px; position:relative; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.5); }
-  .login-card::before{ content:""; position:absolute; top:0; left:0; right:0; height:3px; background:var(--grad); }
-  .field{ margin-bottom:16px; }
-  .field label{ display:block; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#c0c0d4; margin-bottom:6px; }
-  .input-wrap input{ width:100%; background:var(--surface); border:1.5px solid var(--border); border-radius:10px; padding:12px 14px; color:#ffffff; font-family:"Nunito",sans-serif; font-size:14px; outline:none; transition:0.2s; }
-  .input-wrap input:focus{ border-color:var(--orange); }
-  .btn-login{ width:100%; padding:14px; background:var(--grad); color:#fff; border:none; border-radius:10px; cursor:pointer; font-family:"Poppins",sans-serif; font-size:14px; font-weight:800; letter-spacing:.5px; transition:0.2s; margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px; }
-  .btn-login:hover{ filter:brightness(1.1); transform:translateY(-1px); }
-  .error-msg{ display:none; background:rgba(232,23,74,.12); border:1.5px solid rgba(232,23,74,.4); border-radius:10px; padding:10px; font-size:13px; font-weight:600; color:#ff7070; margin-bottom:14px; text-align:center; }
-  .error-msg.show{ display:block; }
-  .success-overlay{ display:none; position:fixed; inset:0; z-index:100; background:var(--bg); flex-direction:column; align-items:center; justify-content:center; gap:12px; }
-  .success-overlay.show{ display:flex; }
-  .success-text{ font-family:"Poppins",sans-serif; font-size:24px; font-weight:800; color:#fff; }
+
+  /* DECORATIVE GRID */
+  body::after{
+    content:"";
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(247,148,29,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(247,148,29,.04) 1px,transparent 1px);
+    background-size:40px 40px;
+    mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 0%,transparent 100%);
+  }
+
+  .login-wrap{
+    position:relative;z-index:1;
+    width:100%;max-width:400px;
+  }
+
+  /* LOGO + BRAND */
+  .brand{ text-align:center; margin-bottom:32px; }
+  .brand-logo{
+    width:72px;height:72px;
+    border-radius:16px;overflow:hidden;
+    margin:0 auto 16px;
+    box-shadow:0 8px 32px rgba(247,148,29,.35);
+    position:relative;
+    background: #0F0F13;
+  }
+  .brand-logo::after{
+    content:"";
+    position:absolute;inset:0;
+    border-radius:16px;
+    box-shadow:inset 0 0 0 1.5px rgba(247,148,29,.3);
+  }
+  .brand-title{
+    font-family:"Norwester",sans-serif;
+    font-size:36px; font-weight:400;
+    color:#ffffff; letter-spacing:3px;
+    line-height:1; margin-bottom:8px;
+  }
+  .brand-sub{
+    font-size:12px; color:var(--muted);
+    font-weight:600; letter-spacing:1px;
+  }
+
+  /* CARD */
+  .login-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:28px 24px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+    position:relative;
+    overflow:hidden;
+  }
+  .login-card::before{
+    content:""; position:absolute;top:0;left:0;right:0;
+    height:2px; background:var(--grad);
+  }
+
+  /* FORM */
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block; font-size:11px;font-weight:700;
+    letter-spacing:1px;text-transform:uppercase;
+    color:#c0c0d4;margin-bottom:6px;
+  }
+  .input-wrap{ position:relative; display:flex;align-items:center; }
+  .input-wrap input{
+    width:100%; background:var(--surface);
+    border:1.5px solid var(--border); border-radius:10px;
+    padding:11px 40px 11px 13px; color:#ffffff;
+    font-family:"Nunito",sans-serif; font-size:14px;
+    outline:none; transition:border-color .2s, box-shadow .2s;
+  }
+  .input-wrap input:focus{
+    border-color:var(--orange);
+    box-shadow:0 0 0 3px rgba(247,148,29,.12);
+  }
+  .input-wrap input::placeholder{color:var(--muted);}
+
+  /* Toggle password visibility */
+  .toggle-pw{
+    position:absolute;right:13px;
+    background:none;border:none;cursor:pointer;
+    font-size:16px;color:var(--muted);
+    transition:color .15s; padding:2px;
+  }
+  .toggle-pw:hover{color:var(--orange);}
+
+  /* LOGIN BUTTON */
+  .btn-login{
+    width:100%; padding:13px; background:var(--grad);
+    color:#fff; border:none;border-radius:10px; cursor:pointer;
+    font-family:"Poppins",sans-serif; font-size:14px;font-weight:800;
+    letter-spacing:.5px; box-shadow:0 4px 18px rgba(247,148,29,.4);
+    transition:all .15s; margin-top:4px;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    position:relative;overflow:hidden;
+  }
+  .btn-login:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 6px 24px rgba(247,148,29,.5);}
+  .btn-login:active{transform:translateY(0);}
+  .btn-login .spin{
+    display:none;width:16px;height:16px;
+    border:2.5px solid rgba(255,255,255,.3);
+    border-top-color:#fff;border-radius:50%;
+    animation:spin .65s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ERROR MESSAGE */
+  .error-msg{
+    display:none; background:rgba(232,23,74,.12);
+    border:1.5px solid rgba(232,23,74,.4); border-radius:10px;
+    padding:10px 14px; font-size:13px;font-weight:600;
+    color:#ff7070; margin-bottom:14px; text-align:center;
+    animation:shake .35s ease;
+  }
+  .error-msg.show{display:block;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    40%{transform:translateX(6px)}
+    60%{transform:translateX(-4px)}
+    80%{transform:translateX(4px)}
+  }
+
+  /* SUCCESS STATE */
+  .success-overlay{
+    display:none; position:fixed;inset:0;z-index:100;
+    background:var(--bg);
+    flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    animation:fadeIn .4s ease;
+  }
+  .success-overlay.show{display:flex;}
+  .success-icon{
+    font-size:56px;
+    animation:popIn .5s cubic-bezier(.175,.885,.32,1.275);
+  }
+  .success-text{
+    font-family:"Norwester",sans-serif;
+    font-size:28px;letter-spacing:2px;color:#fff;
+  }
+  .success-sub{font-size:13px;color:var(--muted);margin-top:-4px;}
+  .success-bar{
+    width:200px;height:3px;
+    background:var(--border);border-radius:10px;
+    margin-top:8px;overflow:hidden;
+  }
+  .success-bar-fill{
+    height:100%;width:0%;
+    background:var(--grad);border-radius:10px;
+    transition:width 1.5s ease;
+  }
+  @keyframes popIn{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 </style>
 </head>
 <body>
 
 <div class="login-wrap">
-  <div class="brand-title">HOSTMABAR</div>
-  
+
+  <div class="brand">
+    <div class="brand-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+        <defs>
+          <linearGradient id="hmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F7941D" />
+            <stop offset="100%" stop-color="#E8174A" />
+          </linearGradient>
+        </defs>
+        <g stroke="url(#hmGradient)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(0, 15)">
+          <line x1="140" y1="120" x2="140" y2="300" />
+          <line x1="220" y1="120" x2="220" y2="300" />
+          <line x1="140" y1="210" x2="220" y2="130" />
+          <line x1="220" y1="130" x2="280" y2="190" />
+          <line x1="280" y1="190" x2="360" y2="110" />
+          <polyline points="320,110 360,110 360,150" />
+        </g>
+      </svg>
+    </div>
+    <div class="brand-title">HOSTMABAR</div>
+    <div class="brand-sub">SISTEM MANAJEMEN KOMUNITAS</div>
+  </div>
+
   <div class="login-card">
     <div class="error-msg" id="errorMsg">Username atau Password salah!</div>
     
@@ -60,10 +234,12 @@
         <label>Password</label>
         <div class="input-wrap">
           <input type="password" id="password" placeholder="Masukkan password" required>
+          <button type="button" class="toggle-pw" id="togglePw" onclick="togglePassword()">👁</button>
         </div>
       </div>
 
       <button type="submit" class="btn-login" id="loginBtn">
+        <div class="spin" id="loginSpin"></div>
         <span id="loginBtnText">Masuk ke Sistem</span>
       </button>
     </form>
@@ -71,8 +247,10 @@
 </div>
 
 <div class="success-overlay" id="successOverlay">
+  <div class="success-icon">✅</div>
   <div class="success-text">Login Berhasil!</div>
-  <div style="color:var(--muted); font-size:14px;">Membuka halaman komunitas...</div>
+  <div class="success-sub">Membuka halaman komunitas...</div>
+  <div class="success-bar"><div class="success-bar-fill" id="successBarFill"></div></div>
 </div>
 
 <script>
@@ -89,34 +267,40 @@ function doLogin(e) {
   const user = document.getElementById('username').value.trim().toLowerCase();
   const pass = document.getElementById('password').value;
   const btn  = document.getElementById('loginBtn');
+  const spin = document.getElementById('loginSpin');
   const text = document.getElementById('loginBtnText');
   const errorMsg = document.getElementById('errorMsg');
 
-  // Loading state
+  // Loading state (Mencegah tombol diklik berulang kali)
   btn.disabled = true;
+  spin.style.display = 'block';
   text.textContent = 'Memeriksa...';
   errorMsg.classList.remove('show');
 
   setTimeout(() => {
     if (USERS[user] && USERS[user].pass === pass) {
-      // Jika SUKSES
+      // JIKA LOGIN BERHASIL
       const sessionData = {
         user: user,
         loginAt: Date.now()
       };
       localStorage.setItem('hm_session', JSON.stringify(sessionData));
       
-      // Tampilkan layar hitam loading sukses
+      // Tampilkan layar overlay sukses
       document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => {
+        document.getElementById('successBarFill').style.width = '100%';
+      }, 100);
       
-      // Pindah ke halaman masing-masing
+      // Pindah ke halaman masing-masing setelah animasi selesai
       setTimeout(() => {
         window.location.href = USERS[user].url;
-      }, 1000);
+      }, 1500);
 
     } else {
-      // Jika GAGAL
+      // JIKA LOGIN GAGAL
       btn.disabled = false;
+      spin.style.display = 'none';
       text.textContent = 'Masuk ke Sistem';
       errorMsg.textContent = !USERS[user] ? 'Username tidak ditemukan.' : 'Password salah. Coba lagi.';
       errorMsg.classList.add('show');
@@ -124,10 +308,19 @@ function doLogin(e) {
       document.getElementById('password').value = '';
       document.getElementById('password').focus();
     }
-  }, 600); 
+  }, 800); 
 }
 
-// Menghilangkan pesan error saat user mengetik ulang
+// Fitur melihat password (mata)
+function togglePassword() {
+  const inp = document.getElementById('password');
+  const btn = document.getElementById('togglePw');
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁';
+}
+
+// Menghilangkan pesan error saat user mulai mengetik ulang
 document.getElementById('username').addEventListener('input', () => {
   document.getElementById('errorMsg').classList.remove('show');
 });
@@ -135,7 +328,7 @@ document.getElementById('password').addEventListener('input', () => {
   document.getElementById('errorMsg').classList.remove('show');
 });
 
-// Auto-login: Mengecek apakah pengunjung belum logout
+// Auto-login: Mengecek apakah pengunjung sebelumnya belum menekan tombol logout
 (function checkSession() {
   try {
     const raw = localStorage.getItem('hm_session');
@@ -145,6 +338,9 @@ document.getElementById('password').addEventListener('input', () => {
     if (s && USERS[s.user]) {
       // Jika tiket masih ada dan valid, lewati form login dan arahkan langsung
       document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => {
+        document.getElementById('successBarFill').style.width = '100%';
+      }, 10);
       window.location.href = USERS[s.user].url;
     } else {
       // Jika data rusak, hapus tiketnya
