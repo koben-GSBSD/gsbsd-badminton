@@ -180,6 +180,9 @@
     <div class="header-text">
       <h1>GSBSD Badminton</h1>
       <p>Mabar Tracker · Double · Point 25</p>
+      <button onclick="prosesLogout()" class="btn btn-secondary btn-sm" style="color: #ff6b6b; border-color: rgba(231,76,60,.3); background: rgba(231,76,60,.12);">
+      🚪 Logout
+    </button>
     </div>
   </div>
 
@@ -335,6 +338,17 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ── LOGOUT ─────────────────────────────────────────────────────────────────
+function prosesLogout() {
+  // Munculkan peringatan konfirmasi sebelum keluar
+  if(confirm('Apakah Anda yakin ingin keluar dari halaman komunitas?')) {
+    // Menghapus tiket/sesi dari penyimpanan browser
+    localStorage.removeItem('hm_session');
+    
+    // Mengarahkan pengguna kembali ke halaman login utama
+    window.location.href = 'index.html';
+  }
+}
 // ── STATE ──────────────────────────────────────────────────────────────────
 let state={players:[],matches:[],playCount:{},session:{date:'',name:''}};
 function save(){localStorage.setItem('gsbsd_v3',JSON.stringify(state));}
