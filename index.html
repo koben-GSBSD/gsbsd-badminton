@@ -365,7 +365,7 @@
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-// KONFIGURASI SUPABASE
+// 1. KONFIGURASI SUPABASE
 // ══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4ZnBza3p3a2ZweHNsc3ZxYnB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDIxODUsImV4cCI6MjA5NTYxODE4NX0.KQ8ozsVzZOesp_ickIbdaYmQR9_0TA4xN40MDMjUeFI';
@@ -373,28 +373,31 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const SESSION_MINUTES = 480; // 8 jam
+const SESSION_MINUTES = 480; // Waktu sesi (8 jam)
 
 // ══════════════════════════════════════════════════════════════════
-// LOGIKA LOGIN
+// 2. LOGIKA LOGIN
 // ══════════════════════════════════════════════════════════════════
 async function doLogin(e) {
-  e.preventDefault();
+  e.preventDefault(); // Mencegah halaman melakukan refresh
+  
   const user = document.getElementById('username').value.trim().toLowerCase();
   const pass = document.getElementById('password').value;
+  
   const btn  = document.getElementById('loginBtn');
   const spin = document.getElementById('loginSpin');
   const text = document.getElementById('loginBtnText');
   const errorMsg = document.getElementById('errorMsg');
+  const errorText = document.getElementById('errorText'); // Menggunakan span id spesifik
 
-  // Loading state
+  // Ubah status tombol menjadi loading
   btn.disabled = true;
   spin.style.display = 'block';
   text.textContent = 'Memeriksa...';
   errorMsg.classList.remove('show');
 
   try {
-    // Meminta Supabase mencari username dan password yang cocok di tabel
+    // Meminta Supabase mencari data yang cocok
     const { data, error } = await supabase
       .from('akun_komunitas')
       .select('*')
@@ -402,44 +405,54 @@ async function doLogin(e) {
       .eq('password', pass)
       .single();
 
+    // Jika Supabase membalas dengan error (data tidak ditemukan/salah)
+    if (error) {
+      throw error; 
+    }
+
+    // Jika Supabase berhasil menemukan data
     if (data) {
-      // JIKA LOGIN BERHASIL (Data ditemukan)
       const sessionData = {
         user: data.username,
-        url: data.redirect_url, // Mengambil halaman tujuan dari tabel
+        url: data.redirect_url, // URL tujuan diambil dari Supabase
         loginAt: Date.now(),
         expiresAt: SESSION_MINUTES > 0 ? Date.now() + SESSION_MINUTES * 60 * 1000 : 0
       };
+      
+      // Simpan tiket sesi di browser
       localStorage.setItem('hm_session', JSON.stringify(sessionData));
       
-      // Animasi Sukses
+      // Tampilkan animasi sukses
       document.getElementById('successOverlay').classList.add('show');
       setTimeout(() => { document.getElementById('successBarFill').style.width = '100%'; }, 100);
       
-      // Pindah ke halaman sesuai data dari database
+      // Pindah halaman
       setTimeout(() => { window.location.href = data.redirect_url; }, 1500);
-
-    } else {
-      // JIKA DATA TIDAK DITEMUKAN
-      throw new Error("Kredensial salah");
     }
-  } catch (error) {
-    // JIKA LOGIN GAGAL
+
+  } catch (err) {
+    // JIKA GAGAL LOGIN (Tampilkan Error)
     btn.disabled = false;
     spin.style.display = 'none';
-    text.textContent = 'Masuk ke Sistem';
+    text.textContent = 'Masuk ke HOSTMABAR';
     
-    // KODE BARU: Memunculkan detail error asli ke layar dan console
-    console.error("Detail Error Supabase:", error);
-    errorMsg.textContent = error.message || 'Data tidak ditemukan di database.';
+    // Tampilkan pesan error di layar
+    errorText.textContent = 'Username atau password salah.';
     errorMsg.classList.add('show');
     
+    // Kosongkan dan fokuskan kembali kolom password
     document.getElementById('password').value = '';
     document.getElementById('password').focus();
+    
+    // Tampilkan log rahasia di Inspect Element jika Anda ingin mengecek penyebabnya
+    console.error("Detail Error Supabase:", err);
   }
 }
 
-// Fitur melihat password (mata)
+// ══════════════════════════════════════════════════════════════════
+// 3. FITUR UI TAMBAHAN
+// ══════════════════════════════════════════════════════════════════
+// Fitur melihat password (ikon mata)
 function togglePassword() {
   const inp = document.getElementById('password');
   const btn = document.getElementById('togglePw');
@@ -448,17 +461,20 @@ function togglePassword() {
   btn.textContent = isHidden ? '🙈' : '👁';
 }
 
-// Menghilangkan pesan error saat mengetik ulang
+// Hilangkan peringatan error saat user mulai mengetik ulang
 document.getElementById('username').addEventListener('input', () => { document.getElementById('errorMsg').classList.remove('show'); });
 document.getElementById('password').addEventListener('input', () => { document.getElementById('errorMsg').classList.remove('show'); });
 
-// Auto-login check
+// ══════════════════════════════════════════════════════════════════
+// 4. CEK AUTO-LOGIN
+// ══════════════════════════════════════════════════════════════════
 (function checkSession() {
   try {
     const raw = localStorage.getItem('hm_session');
     if (!raw) return;
     const s = JSON.parse(raw);
     
+    // Jika masih ada sesi yang valid, langsung arahkan tanpa login
     if (s && s.url && (!s.expiresAt || Date.now() < s.expiresAt)) {
       document.getElementById('successOverlay').classList.add('show');
       setTimeout(() => { document.getElementById('successBarFill').style.width = '100%'; }, 10);
