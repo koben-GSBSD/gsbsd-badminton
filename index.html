@@ -360,23 +360,113 @@
   <div class="success-sub">Login berhasil! Memuat aplikasi...</div>
   <div class="success-bar"><div class="success-bar-fill" id="successBarFill"></div></div>
 </div>
+<!-- Masukkan library Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-// CREDENTIALS & HALAMAN TUJUAN — Tambah akun komunitas di sini
-// Format: 'username' : { pass: 'passwordnya', url: 'halaman-tujuan.html' }
+// KONFIGURASI SUPABASE
 // ══════════════════════════════════════════════════════════════════
-const USERS = {
-  'trial' : { pass: 'coba123', url: 'trialversion.html' },
-  'gsbsd' : { pass: 'gsbsd2025', url: 'komunitas-gsbsd.html' },
-  'basic' : { pass: 'Ayomabar2735', url: 'planbasic.html' },
-  
-  // Contoh jika nanti ada komunitas baru, tinggal tambah di bawahnya:
-  // 'smash' : { pass: 'smash2025', url: 'komunitas-smash.html' }
-};
+const SUPABASE_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4ZnBza3p3a2ZweHNsc3ZxYnB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDIxODUsImV4cCI6MjA5NTYxODE4NX0.KQ8ozsVzZOesp_ickIbdaYmQR9_0TA4xN40MDMjUeFI';
 
-// Session duration (menit) — 0 = sampai browser ditutup
+const { createClient } = window.supabase;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const SESSION_MINUTES = 480; // 8 jam
+
+// ══════════════════════════════════════════════════════════════════
+// LOGIKA LOGIN
+// ══════════════════════════════════════════════════════════════════
+async function doLogin(e) {
+  e.preventDefault();
+  const user = document.getElementById('username').value.trim().toLowerCase();
+  const pass = document.getElementById('password').value;
+  const btn  = document.getElementById('loginBtn');
+  const spin = document.getElementById('loginSpin');
+  const text = document.getElementById('loginBtnText');
+  const errorMsg = document.getElementById('errorMsg');
+
+  // Loading state
+  btn.disabled = true;
+  spin.style.display = 'block';
+  text.textContent = 'Memeriksa...';
+  errorMsg.classList.remove('show');
+
+  try {
+    // Meminta Supabase mencari username dan password yang cocok di tabel
+    const { data, error } = await supabase
+      .from('akun_komunitas')
+      .select('*')
+      .eq('username', user)
+      .eq('password', pass)
+      .single();
+
+    if (data) {
+      // JIKA LOGIN BERHASIL (Data ditemukan)
+      const sessionData = {
+        user: data.username,
+        url: data.redirect_url, // Mengambil halaman tujuan dari tabel
+        loginAt: Date.now(),
+        expiresAt: SESSION_MINUTES > 0 ? Date.now() + SESSION_MINUTES * 60 * 1000 : 0
+      };
+      localStorage.setItem('hm_session', JSON.stringify(sessionData));
+      
+      // Animasi Sukses
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { document.getElementById('successBarFill').style.width = '100%'; }, 100);
+      
+      // Pindah ke halaman sesuai data dari database
+      setTimeout(() => { window.location.href = data.redirect_url; }, 1500);
+
+    } else {
+      // JIKA DATA TIDAK DITEMUKAN
+      throw new Error("Kredensial salah");
+    }
+  } catch (error) {
+    // JIKA LOGIN GAGAL
+    btn.disabled = false;
+    spin.style.display = 'none';
+    text.textContent = 'Masuk ke Sistem';
+    errorMsg.textContent = 'Username atau password salah. Coba lagi.';
+    errorMsg.classList.add('show');
+    
+    document.getElementById('password').value = '';
+    document.getElementById('password').focus();
+  }
+}
+
+// Fitur melihat password (mata)
+function togglePassword() {
+  const inp = document.getElementById('password');
+  const btn = document.getElementById('togglePw');
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁';
+}
+
+// Menghilangkan pesan error saat mengetik ulang
+document.getElementById('username').addEventListener('input', () => { document.getElementById('errorMsg').classList.remove('show'); });
+document.getElementById('password').addEventListener('input', () => { document.getElementById('errorMsg').classList.remove('show'); });
+
+// Auto-login check
+(function checkSession() {
+  try {
+    const raw = localStorage.getItem('hm_session');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    
+    if (s && s.url && (!s.expiresAt || Date.now() < s.expiresAt)) {
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { document.getElementById('successBarFill').style.width = '100%'; }, 10);
+      window.location.href = s.url;
+    } else {
+      localStorage.removeItem('hm_session');
+    }
+  } catch(e) {}
+})();
+</script>
+<script>
 
 // ══════════════════════════════════════════════════════════════════
 
