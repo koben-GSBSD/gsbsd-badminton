@@ -361,96 +361,61 @@
   <div class="success-bar"><div class="success-bar-fill" id="successBarFill"></div></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ══════════════════════════════════════════════════════════════════
-// CREDENTIALS — Tambah/edit akun di sini
-// Format: { username: 'password', ... }
-// ══════════════════════════════════════════════════════════════════
-const USERS = {
-  'hostmabar' : 'mabar2025',
-  'gsbsd'     : 'gsbsd2025',
-  'trial'     : 'coba123',
-  // Tambah akun baru di sini:
-  // 'namauser' : 'passwordnya',
-};
+const SUPABASE_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4ZnBza3p3a2ZweHNsc3ZxYnB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDIxODUsImV4cCI6MjA5NTYxODE4NX0.KQ8ozsVzZOesp_ickIbdaYmQR9_0TA4xN40MDMjUeFI';
 
-// Target halaman setelah login — sesuaikan nama file
-const REDIRECT_URL = 'koben-mabar-trial.html';
+const { createClient } = window.supabase;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Session duration (menit) — 0 = sampai browser ditutup
-const SESSION_MINUTES = 480; // 8 jam
-
-// ══════════════════════════════════════════════════════════════════
-
-function doLogin(e) {
-  e.preventDefault();
+async function doLogin(e) {
+  e.preventDefault(); 
+  
   const user = document.getElementById('username').value.trim().toLowerCase();
   const pass = document.getElementById('password').value;
   const btn  = document.getElementById('loginBtn');
   const spin = document.getElementById('loginSpin');
   const text = document.getElementById('loginBtnText');
+  const errorMsg = document.getElementById('errorMsg');
 
-  // Show loading
   btn.disabled = true;
   spin.style.display = 'block';
   text.textContent = 'Memeriksa...';
-  hideError();
+  errorMsg.classList.remove('show');
 
-  setTimeout(() => {
-    if (USERS[user] && USERS[user] === pass) {
-      // SUCCESS
-      saveSession(user);
-      showSuccess();
-    } else {
-      // FAIL
-      btn.disabled = false;
-      spin.style.display = 'none';
-      text.textContent = 'Masuk ke HOSTMABAR';
-      showError(
-        !USERS[user]
-          ? 'Username tidak ditemukan.'
-          : 'Password salah. Coba lagi.'
-      );
-      document.getElementById('password').value = '';
-      document.getElementById('password').focus();
+  try {
+    const { data, error } = await supabase
+      .from('akun_komunitas')
+      .select('*')
+      .eq('username', user)
+      .eq('password', pass)
+      .single();
+
+    if (error) throw error; 
+
+    if (data) {
+      localStorage.setItem('hm_session', JSON.stringify({
+        user: data.username,
+        url: data.redirect_url,
+        loginAt: Date.now(),
+        expiresAt: Date.now() + (480 * 60 * 1000)
+      }));
+      
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { document.getElementById('successBarFill').style.width = '100%'; }, 100);
+      setTimeout(() => { window.location.href = data.redirect_url; }, 1500);
     }
-  }, 800); // Simulasi network delay
-}
-
-function saveSession(user) {
-  const data = {
-    user,
-    loginAt: Date.now(),
-    expiresAt: SESSION_MINUTES > 0
-      ? Date.now() + SESSION_MINUTES * 60 * 1000
-      : 0
-  };
-  localStorage.setItem('hm_session', JSON.stringify(data));
-}
-
-function showSuccess() {
-  const overlay = document.getElementById('successOverlay');
-  overlay.classList.add('show');
-  // Animate loading bar
-  setTimeout(() => {
-    document.getElementById('successBarFill').style.width = '100%';
-  }, 100);
-  // Redirect
-  setTimeout(() => {
-    window.location.href = REDIRECT_URL;
-  }, 1800);
-}
-
-function showError(msg) {
-  const el = document.getElementById('errorMsg');
-  const txt = document.getElementById('errorText');
-  txt.textContent = msg;
-  el.classList.remove('show');
-  void el.offsetWidth; // force reflow to re-trigger animation
-  el.classList.add('show');
-}
-function hideError() {
-  document.getElementById('errorMsg').classList.remove('show');
+  } catch (err) {
+    btn.disabled = false;
+    spin.style.display = 'none';
+    text.textContent = 'Masuk ke Sistem';
+    errorMsg.textContent = 'Username atau password salah.';
+    errorMsg.classList.add('show');
+    document.getElementById('password').value = '';
+    document.getElementById('password').focus();
+    console.error(err);
+  }
 }
 
 function togglePassword() {
@@ -461,27 +426,23 @@ function togglePassword() {
   btn.textContent = isHidden ? '🙈' : '👁';
 }
 
-// Clear error on typing
-document.getElementById('username').addEventListener('input', hideError);
-document.getElementById('password').addEventListener('input', hideError);
+document.getElementById('username').addEventListener('input', () => { document.getElementById('errorMsg').classList.remove('show'); });
+document.getElementById('password').addEventListener('input', () => { document.getElementById('errorMsg').classList.remove('show'); });
 
-// Auto-check existing session
 (function checkSession() {
   try {
     const raw = localStorage.getItem('hm_session');
     if (!raw) return;
     const s = JSON.parse(raw);
-    if (!s || !s.loginAt) return;
-    if (s.expiresAt && Date.now() > s.expiresAt) {
-      localStorage.removeItem('hm_session'); return;
+    if (s && s.url && Date.now() < s.expiresAt) {
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { document.getElementById('successBarFill').style.width = '100%'; }, 10);
+      window.location.href = s.url;
+    } else {
+      localStorage.removeItem('hm_session');
     }
-    // Valid session — skip login
-    showSuccess();
   } catch(e) {}
 })();
-
-// Focus username on load
-document.getElementById('username').focus();
 </script>
 </body>
 </html>
