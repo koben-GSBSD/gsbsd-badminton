@@ -428,7 +428,10 @@ async function doLogin(e) {
     btn.disabled = false;
     spin.style.display = 'none';
     text.textContent = 'Masuk ke Sistem';
-    errorMsg.textContent = 'Username atau password salah. Coba lagi.';
+    
+    // KODE BARU: Memunculkan detail error asli ke layar dan console
+    console.error("Detail Error Supabase:", error);
+    errorMsg.textContent = error.message || 'Data tidak ditemukan di database.';
     errorMsg.classList.add('show');
     
     document.getElementById('password').value = '';
