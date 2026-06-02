@@ -621,6 +621,23 @@ function resetAll(){
 // ── RENDER ALL ─────────────────────────────────────────────────────────────
 function renderAll(){renderPlayerList();populateSelects();renderMatchHistory();renderLeaderboard();renderCounter();uSI();}
 function esc(s){return s.replace(/'/g,"\\'");}
+  // SKRIP PENJAGA KEAMANAN HALAMAN
+(function proteksiHalaman() {
+  const raw = localStorage.getItem('hm_session');
+  // Jika tidak ada tiket sesi, langsung tendang ke halaman login
+  if (!raw) {
+    window.location.replace('index.html');
+    return;
+  }
+  
+  const s = JSON.parse(raw);
+  // Jika tiket ada tapi waktunya sudah lewat (kedaluwarsa), tendang ke login
+  if (Date.now() > s.expiresAt) {
+    localStorage.removeItem('hm_session');
+    alert('Sesi Anda telah berakhir. Silakan login kembali.');
+    window.location.replace('index.html');
+  }
+})();
 </script>
 </body>
 </html>
