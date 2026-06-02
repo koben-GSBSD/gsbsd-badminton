@@ -687,5 +687,43 @@ function esc(s){return s.replace(/'/g,"\\'");}
 
 })();
 </script>
+  <!-- Library html2pdf (Tambahkan tepat sebelum tag penutup body) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Script Eksekusi Download -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        // Mendeteksi tombol download menggunakan class .btn-pdf yang sudah ada di CSS
+        const downloadBtn = document.querySelector(".btn-pdf");
+
+        // Mendeteksi area yang akan di-download (menggunakan class .app yang membungkus semua konten)
+        const element = document.querySelector(".app"); 
+
+        if (downloadBtn) {
+          downloadBtn.addEventListener("click", function(e) {
+            e.preventDefault(); // Mencegah halaman reload
+            
+            // Mengaktifkan efek loading putar (.pdf-spin) saat tombol diklik
+            const spinner = document.querySelector(".pdf-spin");
+            if (spinner) spinner.style.display = "inline-block";
+
+            // Konfigurasi file PDF
+            const opt = {
+              margin:       [10, 10, 10, 10], // Margin dokumen
+              filename:     'Mabar-GSBSD-Report.pdf', // Nama file yang akan terdownload
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2, useCORS: true }, // scale 2 agar hasil PDF tidak blur
+              jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Proses eksekusi download
+            html2pdf().set(opt).from(element).save().then(() => {
+              // Mematikan efek loading setelah file selesai didownload
+              if (spinner) spinner.style.display = "none";
+            });
+          });
+        }
+      });
+    </script>
 </body>
 </html>
