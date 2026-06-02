@@ -412,6 +412,8 @@ async function doLogin(e) {
       localStorage.setItem('hm_session', JSON.stringify({
         user: data.username,
         url: data.redirect_url,
+        paket: data.paket_langganan,
+        tgl_kedaluwarsa: data.tanggal_kedaluwarsa,
         loginAt: Date.now(),
         expiresAt: Date.now() + (480 * 60 * 1000) // Waktu sesi 8 jam
       }));
