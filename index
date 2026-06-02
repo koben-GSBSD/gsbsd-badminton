@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HOSTMABAR — Manajemen Mabar Pertama di Indonesia</title>
+<link href="https://fonts.cdnfonts.com/css/norwester" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --orange: #F7941D; 
+    --pink: #E8174A;
+    --grad: linear-gradient(135deg, #F7941D 0%, #E8174A 100%);
+    --bg: #0f0f13; 
+    --surface: #2a2a36; 
+    --card: #1e1e28;
+    --border: #38384a; 
+    --text: #f0f0f8; 
+    --muted: #9898b0;
+    --green: #2ecc71;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Nunito", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* EFEK BACKGROUND */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse 70% 60% at 20% 20%, rgba(247,148,29,.09) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(232,23,74,.08) 0%, transparent 60%);
+  }
+
+  a { text-decoration: none; }
+  .container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* ─── NAVIGASI ─── */
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 0;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    box-shadow: inset 0 0 0 1.5px rgba(247,148,29,.3); background: #0F0F13;
+  }
+  .nav-logo-text { font-family: "Norwester", sans-serif; font-size: 24px; letter-spacing: 2px; color: #fff; }
+  .btn-login {
+    background: var(--surface); color: #fff; padding: 10px 24px; border-radius: 8px;
+    font-family: "Poppins", sans-serif; font-weight: 700; font-size: 14px;
+    border: 1px solid var(--border); transition: 0.3s;
+  }
+  .btn-login:hover { background: #fff; color: var(--bg); }
+
+  /* ─── HERO SECTION ─── */
+  .hero { text-align: center; padding: 80px 0 60px; }
+  .badge {
+    display: inline-block; background: rgba(247,148,29,.15); color: var(--orange);
+    padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 800;
+    letter-spacing: 1px; margin-bottom: 24px; border: 1px solid rgba(247,148,29,.3);
+  }
+  .hero h1 {
+    font-family: "Norwester", sans-serif; font-size: 56px; line-height: 1.1;
+    letter-spacing: 2px; margin-bottom: 24px;
+  }
+  .text-gradient {
+    background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p { font-size: 18px; color: var(--muted); max-width: 600px; margin: 0 auto 40px; }
+  
+  .hero-btns { display: flex; gap: 16px; justify-content: center; }
+  .btn-primary {
+    background: var(--grad); color: #fff; padding: 16px 32px; border-radius: 12px;
+    font-family: "Poppins", sans-serif; font-weight: 800; font-size: 16px;
+    box-shadow: 0 10px 30px rgba(232,23,74,.3); transition: transform 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-3px); }
+  .btn-secondary {
+    background: var(--card); color: #fff; padding: 16px 32px; border-radius: 12px;
+    font-family: "Poppins", sans-serif; font-weight: 700; font-size: 16px;
+    border: 1px solid var(--border); transition: 0.3s;
+  }
+  .btn-secondary:hover { border-color: var(--muted); }
+
+  /* ─── KEUNGGULAN SECTION ─── */
+  .features { padding: 60px 0; }
+  .section-title { text-align: center; font-family: "Poppins", sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 48px; }
+  .grid-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+  .feat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 32px 24px; text-align: center; transition: 0.3s;
+  }
+  .feat-card:hover { border-color: var(--orange); transform: translateY(-5px); }
+  .feat-icon { font-size: 40px; margin-bottom: 16px; }
+  .feat-title { font-family: "Poppins", sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 12px; color: #fff; }
+  .feat-desc { font-size: 14px; color: var(--muted); }
+
+  /* ─── PRICING SECTION ─── */
+  .pricing { padding: 80px 0; }
+  .grid-pricing { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 32px; }
+  .price-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 40px 32px; position: relative; overflow: hidden;
+  }
+  .price-card.popular { border-color: var(--orange); box-shadow: 0 10px 40px rgba(247,148,29,.15); }
+  .price-card.popular::before {
+    content: "PALING LARIS"; position: absolute; top: 16px; right: -32px;
+    background: var(--grad); color: #fff; font-size: 10px; font-weight: 900;
+    padding: 6px 40px; transform: rotate(45deg); letter-spacing: 1px;
+  }
+  .price-title { font-family: "Norwester", sans-serif; font-size: 24px; letter-spacing: 1px; color: #fff; margin-bottom: 8px; }
+  .price-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; min-height: 40px; }
+  .price-box { margin-bottom: 24px; }
+  .price-old { text-decoration: line-through; color: var(--muted); font-size: 16px; font-weight: 600; }
+  .price-new { font-family: "Poppins", sans-serif; font-size: 40px; font-weight: 900; color: #fff; line-height: 1; }
+  .price-new span { font-size: 16px; font-weight: 500; color: var(--muted); }
+  
+  .price-list { list-style: none; margin-bottom: 32px; }
+  .price-list li { font-size: 14px; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .price-list li.disabled { color: #5a5a72; }
+  .price-list li.disabled::before { content: "❌"; font-size: 12px; }
+  .price-list li:not(.disabled)::before { content: "✅"; font-size: 12px; }
+  
+  /* EXCLUSIVE BANNER */
+  .exclusive-banner {
+    background: linear-gradient(135deg, rgba(247,148,29,.1) 0%, rgba(232,23,74,.1) 100%);
+    border: 1px dashed var(--orange); border-radius: 20px; padding: 32px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px;
+  }
+  .exc-text h3 { font-family: "Norwester", sans-serif; font-size: 28px; letter-spacing: 1px; color: #fff; margin-bottom: 8px; }
+  .exc-text p { font-size: 14px; color: var(--muted); max-width: 600px; }
+  .btn-ig {
+    background: #E1306C; color: #fff; padding: 14px 28px; border-radius: 12px;
+    font-family: "Poppins", sans-serif; font-weight: 700; font-size: 14px; transition: 0.2s;
+  }
+  .btn-ig:hover { filter: brightness(1.1); }
+
+  /* ─── FOOTER ─── */
+  footer { text-align: center; padding: 40px 0; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+  
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 40px; }
+    .hero-btns { flex-direction: column; }
+    .exclusive-banner { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  
+  <nav>
+    <div class="nav-logo">
+      <div class="logo-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+          <defs>
+            <linearGradient id="hmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#F7941D" /><stop offset="100%" stop-color="#E8174A" />
+            </linearGradient>
+          </defs>
+          <g stroke="url(#hmGradient)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(0, 15)">
+            <line x1="140" y1="120" x2="140" y2="300" /><line x1="220" y1="120" x2="220" y2="300" />
+            <line x1="140" y1="210" x2="220" y2="130" /><line x1="220" y1="130" x2="280" y2="190" />
+            <line x1="280" y1="190" x2="360" y2="110" /><polyline points="320,110 360,110 360,150" />
+          </g>
+        </svg>
+      </div>
+      <div class="nav-logo-text">HOSTMABAR</div>
+    </div>
+    <a href="login.html" class="btn-login">Login Pengurus</a>
+  </nav>
+
+  <section class="hero">
+    <div class="badge">#1 Mabar Management System</div>
+    <h1>Bikin Mabar Makin Profesional & Adil.<br><span class="text-gradient">Bebas Pusing!</span></h1>
+    <p>Manajemen permainan pertama di Indonesia yang paham banget kebutuhan Host & Player di lapangan. Gak ada lagi cerita pemain yang tertinggal atau ke-skip main.</p>
+    <div class="hero-btns">
+      <a href="#harga" class="btn-primary">Lihat Paket Harga</a>
+      <a href="login.html" class="btn-secondary">Coba Login Sekarang</a>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="section-title">Kenapa Pilih HostMabar?</div>
+    <div class="grid-features">
+      <div class="feat-card">
+        <div class="feat-icon">📱</div>
+        <div class="feat-title">Sangat Gampang</div>
+        <div class="feat-desc">User-friendly dan sederhana. Didesain khusus agar mudah di-tap pakai HP saat di pinggir lapangan.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🦅</div>
+        <div class="feat-title">Bird-Eye View</div>
+        <div class="feat-desc">Membantu Host melihat keseluruhan sesi permainan dan antrean lapangan dalam satu layar.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚖️</div>
+        <div class="feat-title">Hitungan Akurat</div>
+        <div class="feat-desc">Menghitung jumlah main player secara akurat. Semua kebagian main dengan adil, gak ada yang nganggur lama.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔥</div>
+        <div class="feat-title">Leaderboard Panas</div>
+        <div class="feat-desc">Bikin semangat main naik level! Papan klasemen otomatis yang bikin mabar terasa seperti turnamen pro.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="harga">
+    <div class="section-title">Investasi Komunitas Anda</div>
+    
+    <div class="grid-pricing">
+      
+      <div class="price-card">
+        <div class="price-title">PAKET TRIAL</div>
+        <div class="price-subtitle">Cocok untuk komunitas kecil bermain santai 1 lapangan.</div>
+        <div class="price-box">
+          <div class="price-new">FREE</div>
+        </div>
+        <ul class="price-list">
+          <li>Maksimal 4 Pemain</li>
+          <li>Maksimal 8 Pertandingan</li>
+          <li>Fitur Counter Otomatis</li>
+          <li class="disabled">Fitur Leaderboard Klasemen</li>
+          <li class="disabled">Fitur Download Laporan PDF</li>
+        </ul>
+      </div>
+
+      <div class="price-card popular">
+        <div class="price-title">MABAR PLUS</div>
+        <div class="price-subtitle">Untuk komunitas berkembang, 1-2 lapangan.</div>
+        <div class="price-box">
+          <div class="price-old">Rp 99.000</div>
+          <div class="price-new">49k<span>/bulan</span></div>
+        </div>
+        <ul class="price-list">
+          <li>Maksimal 16 Pemain</li>
+          <li>Maksimal 24 Pertandingan</li>
+          <li>Fitur Counter Otomatis</li>
+          <li class="disabled">Fitur Leaderboard Klasemen</li>
+          <li class="disabled">Fitur Download Laporan PDF</li>
+        </ul>
+      </div>
+
+      <div class="price-card">
+        <div class="price-title">MABAR PRO</div>
+        <div class="price-subtitle">Komunitas serius dengan lebih dari 3 lapangan.</div>
+        <div class="price-box">
+          <div class="price-old">Rp 199.000</div>
+          <div class="price-new">149k<span>/bulan</span></div>
+        </div>
+        <ul class="price-list">
+          <li><b>Unlimited</b> Pemain</li>
+          <li><b>Unlimited</b> Pertandingan</li>
+          <li>Fitur Counter Otomatis</li>
+          <li>Fitur Leaderboard Klasemen</li>
+          <li>Fitur Download Laporan PDF</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="exclusive-banner">
+      <div class="exc-text">
+        <h3>🏆 Mabar Exclusive Koben</h3>
+        <p>Akses <b>FREE Paket Mabar Pro*</b> tanpa batas! Terbatas khusus untuk komunitas terpilih yang menjadi anggota <b>KOMUTER</b>. Jadikan komunitasmu setingkat lebih profesional.</p>
+      </div>
+      <a href="https://instagram.com/koben.gsbsd" target="_blank" class="btn-ig">💬 Hubungi @koben.gsbsd</a>
+    </div>
+
+  </section>
+
+  <footer>
+    <p>Dikembangkan untuk GSBSD Badminton Community<br>&copy; 2026 HOSTMABAR.com - Hak Cipta Dilindungi.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
