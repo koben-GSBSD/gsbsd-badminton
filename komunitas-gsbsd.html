@@ -639,5 +639,53 @@ function esc(s){return s.replace(/'/g,"\\'");}
   }
 })();
 </script>
+  <!-- ========================================== -->
+<!-- SKRIP PENJAGA KEAMANAN & CEK LANGGANAN     -->
+<!-- ========================================== -->
+<script>
+(function proteksiHalaman() {
+  // 1. Cek apakah pengguna punya tiket masuk (sudah login)
+  const raw = localStorage.getItem('hm_session');
+  if (!raw) {
+    window.location.replace('index.html'); // Tendang ke halaman login
+    return;
+  }
+  
+  const session = JSON.parse(raw);
+  
+  // 2. Cek apakah waktu sesi harian (8 jam) sudah habis
+  if (Date.now() > session.expiresAt) {
+    localStorage.removeItem('hm_session');
+    alert('Sesi login Anda telah berakhir demi keamanan. Silakan masuk kembali.');
+    window.location.replace('index.html');
+    return;
+  }
+
+  // 3. LOGIKA BERLANGGANAN: Cek apakah paket sudah kedaluwarsa
+  // Kita reset jam hari ini ke 00:00:00 agar adil membandingkan tanggalnya saja
+  const hariIni = new Date();
+  hariIni.setHours(0,0,0,0); 
+  
+  const batasWaktu = new Date(session.tgl_kedaluwarsa);
+  
+  // Jika paket BUKAN free, dan hari ini sudah melewati tanggal kedaluwarsa
+  if (session.paket !== 'free' && hariIni > batasWaktu) {
+    alert('Masa aktif paket berlangganan Anda telah habis. Silakan hubungi Admin HostMabar untuk perpanjangan.');
+    
+    // Hapus tiketnya dan kembalikan ke halaman login
+    localStorage.removeItem('hm_session');
+    window.location.replace('index.html');
+    return;
+  }
+
+  // 4. JIKA LOLOS SEMUA PENGECEKAN
+  // Anda bisa menggunakan variabel ini untuk menampilkan nama komunitas di layar
+  console.log("Akses diizinkan. User: " + session.user + " | Paket: " + session.paket);
+  
+  // (Opsional) Jika Anda punya elemen HTML dengan id="namaKomunitas", kode ini akan mengisinya otomatis:
+  // document.getElementById('namaKomunitas').textContent = session.user.toUpperCase();
+
+})();
+</script>
 </body>
 </html>
