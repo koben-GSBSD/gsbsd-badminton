@@ -256,7 +256,7 @@
         <h3>📄 Download Laporan PDF</h3>
         <p>Leaderboard + Riwayat · Siap posting Instagram</p>
       </div>
-      <button class="btn btn-pdf" id="dlMatchBtn">
+      <button class="btn btn-pdf" id="dlMatchBtn"onclick="cetakPDF(this)">
         <span class="pdf-spin" id="spin1"></span>
         ⬇️ Download PDF
       </button>
@@ -279,7 +279,7 @@
         <h3>📄 Download Laporan PDF</h3>
         <p>Leaderboard + Riwayat · Siap posting Instagram</p>
       </div>
-      <button class="btn btn-pdf" id="dlBoardBtn">
+      <button class="btn btn-pdf" id="dlBoardBtn"onclick="cetakPDF(this)">
         <span class="pdf-spin" id="spin2"></span>
         ⬇️ Download PDF
       </button>
@@ -648,46 +648,42 @@ function esc(s){return s.replace(/'/g,"\\'");}
   // document.getElementById('namaKomunitas').textContent = session.user.toUpperCase();
 
 })();
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <script>
-      document.addEventListener("DOMContentLoaded", function() {
-        const downloadBtns = document.querySelectorAll(".btn-pdf");
+  function cetakPDF(tombol) {
+    // 1. Munculkan efek putar (loading) di tombol yang sedang diklik
+    const spinner = tombol.querySelector(".pdf-spin");
+    if (spinner) spinner.style.display = "inline-block";
 
-        downloadBtns.forEach(function(btn) {
-          btn.addEventListener("click", function(e) {
-            e.preventDefault(); 
-            
-            // Mengaktifkan efek loading putar pada tombol yang sedang diklik
-            const spinner = btn.querySelector(".pdf-spin");
-            if (spinner) spinner.style.display = "inline-block";
+    // 2. Cari semua banner PDF dan sembunyikan sementara agar tidak ikut difoto
+    const semuaBanner = document.querySelectorAll(".pdf-banner");
+    semuaBanner.forEach(banner => banner.style.display = "none");
 
-            // 1. SEMBUNYIKAN SELURUH KOTAK BANNER PDF (Teks & Tombol)
-            const bannersToHide = document.querySelectorAll(".pdf-banner");
-            bannersToHide.forEach(el => el.style.display = 'none');
+    // 3. Tentukan area yang difoto (seluruh aplikasi yang sedang tampil)
+    const areaCetak = document.querySelector(".app");
 
-            // 2. TARGET AREA ADALAH SELURUH APLIKASI
-            // (Otomatis hanya memotret Logo dan Tab yang sedang terbuka)
-            const element = document.querySelector(".app"); 
+    // 4. Konfigurasi PDF
+    const opt = {
+      margin:       [10, 10, 10, 10],
+      filename:     'Laporan-Mabar-GSBSD.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true }, 
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
-            // Konfigurasi file PDF
-            const opt = {
-              margin:       [10, 10, 10, 10],
-              filename:     'Mabar-GSBSD-Report.pdf',
-              image:        { type: 'jpeg', quality: 0.98 },
-              html2canvas:  { scale: 2, useCORS: true }, 
-              jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            // Proses eksekusi download
-            html2pdf().set(opt).from(element).save().then(() => {
-              // Mematikan efek loading
-              if (spinner) spinner.style.display = "none";
-              
-              // 3. MUNCULKAN KEMBALI BANNER PDF SETELAH SELESAI
-              bannersToHide.forEach(el => el.style.display = '');
-            });
-          });
-        });
-      });
-    </script>
+    // 5. Mulai eksekusi pembuatan PDF
+    html2pdf().set(opt).from(areaCetak).save().then(() => {
+      // 6. Jika PDF selesai diunduh, kembalikan tampilan tombol seperti semula
+      if (spinner) spinner.style.display = "none";
+      semuaBanner.forEach(banner => banner.style.display = "");
+    }).catch(err => {
+      // Jika terjadi error, pastikan tombol tidak hilang
+      console.error("Gagal cetak PDF:", err);
+      semuaBanner.forEach(banner => banner.style.display = "");
+      alert("Maaf, terjadi kesalahan saat mencetak PDF.");
+    });
+  }
+</script>
 </body>
 </html>
