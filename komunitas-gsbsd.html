@@ -171,7 +171,7 @@
 </head>
 <body>
 <div class="app">
-
+    
   <!-- HEADER -->
   <div class="header">
     <div class="logo-wrap">
@@ -648,31 +648,25 @@ function esc(s){return s.replace(/'/g,"\\'");}
   // document.getElementById('namaKomunitas').textContent = session.user.toUpperCase();
 
 })();
-</script>
-  <!-- Library html2pdf tetap dipertahankan -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-    <!-- Script Eksekusi Download Terbaru -->
-    <script>
+<script>
       document.addEventListener("DOMContentLoaded", function() {
-        // Menggunakan querySelectorAll agar SEMUA tombol download di halaman berfungsi (termasuk di Leaderboard)
         const downloadBtns = document.querySelectorAll(".btn-pdf");
 
         downloadBtns.forEach(function(btn) {
           btn.addEventListener("click", function(e) {
             e.preventDefault(); 
             
-            // Mengaktifkan efek loading putar jika ada
-            const spinner = document.querySelector(".pdf-spin");
+            // Mengaktifkan efek loading putar pada tombol yang sedang diklik
+            const spinner = btn.querySelector(".pdf-spin");
             if (spinner) spinner.style.display = "inline-block";
 
-            // Target area spesifik yang dibungkus div id="area-cetak"
-            // Jika id tidak ditemukan, ia akan menggunakan .app sebagai cadangan
-            const element = document.getElementById("area-cetak") || document.querySelector(".app"); 
+            // 1. SEMBUNYIKAN SELURUH KOTAK BANNER PDF (Teks & Tombol)
+            const bannersToHide = document.querySelectorAll(".pdf-banner");
+            bannersToHide.forEach(el => el.style.display = 'none');
 
-            // Menyembunyikan tombol download agar tidak ikut tercetak di dalam PDF
-            const elementsToHide = document.querySelectorAll(".btn-pdf");
-            elementsToHide.forEach(el => el.style.display = 'none');
+            // 2. TARGET AREA ADALAH SELURUH APLIKASI
+            // (Otomatis hanya memotret Logo dan Tab yang sedang terbuka)
+            const element = document.querySelector(".app"); 
 
             // Konfigurasi file PDF
             const opt = {
@@ -687,8 +681,9 @@ function esc(s){return s.replace(/'/g,"\\'");}
             html2pdf().set(opt).from(element).save().then(() => {
               // Mematikan efek loading
               if (spinner) spinner.style.display = "none";
-              // Memunculkan kembali tombol download di layar web setelah PDF selesai diproses
-              elementsToHide.forEach(el => el.style.display = '');
+              
+              // 3. MUNCULKAN KEMBALI BANNER PDF SETELAH SELESAI
+              bannersToHide.forEach(el => el.style.display = '');
             });
           });
         });
