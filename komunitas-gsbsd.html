@@ -567,39 +567,60 @@ function changeCount(name,delta){
 
 // ── PDF DOWNLOAD ───────────────────────────────────────────────────────────
 async function downloadPDF(source){
-  if(!state.matches.length){showToast('⚠️ Belum ada data pertandingan!');return;}
-  const btnId = source==='match'?'dlMatchBtn':'dlBoardBtn';
-  const spinId= source==='match'?'spin1':'spin2';
-  const btn=document.getElementById(btnId);
-  const spin=document.getElementById(spinId);
-  btn.disabled=true;
-  spin.style.display='inline-block';
-  btn.childNodes[btn.childNodes.length-1].textContent=' Generating...';
+  // 1. Cegah download jika belum ada data pertandingan
+  if(!state.matches.length){
+    showToast('⚠️ Belum ada data pertandingan!');
+    return;
+  }
+  
+  const btnId = source === 'match' ? 'dlMatchBtn' : 'dlBoardBtn';
+  const spinId= source === 'match' ? 'spin1' : 'spin2';
+  const btn = document.getElementById(btnId);
+  const spin = document.getElementById(spinId);
+  
+  // 2. Ubah tombol jadi mode loading / putar
+  if(btn) {
+    btn.disabled = true;
+    btn.childNodes[btn.childNodes.length-1].textContent = ' Generating...';
+  }
+  if(spin) spin.style.display = 'inline-block';
+  
+  // 3. Sembunyikan banner PDF (teks & tombol) agar tidak ikut terfoto
+  const banners = document.querySelectorAll('.pdf-banner');
+  banners.forEach(b => b.style.display = 'none');
+  
+  // 4. Target area yang akan dicetak (seluruh tab yang sedang aktif)
+  const areaCetak = document.querySelector('.app');
+  
+  // 5. Buat nama file PDF otomatis sesuai tanggal dan nama sesi Mabar
+  const sdate = state.session.date || 'report';
+  const sname = (state.session.name || 'mabar').replace(/\s+/g,'_');
+  const fileName = `GSBSD_${sname}_${sdate}.pdf`;
+  
+  // 6. Konfigurasi resolusi dan format PDF
+  const opt = {
+    margin:       [10, 10, 10, 10],
+    filename:     fileName,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true }, 
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
   try {
-    const resp = await fetch('http://localhost:5050/generate_pdf',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(state)
-    });
-    if(!resp.ok){
-      const errTxt = await resp.text();
-      throw new Error(errTxt||'Server error');
-    }
-    const blob = await resp.blob();
-    const url  = URL.createObjectURL(blob);
-    const sdate= state.session.date||'report';
-    const sname= (state.session.name||'mabar').replace(/\s+/g,'_');
-    const a    = document.createElement('a');
-    a.href=url; a.download=`GSBSD_${sname}_${sdate}.pdf`; a.click();
-    URL.revokeObjectURL(url);
+    // 7. Mulai proses pembuatan PDF secara lokal (gratis tanpa server)
+    await html2pdf().set(opt).from(areaCetak).save();
     showToast('✅ PDF berhasil didownload!');
   } catch(err) {
-    console.error(err);
-    showToast('❌ Jalankan pdf_server.py terlebih dahulu!\npython3 pdf_server.py');
+    console.error("Detail error PDF:", err);
+    showToast('❌ Gagal mencetak PDF!');
   } finally {
-    btn.disabled=false;
-    spin.style.display='none';
-    btn.childNodes[btn.childNodes.length-1].textContent=' Download PDF';
+    // 8. Kembalikan kondisi tombol dan banner seperti semula setelah selesai
+    if(btn) {
+      btn.disabled = false;
+      btn.childNodes[btn.childNodes.length-1].textContent = ' Download PDF';
+    }
+    if(spin) spin.style.display = 'none';
+    banners.forEach(b => b.style.display = '');
   }
 }
 
@@ -639,5 +660,6 @@ function esc(s){return s.replace(/'/g,"\\'");}
   }
 })();
 </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
 </html>
