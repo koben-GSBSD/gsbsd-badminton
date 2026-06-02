@@ -256,7 +256,7 @@
         <h3>📄 Download Laporan PDF</h3>
         <p>Leaderboard + Riwayat · Siap posting Instagram</p>
       </div>
-      <button class="btn btn-pdf" id="dlMatchBtn" onclick="downloadPDF('match')">
+      <button class="btn btn-pdf" id="dlMatchBtn">
         <span class="pdf-spin" id="spin1"></span>
         ⬇️ Download PDF
       </button>
@@ -279,7 +279,7 @@
         <h3>📄 Download Laporan PDF</h3>
         <p>Leaderboard + Riwayat · Siap posting Instagram</p>
       </div>
-      <button class="btn btn-pdf" id="dlBoardBtn" onclick="downloadPDF('board')">
+      <button class="btn btn-pdf" id="dlBoardBtn">
         <span class="pdf-spin" id="spin2"></span>
         ⬇️ Download PDF
       </button>
@@ -565,44 +565,6 @@ function changeCount(name,delta){
   save();const el=document.getElementById('cnt-'+name);if(el)el.textContent=state.playCount[name];
 }
 
-// ── PDF DOWNLOAD ───────────────────────────────────────────────────────────
-async function downloadPDF(source){
-  if(!state.matches.length){showToast('⚠️ Belum ada data pertandingan!');return;}
-  const btnId = source==='match'?'dlMatchBtn':'dlBoardBtn';
-  const spinId= source==='match'?'spin1':'spin2';
-  const btn=document.getElementById(btnId);
-  const spin=document.getElementById(spinId);
-  btn.disabled=true;
-  spin.style.display='inline-block';
-  btn.childNodes[btn.childNodes.length-1].textContent=' Generating...';
-  try {
-    const resp = await fetch('http://localhost:5050/generate_pdf',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(state)
-    });
-    if(!resp.ok){
-      const errTxt = await resp.text();
-      throw new Error(errTxt||'Server error');
-    }
-    const blob = await resp.blob();
-    const url  = URL.createObjectURL(blob);
-    const sdate= state.session.date||'report';
-    const sname= (state.session.name||'mabar').replace(/\s+/g,'_');
-    const a    = document.createElement('a');
-    a.href=url; a.download=`GSBSD_${sname}_${sdate}.pdf`; a.click();
-    URL.revokeObjectURL(url);
-    showToast('✅ PDF berhasil didownload!');
-  } catch(err) {
-    console.error(err);
-    showToast('❌ Jalankan pdf_server.py terlebih dahulu!\npython3 pdf_server.py');
-  } finally {
-    btn.disabled=false;
-    spin.style.display='none';
-    btn.childNodes[btn.childNodes.length-1].textContent=' Download PDF';
-  }
-}
-
 // ── TOAST ──────────────────────────────────────────────────────────────────
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -687,42 +649,49 @@ function esc(s){return s.replace(/'/g,"\\'");}
 
 })();
 </script>
-  <!-- Library html2pdf (Tambahkan tepat sebelum tag penutup body) -->
+  <!-- Library html2pdf tetap dipertahankan -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- Script Eksekusi Download -->
+    <!-- Script Eksekusi Download Terbaru -->
     <script>
       document.addEventListener("DOMContentLoaded", function() {
-        // Mendeteksi tombol download menggunakan class .btn-pdf yang sudah ada di CSS
-        const downloadBtn = document.querySelector(".btn-pdf");
+        // Menggunakan querySelectorAll agar SEMUA tombol download di halaman berfungsi (termasuk di Leaderboard)
+        const downloadBtns = document.querySelectorAll(".btn-pdf");
 
-        // Mendeteksi area yang akan di-download (menggunakan class .app yang membungkus semua konten)
-        const element = document.querySelector(".app"); 
-
-        if (downloadBtn) {
-          downloadBtn.addEventListener("click", function(e) {
-            e.preventDefault(); // Mencegah halaman reload
+        downloadBtns.forEach(function(btn) {
+          btn.addEventListener("click", function(e) {
+            e.preventDefault(); 
             
-            // Mengaktifkan efek loading putar (.pdf-spin) saat tombol diklik
+            // Mengaktifkan efek loading putar jika ada
             const spinner = document.querySelector(".pdf-spin");
             if (spinner) spinner.style.display = "inline-block";
 
+            // Target area spesifik yang dibungkus div id="area-cetak"
+            // Jika id tidak ditemukan, ia akan menggunakan .app sebagai cadangan
+            const element = document.getElementById("area-cetak") || document.querySelector(".app"); 
+
+            // Menyembunyikan tombol download agar tidak ikut tercetak di dalam PDF
+            const elementsToHide = document.querySelectorAll(".btn-pdf");
+            elementsToHide.forEach(el => el.style.display = 'none');
+
             // Konfigurasi file PDF
             const opt = {
-              margin:       [10, 10, 10, 10], // Margin dokumen
-              filename:     'Mabar-GSBSD-Report.pdf', // Nama file yang akan terdownload
+              margin:       [10, 10, 10, 10],
+              filename:     'Mabar-GSBSD-Report.pdf',
               image:        { type: 'jpeg', quality: 0.98 },
-              html2canvas:  { scale: 2, useCORS: true }, // scale 2 agar hasil PDF tidak blur
+              html2canvas:  { scale: 2, useCORS: true }, 
               jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             // Proses eksekusi download
             html2pdf().set(opt).from(element).save().then(() => {
-              // Mematikan efek loading setelah file selesai didownload
+              // Mematikan efek loading
               if (spinner) spinner.style.display = "none";
+              // Memunculkan kembali tombol download di layar web setelah PDF selesai diproses
+              elementsToHide.forEach(el => el.style.display = '');
             });
           });
-        }
+        });
       });
     </script>
 </body>
