@@ -567,7 +567,6 @@ function changeCount(name,delta){
 
 // ── PDF DOWNLOAD ───────────────────────────────────────────────────────────
 async function downloadPDF(source){
-  // 1. Cegah download jika belum ada data pertandingan
   if(!state.matches.length){
     showToast('⚠️ Belum ada data pertandingan!');
     return;
@@ -578,26 +577,53 @@ async function downloadPDF(source){
   const btn = document.getElementById(btnId);
   const spin = document.getElementById(spinId);
   
-  // 2. Ubah tombol jadi mode loading / putar
   if(btn) {
     btn.disabled = true;
     btn.childNodes[btn.childNodes.length-1].textContent = ' Generating...';
   }
   if(spin) spin.style.display = 'inline-block';
   
-  // 3. Sembunyikan banner PDF (teks & tombol) agar tidak ikut terfoto
-  const banners = document.querySelectorAll('.pdf-banner');
-  banners.forEach(b => b.style.display = 'none');
+  // =========================================================================
+  // 3. SEMBUNYIKAN ELEMEN YANG TIDAK BOLEH MASUK KE PDF
+  // =========================================================================
+  const elemenDisembunyikan = [];
   
-  // 4. Target area yang akan dicetak (seluruh tab yang sedang aktif)
+  // Sembunyikan semua Banner PDF
+  document.querySelectorAll('.pdf-banner').forEach(el => {
+    elemenDisembunyikan.push({ node: el, display: el.style.display });
+    el.style.display = 'none';
+  });
+
+  // Sembunyikan menu Tab (Match, Board, Counter)
+  // (Pastikan class ini sesuai dengan class pembungkus menu tab Anda, biasanya 'nav' atau 'tab-nav')
+  document.querySelectorAll('.nav').forEach(el => {
+    elemenDisembunyikan.push({ node: el, display: el.style.display });
+    el.style.display = 'none';
+  });
+
+  // Sembunyikan Tombol Logout & Setup di atas
+  document.querySelectorAll('button:not(.btn-pdf)').forEach(el => {
+      // Kita sembunyikan semua tombol interaktif kecuali tombol download itu sendiri
+      elemenDisembunyikan.push({ node: el, display: el.style.display });
+      el.style.display = 'none';
+  });
+
+  // Jika sedang di Tab Match, Sembunyikan Card "INPUT PERTANDINGAN"
+  // (Asumsinya form input ini ada di elemen pertama dengan class 'card' di dalam tab match)
+  if (source === 'match') {
+    const inputCard = document.querySelector('#tab-match .card'); // Mengambil card pertama (form input)
+    if (inputCard) {
+      elemenDisembunyikan.push({ node: inputCard, display: inputCard.style.display });
+      inputCard.style.display = 'none';
+    }
+  }
+  // =========================================================================
+
   const areaCetak = document.querySelector('.app');
-  
-  // 5. Buat nama file PDF otomatis sesuai tanggal dan nama sesi Mabar
   const sdate = state.session.date || 'report';
   const sname = (state.session.name || 'mabar').replace(/\s+/g,'_');
   const fileName = `GSBSD_${sname}_${sdate}.pdf`;
   
-  // 6. Konfigurasi resolusi dan format PDF
   const opt = {
     margin:       [10, 10, 10, 10],
     filename:     fileName,
@@ -607,20 +633,24 @@ async function downloadPDF(source){
   };
   
   try {
-    // 7. Mulai proses pembuatan PDF secara lokal (gratis tanpa server)
     await html2pdf().set(opt).from(areaCetak).save();
-    showToast('✅ PDF berhasil didownload!');
+    showToast('✅ Laporan PDF berhasil dibuat!');
   } catch(err) {
     console.error("Detail error PDF:", err);
     showToast('❌ Gagal mencetak PDF!');
   } finally {
-    // 8. Kembalikan kondisi tombol dan banner seperti semula setelah selesai
     if(btn) {
       btn.disabled = false;
       btn.childNodes[btn.childNodes.length-1].textContent = ' Download PDF';
     }
     if(spin) spin.style.display = 'none';
-    banners.forEach(b => b.style.display = '');
+    
+    // =========================================================================
+    // 8. KEMBALIKAN SEMUA ELEMEN YANG DISEMBUNYIKAN KE KONDISI SEMULA
+    // =========================================================================
+    elemenDisembunyikan.forEach(item => {
+      item.node.style.display = item.display;
+    });
   }
 }
 
