@@ -21,14 +21,58 @@
                radial-gradient(ellipse 60% 40% at 90% 90%,rgba(232,23,74,.05) 0%,transparent 60%);}
   .app{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:16px;}
 
-  /* HEADER */
-  .header{display:flex;align-items:center;gap:16px;padding:26px 0 20px;border-bottom:1px solid var(--border);margin-bottom:22px;}
-  .logo-wrap{width:48px;height:48px;flex-shrink:0;border-radius:10px;overflow:hidden;box-shadow:0 4px 18px rgba(247,148,29,.3);}
-  .logo-wrap img{width:100%;height:100%;object-fit:cover;}
-  .header-text h1{font-family:"Poppins",sans-serif;font-size:clamp(20px,5vw,32px);font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;}
-  .header-text p{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px;}
-  .basic-badge{margin-left:auto;flex-shrink:0;background:linear-gradient(135deg,rgba(247,148,29,.2),rgba(232,23,74,.2));border:1.5px solid rgba(247,148,29,.5);border-radius:20px;padding:5px 12px;font-family:"Poppins",sans-serif;font-size:11px;font-weight:800;color:#FFB347;letter-spacing:1px;text-transform:uppercase;}
+  /* ==============================
+     TAMBAHKAN BLOK CSS BARU INI
+     ============================== */
+  /* --- GAYA HEADER BARU UNTUK MABAR PRO --- */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Jarak sedikit lebih lebar seperti di gambar */
+    padding: 26px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 22px;
+  }
+  .logo-wrap {
+    width: 60px; /* Ukuran lingkaran sedikit lebih besar */
+    height: 60px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #000; /* Latar belakang lingkaran hitam */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Bayangan Glowing Blue seperti di gambar */
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.7);
+  }
+  .logo-wrap img {
+    width: 60%; /* Ikon petir di tengah, tidak penuh */
+    height: 60%;
+    object-fit: contain; /* Agar ikon tidak terpotong */
+  }
 
+  .header-text h1 {
+    /* Menggunakan font Norwester untuk teks utama */
+    font-family: 'Norwester', sans-serif;
+    font-size: clamp(24px, 6vw, 36px); /* Ukuran sedikit lebih besar */
+    font-weight: bold;
+    /* Gradasi warna-warni (Blue-Purple-Magenta-Orange) seperti gambar */
+    background: linear-gradient(90deg, #38bdf8 0%, #a855f7 35%, #ec4899 65%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+    /* Efek teks glow putih/biru tipis */
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3), 0 0 2px rgba(56, 189, 248, 0.3);
+  }
+  .header-text p {
+    font-size: 13px;
+    color: #fff; /* Subteks warna putih bersih */
+    font-weight: 400; /* Lebih tipis dari aslinya */
+    margin-top: 4px;
+    opacity: 0.8; /* Sedikit transparan agar h1 menonjol */
+  } 
+  
   /* TABS — putih/abu terang agar kontras di atas dark bg */
   .tabs{display:flex;gap:4px;background:var(--nav-bg);border:1px solid var(--nav-border);border-radius:var(--radius);padding:4px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.25);}
   .tab{flex:1;padding:10px 4px;background:none;border:none;cursor:pointer;font-family:"Poppins",sans-serif;font-size:12px;font-weight:700;color:var(--muted-on-light);border-radius:12px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:4px;}
@@ -165,16 +209,15 @@
 <div class="app">
 
   <!-- HEADER -->
-  <div class="header">
+ <div class="header">
     <div class="logo-wrap">
-     <img src="logo.png"
-  </div>
+      <!-- Menggunakan logo petir 'logo.png' -->
+      <img src="logo.png" alt="Mabar Pro Logo" />
+    </div>
     <div class="header-text">
-      <h1>GSBSD Badminton</h1>
-      <p>Mabar Tracker · Double · Point 25</p>
-      <button onclick="prosesLogout()" class="btn btn-secondary btn-sm" style="color: #ff6b6b; border-color: rgba(231,76,60,.3); background: rgba(231,76,60,.12);">
-      🚪 Logout
-    </button>
+      <h1>MABAR PRO</h1>
+      <!-- Subteks disesuaikan dengan status paket (misal: "Pro Version") -->
+      <p>PRO VERSION</p>
     </div>
   </div>
 
