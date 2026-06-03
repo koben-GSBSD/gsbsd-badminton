@@ -1,27 +1,18 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GSBSD Badminton — Mabar Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HOSTMABAR — Trial</title>
+<link href="https://fonts.cdnfonts.com/css/norwester" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --orange:#F7941D;--pink:#E8174A;
+    --orange:#F7941D; --pink:#E8174A;
     --grad:linear-gradient(135deg,#F7941D 0%,#E8174A 100%);
-    --grad-soft:linear-gradient(135deg,rgba(247,148,29,.12) 0%,rgba(232,23,74,.12) 100%);
-    /* Dark page background, lighter surfaces for cards/nav */
-    --bg:#0f0f13;
-    --surface:#2a2a36;
-    --card:#1e1e28;
-    --nav-bg:#ffffff;
-    --nav-border:#e2e2e8;
-    --border:#38384a;
-    --text:#f0f0f8;
-    --text-on-light:#1a1a2e;
-    --muted-on-light:#555568;
-    --muted:#9898b0;
-    --green:#2ecc71;--red:#e74c3c;--radius:16px;
+    --bg:#0f0f13; --surface:#2a2a36; --card:#1e1e28;
+    --border:#38384a; --text:#f0f0f8; --muted:#9898b0;
+    --green:#2ecc71; --red:#e74c3c; --radius:16px;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
@@ -32,10 +23,12 @@
 
   /* HEADER */
   .header{display:flex;align-items:center;gap:16px;padding:26px 0 20px;border-bottom:1px solid var(--border);margin-bottom:22px;}
-  .logo-wrap{width:50px;height:50px;flex-shrink:0;border-radius:50%;overflow:hidden;box-shadow:0 4px 18px rgba(247,148,29,.4);}
+  .logo-wrap{width:48px;height:48px;flex-shrink:0;border-radius:10px;overflow:hidden;box-shadow:0 4px 18px rgba(247,148,29,.3);}
   .logo-wrap img{width:100%;height:100%;object-fit:cover;}
   .header-text h1{font-family:"Poppins",sans-serif;font-size:clamp(20px,5vw,32px);font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;}
   .header-text p{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px;}
+  .trial-badge{margin-left:auto;flex-shrink:0;background:linear-gradient(135deg,rgba(247,148,29,.2),rgba(232,23,74,.2));border:1.5px solid rgba(247,148,29,.5);border-radius:20px;padding:5px 12px;font-family:"Poppins",sans-serif;font-size:11px;font-weight:800;color:#FFB347;letter-spacing:1px;text-transform:uppercase;}
+
 
   /* TABS — putih/abu terang agar kontras di atas dark bg */
   .tabs{display:flex;gap:4px;background:var(--nav-bg);border:1px solid var(--nav-border);border-radius:var(--radius);padding:4px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.25);}
