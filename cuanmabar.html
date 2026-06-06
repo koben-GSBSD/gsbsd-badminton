@@ -96,26 +96,18 @@
     </nav>
 
     <div id="modal-container"></div>
-
-    <div id="print-section" class="hidden print:block print:bg-white print:text-black p-8 min-h-screen">
-      </div>
   </div>
 
-  <script>
-    // --- 1. DEFAULT DATA & STATE ---
-    const defaultKas = [
-      { id: 1, date: '2026-06-01', type: 'in', category: 'iuran', amount: 150000, description: 'Iuran awal bulan' },
-      { id: 2, date: '2026-06-02', type: 'out', category: 'sewa lapangan', amount: 200000, description: 'Sewa GOR 2 Jam' }
-    ];
-    const defaultMembers = [
-      { id: 1, name: 'Koben', status: 'lunas', dueAmount: 50000 },
-      { id: 2, name: 'Budi', status: 'belum', dueAmount: 50000 }
-    ];
-    const defaultInv = [
-      { id: 1, date: '2026-06-01', type: 'in', itemName: 'Shuttlecock (Slop)', qty: 5, description: 'Beli stok awal' }
-    ];
+  <div id="print-section" class="hidden print:block bg-white text-black p-8 w-full">
+    </div>
 
-    // Ambil dari LocalStorage atau pakai default
+  <script>
+    // --- 1. DATA KOSONG UNTUK PRODUCTION RILIS (EMPTY ARRAYS) ---
+    const defaultKas = [];
+    const defaultMembers = [];
+    const defaultInv = [];
+
+    // Ambil dari LocalStorage atau pakai default kosong jika pengguna baru membuka aplikasi
     let transactions = JSON.parse(localStorage.getItem('cm_kas')) || defaultKas;
     let members = JSON.parse(localStorage.getItem('cm_members')) || defaultMembers;
     let inventoryTxs = JSON.parse(localStorage.getItem('cm_inv')) || defaultInv;
@@ -161,7 +153,6 @@
       btn.querySelector('i').classList.add('animate-spin');
       status.innerText = "Menyimpan ke GSheets...";
       
-      // Simulasi loading 1.5 detik (Nanti diganti dengan fetch() ke API Vercel/Supabase)
       setTimeout(() => {
         btn.querySelector('i').classList.remove('animate-spin');
         status.innerText = "Berhasil di-sync ke GSheets!";
@@ -169,14 +160,14 @@
       }, 1500);
     }
 
-    // --- 3. RENDER FUNCTIONS ---
+    // --- 3. RENDER FUNCTIONS WITH CLEAN EMPTY STATES ---
 
     function renderDashboard() {
       let tIn = 0, tOut = 0;
       transactions.forEach(t => t.type === 'in' ? tIn += t.amount : tOut += t.amount);
       let balance = tIn - tOut;
       let total = tIn + tOut;
-      let inPercent = total === 0 ? 50 : Math.round((tIn / total) * 100);
+      let inPercent = total === 0 ? 0 : Math.round((tIn / total) * 100);
       
       let unpaid = members.filter(m => m.status === 'belum' || m.status === 'nunggak');
       let recentTx = transactions.slice(0, 3);
@@ -187,7 +178,7 @@
           <h1 class="text-4xl font-bold mb-6 ${balance >= 0 ? 'text-white' : 'text-red-400'}">${formatRp(balance)}</h1>
           
           <div class="flex items-center space-x-6 border-t border-slate-700 pt-5">
-            <div class="relative w-16 h-16 flex-shrink-0 rounded-full" style="background: conic-gradient(#10b981 0% ${inPercent}%, #ef4444 ${inPercent}% 100%)">
+            <div class="relative w-16 h-16 flex-shrink-0 rounded-full" style="background: conic-gradient(${total === 0 ? '#475569 0% 100%' : `#10b981 0% ${inPercent}%, #ef4444 ${inPercent}% 100%`})">
               <div class="absolute inset-1.5 bg-slate-800 rounded-full"></div>
             </div>
             <div class="flex-1 space-y-2">
@@ -224,7 +215,12 @@
             <button onclick="switchTab('kas')" class="text-orange-500 text-xs font-medium hover:underline">Lihat Semua</button>
           </div>
           <div class="space-y-3">
-            ${recentTx.map(tx => `
+            ${recentTx.length === 0 ? `
+              <div class="text-center text-slate-500 py-8 px-4 text-sm bg-slate-800/30 rounded-xl border border-dashed border-slate-700">
+                <i data-lucide="activity" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
+                Belum ada aktivitas finansial baru.
+              </div>
+            ` : recentTx.map(tx => `
               <div class="bg-slate-800 rounded-lg p-3 flex justify-between items-center border border-slate-700/50">
                 <div class="flex items-center space-x-3">
                   <div class="p-2 rounded-full ${tx.type === 'in' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
@@ -266,7 +262,13 @@
           </button>
         </div>
         <div class="space-y-3">
-          ${transactions.map(tx => `
+          ${transactions.length === 0 ? `
+            <div class="text-center text-slate-500 py-16 px-4 bg-slate-800/40 rounded-xl border border-dashed border-slate-700">
+              <i data-lucide="wallet" class="w-10 h-10 mx-auto mb-3 text-slate-600"></i>
+              <p class="font-medium text-slate-400 text-base">Buku Kas Masih Kosong</p>
+              <p class="text-xs text-slate-500 mt-1">Gunakan tombol di atas untuk mencatat pemasukan/pengeluaran pertama mabar komunitas Anda.</p>
+            </div>
+          ` : transactions.map(tx => `
             <div class="bg-slate-800 rounded-lg p-4 border border-slate-700/50">
               <div class="flex justify-between items-start mb-2">
                 <div>
@@ -305,11 +307,17 @@
             <p class="text-2xl font-bold text-emerald-400">${formatRp(collected)}</p>
           </div>
           <div class="bg-slate-900 text-slate-300 text-[10px] p-2 rounded-lg border border-slate-700 max-w-[150px]">
-            <strong class="text-orange-400">💡 Note:</strong> Host bisa catat dana ini ke Kas. Nama yg Lunas bisa dihapus.
+            <strong class="text-orange-400">💡 Note:</strong> Host bisa catat dana ini ke Kas. Nama yg Lunas bisa dihapus jika siklus ganti.
           </div>
         </div>
         <div class="space-y-3">
-          ${members.map(m => `
+          ${members.length === 0 ? `
+            <div class="text-center text-slate-500 py-16 px-4 bg-slate-800/40 rounded-xl border border-dashed border-slate-700">
+              <i data-lucide="users" class="w-10 h-10 mx-auto mb-3 text-slate-600"></i>
+              <p class="font-medium text-slate-400 text-base">Belum Ada Daftar Member</p>
+              <p class="text-xs text-slate-500 mt-1">Klik 'Tambah' untuk menginput nama pemain beserta target iuran wajib minggu/bulan ini.</p>
+            </div>
+          ` : members.map(m => `
             <div class="bg-slate-800 rounded-xl p-3 flex items-center justify-between border border-slate-700/80">
               <div class="flex-1">
                 <h4 class="text-white font-semibold text-base">${m.name}</h4>
@@ -346,7 +354,7 @@
           </button>
         </div>
         <div class="grid grid-cols-2 gap-3 mb-6">
-          ${Object.keys(summary).length === 0 ? `<div class="col-span-2 text-center text-slate-500 py-4 bg-slate-800 rounded-xl border border-slate-700">Stok kosong</div>` : ''}
+          ${Object.keys(summary).length === 0 ? `<div class="col-span-2 text-center text-slate-500 py-6 bg-slate-800/30 rounded-xl border border-slate-700/60 text-sm">Stok barang kosong</div>` : ''}
           ${Object.entries(summary).map(([item, qty]) => `
             <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 text-center relative overflow-hidden">
               <i data-lucide="package" class="absolute -right-2 -bottom-2 w-10 h-10 text-slate-700 opacity-30"></i>
@@ -358,7 +366,12 @@
         <div>
           <h3 class="text-slate-300 font-medium mb-3">Riwayat Keluar / Masuk</h3>
           <div class="space-y-3">
-            ${inventoryTxs.map(tx => `
+            ${inventoryTxs.length === 0 ? `
+              <div class="text-center text-slate-500 py-12 px-4 bg-slate-800/40 rounded-xl border border-dashed border-slate-700">
+                <i data-lucide="package" class="w-10 h-10 mx-auto mb-2 text-slate-600"></i>
+                Belum ada pergerakan kok/barang.
+              </div>
+            ` : inventoryTxs.map(tx => `
               <div class="bg-slate-800 rounded-lg p-3 flex justify-between items-center border border-slate-700/50">
                 <div class="flex items-center space-x-3">
                   <div class="p-2 rounded-full ${tx.type === 'in' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
@@ -419,9 +432,9 @@
                   ${['iuran','donasi','denda','shuttlecock','sewa lapangan','konsumsi','hadiah','lain-lain'].map(c => `<option value="${c}" ${(tx && tx.category===c)?'selected':''}>${c}</option>`).join('')}
                 </select></div>
               <div><label class="text-xs text-slate-400">Nominal (Rp)</label>
-                <input type="number" name="amount" required value="${tx ? tx.amount : ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+                <input type="number" name="amount" required value="${tx ? tx.amount : ''}" placeholder="Contoh: 50000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
               <div><label class="text-xs text-slate-400">Keterangan</label>
-                <input type="text" name="description" required value="${tx ? tx.description : ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+                <input type="text" name="description" required value="${tx ? tx.description : ''}" placeholder="Contoh: Iuran mabar Agus" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
               <div class="flex space-x-3 pt-2">
                 <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
                 <button type="submit" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-medium">Simpan</button>
@@ -460,8 +473,8 @@
             <h3 class="text-lg font-bold text-white mb-4">Tambah Member Iuran</h3>
             <form onsubmit="saveMember(event)" class="space-y-4">
               <div><label class="text-xs text-slate-400">Nama Pemain</label>
-                <input type="text" name="name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
-              <div><label class="text-xs text-slate-400">Nominal (Rp)</label>
+                <input type="text" name="name" required placeholder="Nama pemain mabar" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Nominal Tagihan (Rp)</label>
                 <input type="number" name="dueAmount" required value="50000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
               <div><label class="text-xs text-slate-400">Status Awal</label>
                 <select name="status" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
@@ -520,12 +533,12 @@
                   <option value="Air Mineral (Dus)" ${(tx && tx.itemName==='Air Mineral (Dus)')?'selected':''}>Air Mineral (Dus)</option>
                   <option value="Lainnya" ${(!isDefaultItem)?'selected':''}>Lainnya...</option>
                 </select>
-                <input type="text" name="customItemName" value="${!isDefaultItem ? tx.itemName : ''}" placeholder="Jika Lainnya..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+                <input type="text" name="customItemName" value="${!isDefaultItem ? tx.itemName : ''}" placeholder="Jika pilih Lainnya, tulis di sini" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
               </div>
               <div><label class="text-xs text-slate-400">Jumlah/Qty</label>
-                <input type="number" name="qty" required value="${tx ? tx.qty : ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+                <input type="number" name="qty" required value="${tx ? tx.qty : ''}" placeholder="Contoh: 1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
               <div><label class="text-xs text-slate-400">Keterangan</label>
-                <input type="text" name="description" required value="${tx ? tx.description : ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+                <input type="text" name="description" required value="${tx ? tx.description : ''}" placeholder="Contoh: Dipakai mabar selasa malam" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
               <div class="flex space-x-3 pt-2">
                 <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
                 <button type="submit" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-medium">Simpan</button>
@@ -563,25 +576,113 @@
     // --- 5. RENDER PRINT SECTION ---
     function renderPrintView() {
       let balance = transactions.reduce((acc, t) => t.type === 'in' ? acc + t.amount : acc - t.amount, 0);
+      
+      const summary = {};
+      inventoryTxs.forEach(tx => {
+        if (!summary[tx.itemName]) summary[tx.itemName] = 0;
+        summary[tx.itemName] += (tx.type === 'in' ? tx.qty : -tx.qty);
+      });
+
       let html = `
         <div class="text-center mb-8 border-b-2 border-black pb-4">
-          <h1 class="text-3xl font-black">LAPORAN KEUANGAN MABAR</h1>
-          <p class="text-gray-500">Dihasilkan otomatis oleh: CUANMABAR - Hostmabar.com</p>
+          <h1 class="text-3xl font-black">LAPORAN KEUANGAN & INVENTORI MABAR</h1>
+          <p class="text-gray-500">Dihasilkan otomatis oleh aplikasi resmi: CUANMABAR - Hostmabar.com</p>
         </div>
-        <div class="border border-black p-4 rounded mb-8">
-          <h3 class="font-bold mb-2">Ringkasan Kas</h3>
-          <p class="font-bold text-lg">Saldo Akhir: ${formatRp(balance)}</p>
+        
+        <div class="grid grid-cols-2 gap-6 mb-8">
+          <div class="border border-black p-4 rounded">
+            <h3 class="font-bold mb-1 text-sm text-gray-700 uppercase tracking-wider">Ringkasan Keuangan</h3>
+            <p class="text-xs text-gray-500 mb-2">Total Saldo Kas Berjalan</p>
+            <p class="font-black text-2xl">${formatRp(balance)}</p>
+          </div>
+          <div class="border border-black p-4 rounded">
+            <h3 class="font-bold mb-1 text-sm text-gray-700 uppercase tracking-wider">Sisa Stok Inventori</h3>
+            <p class="text-xs text-gray-500 mb-2">Akumulasi sisa stok barang</p>
+            <div class="space-y-1">
+              ${Object.keys(summary).length === 0 ? '<p class="text-sm text-gray-400 italic">Stok Kosong</p>' : 
+                Object.entries(summary).map(([item, qty]) => `
+                  <p class="text-sm font-bold flex justify-between">
+                    <span>${item}</span> <span>: ${qty} Unit/Slop</span>
+                  </p>
+                `).join('')}
+            </div>
+          </div>
         </div>
-        <h3 class="font-bold mb-4 text-xl border-b border-gray-300 pb-2">Catatan Transaksi Kas</h3>
-        <table class="w-full text-left border-collapse mb-8 text-sm">
-          <tr class="bg-gray-200"><th class="border border-black p-2">Tanggal</th><th class="border border-black p-2">Ket</th><th class="border border-black p-2">Nominal</th></tr>
-          ${transactions.map(t => `<tr><td class="border border-black p-2">${t.date}</td><td class="border border-black p-2">${t.description}</td><td class="border border-black p-2 text-right ${t.type==='in'?'text-green-600':'text-red-600'}">${t.type==='in'?'+':'-'}${formatRp(t.amount)}</td></tr>`).join('')}
+        
+        <h3 class="font-bold mb-3 text-lg border-b border-gray-400 pb-1 uppercase tracking-wide">1. Catatan Buku Transaksi Kas</h3>
+        <table class="w-full text-left border-collapse mb-8 text-xs">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border border-black p-2 w-24">Tanggal</th>
+              <th class="border border-black p-2 w-28">Kategori</th>
+              <th class="border border-black p-2">Keterangan / Deskripsi</th>
+              <th class="border border-black p-2 w-32 text-right">Nominal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${transactions.length === 0 ? `<tr><td colspan="4" class="text-center p-4 italic text-gray-400">Belum ada rekaman data transaksi kas.</td></tr>` : 
+              transactions.map(t => `
+              <tr>
+                <td class="border border-black p-2">${t.date}</td>
+                <td class="border border-black p-2 capitalize font-medium">${t.category}</td>
+                <td class="border border-black p-2 text-gray-700">${t.description}</td>
+                <td class="border border-black p-2 text-right font-bold ${t.type==='in'?'text-green-700':'text-red-700'}">
+                  ${t.type==='in'?'+':'-'} ${formatRp(t.amount)}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
         </table>
-        <h3 class="font-bold mb-4 text-xl border-b border-gray-300 pb-2">Status Iuran</h3>
-        <table class="w-full text-left border-collapse mb-8 text-sm">
-          <tr class="bg-gray-200"><th class="border border-black p-2">Nama</th><th class="border border-black p-2">Status</th></tr>
-          ${members.map(m => `<tr><td class="border border-black p-2">${m.name}</td><td class="border border-black p-2 uppercase font-bold">${m.status}</td></tr>`).join('')}
+        
+        <h3 class="font-bold mb-3 text-lg border-b border-gray-400 pb-1 uppercase tracking-wide">2. Status Monitoring Iuran Member</h3>
+        <table class="w-full text-left border-collapse mb-8 text-xs">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border border-black p-2">Nama Member / Pemain</th>
+              <th class="border border-black p-2 w-32">Status Tagihan</th>
+              <th class="border border-black p-2 w-40 text-right">Nominal Periode Ini</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${members.length === 0 ? `<tr><td colspan="3" class="text-center p-4 italic text-gray-400">Belum ada daftar tagihan iuran member.</td></tr>` : 
+              members.map(m => `
+              <tr>
+                <td class="border border-black p-2 font-medium">${m.name}</td>
+                <td class="border border-black p-2 uppercase font-bold ${m.status==='lunas'?'text-green-700':m.status==='belum'?'text-blue-700':'text-red-700'}">${m.status}</td>
+                <td class="border border-black p-2 text-right">${formatRp(m.dueAmount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
         </table>
+
+        <h3 class="font-bold mb-3 text-lg border-b border-gray-400 pb-1 uppercase tracking-wide">3. Riwayat Mutasi Log Inventori</h3>
+        <table class="w-full text-left border-collapse mb-8 text-xs">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border border-black p-2 w-24">Tanggal</th>
+              <th class="border border-black p-2 w-44">Nama Barang/Item</th>
+              <th class="border border-black p-2">Keterangan Pemakaian / Log</th>
+              <th class="border border-black p-2 w-24 text-center">Jumlah (Qty)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${inventoryTxs.length === 0 ? `<tr><td colspan="4" class="text-center p-4 italic text-gray-400">Belum ada rekaman riwayat inventori.</td></tr>` : 
+              inventoryTxs.map(tx => `
+              <tr>
+                <td class="border border-black p-2">${tx.date}</td>
+                <td class="border border-black p-2 font-medium">${tx.itemName}</td>
+                <td class="border border-black p-2 text-gray-700">${tx.description}</td>
+                <td class="border border-black p-2 text-center font-bold ${tx.type==='in'?'text-green-700':'text-red-700'}">
+                  ${tx.type==='in'?'+':'-'}${tx.qty}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="mt-12 text-center text-xs text-gray-400 italic border-t border-gray-200 pt-4">
+          Dokumen ini sah dikeluarkan melalui sistem financial hostmabar.com secara realtime.
+        </div>
       `;
       document.getElementById('print-section').innerHTML = html;
     }
