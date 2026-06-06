@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CUANMABAR - Financial Community App</title>
+  
+  <script>
+    (function proteksiHalaman() {
+      const raw = localStorage.getItem('hm_session');
+      if (!raw) {
+        window.location.replace('index.html');
+        return;
+      }
+      const s = JSON.parse(raw);
+      if (s && Date.now() > s.expiresAt) {
+        localStorage.removeItem('hm_session');
+        window.location.replace('index.html');
+      }
+    })();
+  </script>
+
+  <link href="https://fonts.cdnfonts.com/css/norwester" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body { font-family: 'Nunito', sans-serif; background-color: #0f172a; color: #f1f5f9; }
+    .font-norwester { font-family: 'norwester', sans-serif; letter-spacing: 1px; }
+    
+    /* Scrollbar minimalis untuk mobile feel */
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .pb-safe { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+    }
+
+    /* Modal Animation */
+    .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body class="min-h-screen flex justify-center selection:bg-orange-500/30">
+
+  <div class="w-full max-w-md bg-slate-900 min-h-screen relative shadow-2xl flex flex-col">
+    
+    <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-5 py-4 print:hidden">
+      <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center space-x-3">
+          <img src="logocuanmabar.png" alt="Logo" class="w-10 h-10 object-contain" 
+               onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23f97316%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-family=%22sans-serif%22 font-weight=%22bold%22 font-size=%2216%22 fill=%22white%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22%3EHM%3C/text%3E%3C/svg%3E'"/>
+          <div class="flex flex-col justify-center">
+            <h1 class="text-2xl text-white leading-none font-norwester">CUANMABAR</h1>
+            <p class="text-[10px] text-emerald-500 font-semibold mt-1 tracking-wide">Financial Community App - Cuan Terus!</p>
+          </div>
+        </div>
+        <div class="flex space-x-3">
+          <button onclick="window.print()" class="text-slate-400 hover:text-white transition-colors" title="Cetak Laporan">
+            <i data-lucide="printer" class="w-5 h-5"></i>
+          </button>
+          <button onclick="syncData()" id="syncBtn" class="text-emerald-500 hover:text-emerald-400 transition-all" title="Sync Data">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex items-center justify-between mt-1 bg-slate-800/50 rounded-lg px-2 py-1">
+        <span id="syncStatus" class="text-[10px] text-slate-500">Tersimpan di Lokal Memory</span>
+        <a href="https://docs.google.com/spreadsheets" target="_blank" class="text-[10px] flex items-center text-blue-400 hover:text-blue-300 font-medium">
+          Buka di GSheets <i data-lucide="external-link" class="w-3 h-3 ml-1"></i>
+        </a>
+      </div>
+    </header>
+
+    <main id="app-content" class="flex-1 overflow-y-auto px-5 pt-6 pb-24 custom-scrollbar print:hidden">
+      </main>
+
+    <nav class="fixed bottom-0 w-full max-w-md bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-safe pt-2 px-6 pb-4 flex justify-between z-40 print:hidden">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center w-full space-y-1 text-slate-500 hover:text-slate-400 transition-colors">
+        <i data-lucide="home" class="w-5 h-5"></i><span class="text-[10px] font-medium">Dashboard</span>
+      </button>
+      <button onclick="switchTab('kas')" id="nav-kas" class="flex flex-col items-center justify-center w-full space-y-1 text-slate-500 hover:text-slate-400 transition-colors">
+        <i data-lucide="wallet" class="w-5 h-5"></i><span class="text-[10px] font-medium">Kas</span>
+      </button>
+      <button onclick="switchTab('iuran')" id="nav-iuran" class="flex flex-col items-center justify-center w-full space-y-1 text-slate-500 hover:text-slate-400 transition-colors">
+        <i data-lucide="users" class="w-5 h-5"></i><span class="text-[10px] font-medium">Iuran</span>
+      </button>
+      <button onclick="switchTab('inventory')" id="nav-inventory" class="flex flex-col items-center justify-center w-full space-y-1 text-slate-500 hover:text-slate-400 transition-colors">
+        <i data-lucide="package" class="w-5 h-5"></i><span class="text-[10px] font-medium">Inventori</span>
+      </button>
+    </nav>
+
+    <div id="modal-container"></div>
+
+    <div id="print-section" class="hidden print:block print:bg-white print:text-black p-8 min-h-screen">
+      </div>
+  </div>
+
+  <script>
+    // --- 1. DEFAULT DATA & STATE ---
+    const defaultKas = [
+      { id: 1, date: '2026-06-01', type: 'in', category: 'iuran', amount: 150000, description: 'Iuran awal bulan' },
+      { id: 2, date: '2026-06-02', type: 'out', category: 'sewa lapangan', amount: 200000, description: 'Sewa GOR 2 Jam' }
+    ];
+    const defaultMembers = [
+      { id: 1, name: 'Koben', status: 'lunas', dueAmount: 50000 },
+      { id: 2, name: 'Budi', status: 'belum', dueAmount: 50000 }
+    ];
+    const defaultInv = [
+      { id: 1, date: '2026-06-01', type: 'in', itemName: 'Shuttlecock (Slop)', qty: 5, description: 'Beli stok awal' }
+    ];
+
+    // Ambil dari LocalStorage atau pakai default
+    let transactions = JSON.parse(localStorage.getItem('cm_kas')) || defaultKas;
+    let members = JSON.parse(localStorage.getItem('cm_members')) || defaultMembers;
+    let inventoryTxs = JSON.parse(localStorage.getItem('cm_inv')) || defaultInv;
+    
+    let activeTab = 'dashboard';
+    let editingId = null;
+
+    // --- 2. HELPERS ---
+    const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+    const saveLocal = () => {
+      localStorage.setItem('cm_kas', JSON.stringify(transactions));
+      localStorage.setItem('cm_members', JSON.stringify(members));
+      localStorage.setItem('cm_inv', JSON.stringify(inventoryTxs));
+    };
+
+    // Refresh Icons setelah render
+    const updateUI = () => {
+      renderActiveTab();
+      renderPrintView();
+      updateNavStyles();
+      lucide.createIcons();
+    };
+
+    function switchTab(tab) {
+      activeTab = tab;
+      updateUI();
+    }
+
+    function updateNavStyles() {
+      ['dashboard', 'kas', 'iuran', 'inventory'].forEach(t => {
+        const btn = document.getElementById(`nav-${t}`);
+        if(t === activeTab) {
+          btn.classList.add('text-orange-500'); btn.classList.remove('text-slate-500');
+        } else {
+          btn.classList.remove('text-orange-500'); btn.classList.add('text-slate-500');
+        }
+      });
+    }
+
+    function syncData() {
+      const btn = document.getElementById('syncBtn');
+      const status = document.getElementById('syncStatus');
+      btn.querySelector('i').classList.add('animate-spin');
+      status.innerText = "Menyimpan ke GSheets...";
+      
+      // Simulasi loading 1.5 detik (Nanti diganti dengan fetch() ke API Vercel/Supabase)
+      setTimeout(() => {
+        btn.querySelector('i').classList.remove('animate-spin');
+        status.innerText = "Berhasil di-sync ke GSheets!";
+        setTimeout(() => { status.innerText = "Tersimpan di Lokal Memory"; }, 3000);
+      }, 1500);
+    }
+
+    // --- 3. RENDER FUNCTIONS ---
+
+    function renderDashboard() {
+      let tIn = 0, tOut = 0;
+      transactions.forEach(t => t.type === 'in' ? tIn += t.amount : tOut += t.amount);
+      let balance = tIn - tOut;
+      let total = tIn + tOut;
+      let inPercent = total === 0 ? 50 : Math.round((tIn / total) * 100);
+      
+      let unpaid = members.filter(m => m.status === 'belum' || m.status === 'nunggak');
+      let recentTx = transactions.slice(0, 3);
+
+      let html = `
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 shadow-xl border border-slate-700 mb-6">
+          <h3 class="text-slate-400 text-sm font-medium mb-1">Total Saldo Kas</h3>
+          <h1 class="text-4xl font-bold mb-6 ${balance >= 0 ? 'text-white' : 'text-red-400'}">${formatRp(balance)}</h1>
+          
+          <div class="flex items-center space-x-6 border-t border-slate-700 pt-5">
+            <div class="relative w-16 h-16 flex-shrink-0 rounded-full" style="background: conic-gradient(#10b981 0% ${inPercent}%, #ef4444 ${inPercent}% 100%)">
+              <div class="absolute inset-1.5 bg-slate-800 rounded-full"></div>
+            </div>
+            <div class="flex-1 space-y-2">
+              <div class="flex justify-between items-center text-sm">
+                <div class="flex items-center text-emerald-400"><i data-lucide="arrow-up-right" class="w-4 h-4 mr-1"></i> Masuk</div>
+                <div class="text-white font-semibold">${formatRp(tIn)}</div>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <div class="flex items-center text-red-400"><i data-lucide="arrow-down-right" class="w-4 h-4 mr-1"></i> Keluar</div>
+                <div class="text-white font-semibold">${formatRp(tOut)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      if(unpaid.length > 0) {
+        html += `
+          <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start space-x-3 mb-6">
+            <i data-lucide="alert-circle" class="text-red-400 mt-0.5 flex-shrink-0 w-5 h-5"></i>
+            <div>
+              <h4 class="text-red-400 font-medium text-sm">Perhatian: Ada Iuran Tertunggak</h4>
+              <p class="text-slate-300 text-xs mt-1">${unpaid.length} member belum bayar iuran periode ini.</p>
+              <button onclick="switchTab('iuran')" class="text-red-400 text-xs font-bold mt-2 underline">Cek Detail Member</button>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-slate-200 font-bold">Transaksi Terakhir</h3>
+            <button onclick="switchTab('kas')" class="text-orange-500 text-xs font-medium hover:underline">Lihat Semua</button>
+          </div>
+          <div class="space-y-3">
+            ${recentTx.map(tx => `
+              <div class="bg-slate-800 rounded-lg p-3 flex justify-between items-center border border-slate-700/50">
+                <div class="flex items-center space-x-3">
+                  <div class="p-2 rounded-full ${tx.type === 'in' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
+                    <i data-lucide="${tx.type === 'in' ? 'arrow-up-right' : 'arrow-down-right'}" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-slate-200">${tx.description}</p>
+                    <p class="text-xs text-slate-500 capitalize">${tx.date} • ${tx.category}</p>
+                  </div>
+                </div>
+                <div class="font-semibold text-sm ${tx.type === 'in' ? 'text-emerald-400' : 'text-red-400'}">
+                  ${tx.type === 'in' ? '+' : '-'}${formatRp(tx.amount)}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      document.getElementById('app-content').innerHTML = html;
+    }
+
+    function renderKas() {
+      let balance = transactions.reduce((acc, t) => t.type === 'in' ? acc + t.amount : acc - t.amount, 0);
+      
+      let html = `
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-xl font-bold text-white">Buku Kas</h2>
+          <button class="bg-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-300 border border-slate-700 flex items-center">
+            <i data-lucide="calendar" class="w-4 h-4 mr-2 text-slate-400"></i> Histori
+          </button>
+        </div>
+        <div class="bg-slate-800 rounded-xl p-4 flex justify-between items-center border border-slate-700 mb-4">
+          <div>
+            <p class="text-xs text-slate-400 mb-1">Saldo Berjalan</p>
+            <p class="text-xl font-bold text-white">${formatRp(balance)}</p>
+          </div>
+          <button onclick="openModalKas(null)" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl flex items-center font-semibold text-sm">
+            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Catat Transaksi
+          </button>
+        </div>
+        <div class="space-y-3">
+          ${transactions.map(tx => `
+            <div class="bg-slate-800 rounded-lg p-4 border border-slate-700/50">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-700 text-slate-300 capitalize mr-2">${tx.category}</span>
+                  <span class="text-xs text-slate-500">${tx.date}</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <button onclick="openModalKas(${tx.id})" class="text-slate-500 hover:text-orange-400"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                  <button onclick="deleteKas(${tx.id})" class="text-slate-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  <div class="font-bold ${tx.type === 'in' ? 'text-emerald-400' : 'text-red-400'}">
+                    ${tx.type === 'in' ? '+' : '-'}${formatRp(tx.amount)}
+                  </div>
+                </div>
+              </div>
+              <p class="text-slate-200 text-sm">${tx.description}</p>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      document.getElementById('app-content').innerHTML = html;
+    }
+
+    function renderIuran() {
+      let collected = members.filter(m => m.status === 'lunas').reduce((sum, m) => sum + m.dueAmount, 0);
+      
+      let html = `
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-white">Daftar Iuran</h2>
+          <button onclick="openModalMember()" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center">
+            <i data-lucide="user-plus" class="w-4 h-4 mr-1"></i> Tambah
+          </button>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-4 flex justify-between items-start">
+          <div>
+            <p class="text-slate-400 text-xs mb-1">Total Terkumpul</p>
+            <p class="text-2xl font-bold text-emerald-400">${formatRp(collected)}</p>
+          </div>
+          <div class="bg-slate-900 text-slate-300 text-[10px] p-2 rounded-lg border border-slate-700 max-w-[150px]">
+            <strong class="text-orange-400">💡 Note:</strong> Host bisa catat dana ini ke Kas. Nama yg Lunas bisa dihapus.
+          </div>
+        </div>
+        <div class="space-y-3">
+          ${members.map(m => `
+            <div class="bg-slate-800 rounded-xl p-3 flex items-center justify-between border border-slate-700/80">
+              <div class="flex-1">
+                <h4 class="text-white font-semibold text-base">${m.name}</h4>
+                <p class="text-slate-400 text-xs">Tagihan: ${formatRp(m.dueAmount)}</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <select onchange="updateMemberStatus(${m.id}, this.value)" class="text-xs font-bold rounded-md px-2 py-1.5 outline-none cursor-pointer text-center text-white
+                  ${m.status === 'lunas' ? 'bg-green-600' : m.status === 'belum' ? 'bg-blue-600' : 'bg-red-600'}">
+                  <option value="lunas" class="bg-slate-800" ${m.status === 'lunas' ? 'selected' : ''}>✅ LUNAS</option>
+                  <option value="belum" class="bg-slate-800" ${m.status === 'belum' ? 'selected' : ''}>⏳ BELUM</option>
+                  <option value="nunggak" class="bg-slate-800" ${m.status === 'nunggak' ? 'selected' : ''}>❌ NUNGGAK</option>
+                </select>
+                <button onclick="deleteMember(${m.id})" class="p-1 text-slate-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      document.getElementById('app-content').innerHTML = html;
+    }
+
+    function renderInventory() {
+      const summary = {};
+      inventoryTxs.forEach(tx => {
+        if (!summary[tx.itemName]) summary[tx.itemName] = 0;
+        summary[tx.itemName] += (tx.type === 'in' ? tx.qty : -tx.qty);
+      });
+
+      let html = `
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-white">Log Inventori</h2>
+          <button onclick="openModalInv(null)" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl flex items-center font-semibold text-sm">
+            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Catat Barang
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          ${Object.keys(summary).length === 0 ? `<div class="col-span-2 text-center text-slate-500 py-4 bg-slate-800 rounded-xl border border-slate-700">Stok kosong</div>` : ''}
+          ${Object.entries(summary).map(([item, qty]) => `
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 text-center relative overflow-hidden">
+              <i data-lucide="package" class="absolute -right-2 -bottom-2 w-10 h-10 text-slate-700 opacity-30"></i>
+              <div class="text-3xl font-black text-white relative z-10">${qty}</div>
+              <div class="text-xs text-slate-400 mt-1 relative z-10">${item}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div>
+          <h3 class="text-slate-300 font-medium mb-3">Riwayat Keluar / Masuk</h3>
+          <div class="space-y-3">
+            ${inventoryTxs.map(tx => `
+              <div class="bg-slate-800 rounded-lg p-3 flex justify-between items-center border border-slate-700/50">
+                <div class="flex items-center space-x-3">
+                  <div class="p-2 rounded-full ${tx.type === 'in' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
+                    <i data-lucide="${tx.type === 'in' ? 'arrow-up-right' : 'arrow-down-right'}" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-slate-200">${tx.itemName}</p>
+                    <p class="text-xs text-slate-500">${tx.date} • ${tx.description}</p>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <button onclick="openModalInv(${tx.id})" class="text-slate-500 hover:text-orange-400"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                  <button onclick="deleteInv(${tx.id})" class="text-slate-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  <div class="font-bold text-sm ${tx.type === 'in' ? 'text-emerald-400' : 'text-red-400'}">
+                    ${tx.type === 'in' ? '+' : '-'}${tx.qty}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      document.getElementById('app-content').innerHTML = html;
+    }
+
+    function renderActiveTab() {
+      if(activeTab === 'dashboard') renderDashboard();
+      if(activeTab === 'kas') renderKas();
+      if(activeTab === 'iuran') renderIuran();
+      if(activeTab === 'inventory') renderInventory();
+    }
+
+    // --- 4. CRUD & MODALS ---
+    
+    // -- Modal Kas --
+    function openModalKas(id) {
+      editingId = id;
+      let tx = id ? transactions.find(t => t.id === id) : null;
+      let html = `
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-md rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter">
+            <h3 class="text-lg font-bold text-white mb-4">${id ? 'Edit Transaksi' : 'Catat Transaksi Baru'}</h3>
+            <form onsubmit="saveKas(event)" class="space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <label class="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10">
+                  <input type="radio" name="type" value="in" ${(!tx || tx.type==='in') ? 'checked' : ''} class="hidden" />
+                  <span class="text-emerald-400 font-medium text-sm">Pemasukan</span>
+                </label>
+                <label class="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-red-500 has-[:checked]:bg-red-500/10">
+                  <input type="radio" name="type" value="out" ${(tx && tx.type==='out') ? 'checked' : ''} class="hidden" />
+                  <span class="text-red-400 font-medium text-sm">Pengeluaran</span>
+                </label>
+              </div>
+              <div><label class="text-xs text-slate-400">Tanggal</label>
+                <input type="date" name="date" required value="${tx ? tx.date : new Date().toISOString().split('T')[0]}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Kategori</label>
+                <select name="category" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white capitalize">
+                  ${['iuran','donasi','denda','shuttlecock','sewa lapangan','konsumsi','hadiah','lain-lain'].map(c => `<option value="${c}" ${(tx && tx.category===c)?'selected':''}>${c}</option>`).join('')}
+                </select></div>
+              <div><label class="text-xs text-slate-400">Nominal (Rp)</label>
+                <input type="number" name="amount" required value="${tx ? tx.amount : ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Keterangan</label>
+                <input type="text" name="description" required value="${tx ? tx.description : ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div class="flex space-x-3 pt-2">
+                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
+                <button type="submit" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-medium">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-container').innerHTML = html;
+    }
+
+    function saveKas(e) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = {
+        date: fd.get('date'), type: fd.get('type'), category: fd.get('category'),
+        amount: parseInt(fd.get('amount')), description: fd.get('description')
+      };
+      if (editingId) {
+        transactions = transactions.map(t => t.id === editingId ? { ...t, ...data } : t);
+      } else {
+        transactions.unshift({ id: Date.now(), ...data });
+        transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
+      }
+      saveLocal(); closeModal(); updateUI();
+    }
+    function deleteKas(id) {
+      if(confirm("Hapus transaksi ini?")) { transactions = transactions.filter(t => t.id !== id); saveLocal(); updateUI(); }
+    }
+
+    // -- Modal Member --
+    function openModalMember() {
+      let html = `
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter">
+            <h3 class="text-lg font-bold text-white mb-4">Tambah Member Iuran</h3>
+            <form onsubmit="saveMember(event)" class="space-y-4">
+              <div><label class="text-xs text-slate-400">Nama Pemain</label>
+                <input type="text" name="name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Nominal (Rp)</label>
+                <input type="number" name="dueAmount" required value="50000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Status Awal</label>
+                <select name="status" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+                  <option value="belum">Belum Bayar</option><option value="lunas">Lunas</option><option value="nunggak">Nunggak</option>
+                </select></div>
+              <div class="flex space-x-3 pt-2">
+                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
+                <button type="submit" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-medium">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-container').innerHTML = html;
+    }
+
+    function saveMember(e) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      members.push({ id: Date.now(), name: fd.get('name'), dueAmount: parseInt(fd.get('dueAmount')), status: fd.get('status') });
+      saveLocal(); closeModal(); updateUI();
+    }
+    function updateMemberStatus(id, stat) {
+      members = members.map(m => m.id === id ? { ...m, status: stat } : m);
+      saveLocal(); updateUI();
+    }
+    function deleteMember(id) {
+      if(confirm("Hapus pemain dari daftar?")) { members = members.filter(m => m.id !== id); saveLocal(); updateUI(); }
+    }
+
+    // -- Modal Inventory --
+    function openModalInv(id) {
+      editingId = id;
+      let tx = id ? inventoryTxs.find(t => t.id === id) : null;
+      let isDefaultItem = tx ? ['Shuttlecock (Slop)', 'Air Mineral (Dus)'].includes(tx.itemName) : true;
+      let html = `
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-md rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter">
+            <h3 class="text-lg font-bold text-white mb-4">${id ? 'Edit Barang' : 'Catat Barang'}</h3>
+            <form onsubmit="saveInv(event)" class="space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <label class="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10">
+                  <input type="radio" name="type" value="in" ${(!tx || tx.type==='in') ? 'checked' : ''} class="hidden" />
+                  <span class="text-emerald-400 font-medium text-sm">Masuk</span>
+                </label>
+                <label class="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-red-500 has-[:checked]:bg-red-500/10">
+                  <input type="radio" name="type" value="out" ${(tx && tx.type==='out') ? 'checked' : ''} class="hidden" />
+                  <span class="text-red-400 font-medium text-sm">Keluar</span>
+                </label>
+              </div>
+              <div><label class="text-xs text-slate-400">Tanggal</label>
+                <input type="date" name="date" required value="${tx ? tx.date : new Date().toISOString().split('T')[0]}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Nama Item</label>
+                <select name="itemName" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white mb-2">
+                  <option value="Shuttlecock (Slop)" ${(tx && tx.itemName==='Shuttlecock (Slop)')?'selected':''}>Shuttlecock (Slop)</option>
+                  <option value="Air Mineral (Dus)" ${(tx && tx.itemName==='Air Mineral (Dus)')?'selected':''}>Air Mineral (Dus)</option>
+                  <option value="Lainnya" ${(!isDefaultItem)?'selected':''}>Lainnya...</option>
+                </select>
+                <input type="text" name="customItemName" value="${!isDefaultItem ? tx.itemName : ''}" placeholder="Jika Lainnya..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+              </div>
+              <div><label class="text-xs text-slate-400">Jumlah/Qty</label>
+                <input type="number" name="qty" required value="${tx ? tx.qty : ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Keterangan</label>
+                <input type="text" name="description" required value="${tx ? tx.description : ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div class="flex space-x-3 pt-2">
+                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
+                <button type="submit" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-medium">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-container').innerHTML = html;
+    }
+
+    function saveInv(e) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const custom = fd.get('customItemName');
+      const data = {
+        date: fd.get('date'), type: fd.get('type'), 
+        itemName: custom ? custom : fd.get('itemName'),
+        qty: parseInt(fd.get('qty')), description: fd.get('description')
+      };
+      if (editingId) {
+        inventoryTxs = inventoryTxs.map(t => t.id === editingId ? { ...t, ...data } : t);
+      } else {
+        inventoryTxs.unshift({ id: Date.now(), ...data });
+        inventoryTxs.sort((a,b) => new Date(b.date) - new Date(a.date));
+      }
+      saveLocal(); closeModal(); updateUI();
+    }
+    function deleteInv(id) {
+      if(confirm("Hapus log ini?")) { inventoryTxs = inventoryTxs.filter(t => t.id !== id); saveLocal(); updateUI(); }
+    }
+
+    function closeModal() { document.getElementById('modal-container').innerHTML = ''; editingId = null; }
+
+    // --- 5. RENDER PRINT SECTION ---
+    function renderPrintView() {
+      let balance = transactions.reduce((acc, t) => t.type === 'in' ? acc + t.amount : acc - t.amount, 0);
+      let html = `
+        <div class="text-center mb-8 border-b-2 border-black pb-4">
+          <h1 class="text-3xl font-black">LAPORAN KEUANGAN MABAR</h1>
+          <p class="text-gray-500">Dihasilkan otomatis oleh: CUANMABAR - Hostmabar.com</p>
+        </div>
+        <div class="border border-black p-4 rounded mb-8">
+          <h3 class="font-bold mb-2">Ringkasan Kas</h3>
+          <p class="font-bold text-lg">Saldo Akhir: ${formatRp(balance)}</p>
+        </div>
+        <h3 class="font-bold mb-4 text-xl border-b border-gray-300 pb-2">Catatan Transaksi Kas</h3>
+        <table class="w-full text-left border-collapse mb-8 text-sm">
+          <tr class="bg-gray-200"><th class="border border-black p-2">Tanggal</th><th class="border border-black p-2">Ket</th><th class="border border-black p-2">Nominal</th></tr>
+          ${transactions.map(t => `<tr><td class="border border-black p-2">${t.date}</td><td class="border border-black p-2">${t.description}</td><td class="border border-black p-2 text-right ${t.type==='in'?'text-green-600':'text-red-600'}">${t.type==='in'?'+':'-'}${formatRp(t.amount)}</td></tr>`).join('')}
+        </table>
+        <h3 class="font-bold mb-4 text-xl border-b border-gray-300 pb-2">Status Iuran</h3>
+        <table class="w-full text-left border-collapse mb-8 text-sm">
+          <tr class="bg-gray-200"><th class="border border-black p-2">Nama</th><th class="border border-black p-2">Status</th></tr>
+          ${members.map(m => `<tr><td class="border border-black p-2">${m.name}</td><td class="border border-black p-2 uppercase font-bold">${m.status}</td></tr>`).join('')}
+        </table>
+      `;
+      document.getElementById('print-section').innerHTML = html;
+    }
+
+    // Initialize the App
+    updateUI();
+
+  </script>
+</body>
+</html>
