@@ -292,7 +292,7 @@
 <script>
   // GANTI DENGAN URL DAN KEY DARI PROJECT SETTINGS SUPABASE KOBEN
   const supabaseUrl = 'https://pxfpskzwkfpxslsvqbpz.supabase.co'; 
-  const supabaseKey = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4ZnBza3p3a2ZweHNsc3ZxYnB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDIxODUsImV4cCI6MjA5NTYxODE4NX0.KQ8ozsVzZOesp_ickIbdaYmQR9_0TA4xN40MDMjUeFI';
   const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 </script>
 </head>
@@ -370,31 +370,71 @@
 </div>
 
 <script>
-  // --- KODE MESIN LOGIN BARU (SUPABASE) ---
+// ===================================================
+// --- KODE MESIN LOGIN BARU (SUPABASE) ---
+// ===================================================
 
+// 1. Fungsi untuk menampilkan pesan error
+function showError(pesan) {
+  const errorEl = document.querySelector('.error-msg');
+  if(errorEl) {
+    errorEl.innerHTML = `⚠️ ${pesan}`;
+    errorEl.classList.add('show');
+  } else {
+    alert(pesan);
+  }
+}
+
+// 2. Fungsi untuk menyembunyikan error saat user mengetik
+function hideError() {
+  const errorEl = document.querySelector('.error-msg');
+  if(errorEl) errorEl.classList.remove('show');
+}
+
+// 3. Fitur melihat password (tombol mata)
+function togglePassword() {
+  const inp = document.getElementById('password');
+  const btn = document.querySelector('.toggle-pw');
+  if(!inp || !btn) return;
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁';
+}
+
+// Pasang sensor agar error hilang saat mulai mengetik
+const userInp = document.getElementById('username');
+const passInp = document.getElementById('password');
+if(userInp) userInp.addEventListener('input', hideError);
+if(passInp) passInp.addEventListener('input', hideError);
+
+// 4. Fungsi Utama Login
 async function handleLogin(e) {
-  e.preventDefault();
+  // Mencegah refresh halaman (pengaman jika tombol ada di dalam <form>)
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
   
-  // Karena Supabase butuh email, pastikan user menginput format email di kotak username
-  const emailInput = document.getElementById('username').value.trim(); 
-  const passwordInput = document.getElementById('password').value;
+  // Ambil nilai dari inputan
+  // INGAT: USERNAME YANG DIKETIK HARUS BERUPA EMAIL, MISAL koben.gsbsd@hostmabar.com
+  const emailInput = userInp ? userInp.value.trim() : ''; 
+  const passwordInput = passInp ? passInp.value : '';
   
-  const btn = document.getElementById('loginBtn');
-  const text = document.getElementById('btnText');
-  const spin = document.getElementById('btnSpin');
+  const btn = document.querySelector('.btn-login');
+  const text = btn ? btn.querySelector('span:not(.spin)') : null;
+  const spin = btn ? btn.querySelector('.spin') : null;
   
   if (!emailInput || !passwordInput) {
-    showError('Email dan password harus diisi.');
+    showError('Username (Email) dan password harus diisi.');
     return;
   }
   
   // Memulai animasi loading
-  btn.disabled = true;
-  text.textContent = 'Memeriksa...';
-  spin.style.display = 'block';
+  if(btn) btn.disabled = true;
+  if(text) text.textContent = 'Memeriksa...';
+  if(spin) spin.style.display = 'block';
   
   try {
-    // 1. Proses Login ke Server Supabase
+    // A. Lakukan Pengecekan Login ke Brankas Supabase
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: emailInput,
       password: passwordInput,
@@ -402,7 +442,7 @@ async function handleLogin(e) {
 
     if (authError) throw authError;
 
-    // 2. Ambil data profil (termasuk redirect_url) berdasarkan ID user yang login
+    // B. Lolos Login! Sekarang ambil data profil URL tujuan
     const userId = authData.user.id;
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
@@ -412,46 +452,52 @@ async function handleLogin(e) {
 
     if (profileError) throw profileError;
 
-    // 3. Cek Masa Kedaluwarsa (Opsional untuk keamanan tambahan)
-    const now = new Date();
-    const expiryDate = new Date(profileData.tanggal_kedaluwarsa);
-    if (now > expiryDate) {
-       showError('Masa berlangganan Anda telah habis.');
-       await supabase.auth.signOut(); // Keluarkan paksa
-       btn.disabled = false;
-       text.textContent = 'Masuk ke Sistem';
-       spin.style.display = 'none';
-       return;
+    // C. Cek Masa Berlangganan (Kedaluwarsa)
+    if (profileData && profileData.tanggal_kedaluwarsa) {
+      const now = new Date();
+      const expiryDate = new Date(profileData.tanggal_kedaluwarsa);
+      if (now > expiryDate) {
+         showError('Masa berlangganan komunitas Anda telah habis.');
+         await supabase.auth.signOut(); 
+         if(btn) btn.disabled = false;
+         if(text) text.textContent = 'Masuk ke Sistem';
+         if(spin) spin.style.display = 'none';
+         return;
+      }
     }
 
-    // 4. Sukses Login! Tampilkan animasi sukses
-    document.getElementById('successOverlay').classList.add('show');
-    setTimeout(() => { document.getElementById('successBarFill').style.width = '100%'; }, 10);
+    // D. Sukses Login Sepenuhnya! Mainkan Animasi Bar
+    const overlay = document.querySelector('.success-overlay');
+    const barFill = document.querySelector('.success-bar-fill');
+    if(overlay) overlay.classList.add('show');
+    if(barFill) setTimeout(() => { barFill.style.width = '100%'; }, 10);
     
-    // 5. Arahkan ke halaman sesuai paket komunitas
+    // E. Lempar (Redirect) ke halaman sesuai paket mereka
+    const targetUrl = (profileData && profileData.redirect_url) ? profileData.redirect_url : 'trialversion.html';
     setTimeout(() => {
-        window.location.href = profileData.redirect_url;
+        window.location.href = targetUrl;
     }, 800);
 
   } catch (err) {
-    // Jika gagal login (salah password / email)
-    btn.disabled = false;
-    text.textContent = 'Masuk ke Sistem';
-    spin.style.display = 'none';
+    // Jika Gagal Login (Password Salah atau Bukan Email)
+    if(btn) btn.disabled = false;
+    if(text) text.textContent = 'Masuk ke Sistem';
+    if(spin) spin.style.display = 'none';
     
-    showError('Login gagal. Periksa kembali email dan password.');
-    document.getElementById('password').value = '';
-    document.getElementById('password').focus();
-    console.error("Detail log kegagalan:", err.message);
+    showError('Login gagal. Pastikan memakai Email dan Password dengan benar.');
+    if(passInp) {
+       passInp.value = '';
+       passInp.focus();
+    }
+    console.error("Detail kegagalan:", err.message);
   }
 }
 
-// Fitur Auto-Login yang Jauh Lebih Aman (Langsung dari Server)
+// 5. Fitur Auto-Login (Langsung masuk jika browser sudah menyimpan sesi)
 async function checkSession() {
   const { data: { session } } = await supabase.auth.getSession();
   
   if (session) {
-     // Jika di browser masih ada tiket login Supabase yang valid
      const { data: profile } = await supabase
       .from('profiles')
       .select('redirect_url')
@@ -459,8 +505,10 @@ async function checkSession() {
       .single();
       
      if (profile && profile.redirect_url) {
-        document.getElementById('successOverlay').classList.add('show');
-        setTimeout(() => { document.getElementById('successBarFill').style.width = '100%'; }, 10);
+        const overlay = document.querySelector('.success-overlay');
+        const barFill = document.querySelector('.success-bar-fill');
+        if(overlay) overlay.classList.add('show');
+        if(barFill) setTimeout(() => { barFill.style.width = '100%'; }, 10);
         
         setTimeout(() => {
            window.location.href = profile.redirect_url;
@@ -469,7 +517,8 @@ async function checkSession() {
   }
 }
 
-// Jalankan cek sesi saat halaman pertama dibuka
-checkSession(); </script>
+// Panggil cek sesi otomatis saat halaman pertama kali dibuka
+checkSession();
+</script>
 </body>
 </html>
