@@ -289,11 +289,12 @@
   gtag('config', 'G-SRPN7KZ7FC');
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
   // GANTI DENGAN URL DAN KEY DARI PROJECT SETTINGS SUPABASE KOBEN
-  const supabaseUrl = 'https://pxfpskzwkfpxslsvqbpz.supabase.co'; 
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4ZnBza3p3a2ZweHNsc3ZxYnB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDIxODUsImV4cCI6MjA5NTYxODE4NX0.KQ8ozsVzZOesp_ickIbdaYmQR9_0TA4xN40MDMjUeFI';
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+<script>
+  // MENGGUNAKAN 'var' AGAR TIDAK ERROR MESKIPUN DOUBLE
+  var supabaseUrl = 'https://pxfpskzwkfpxslsvqbpz.supabase.co'; 
+  var supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4ZnBza3p3a2ZweHNsc3ZxYnB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDIxODUsImV4cCI6MjA5NTYxODE4NX0.KQ8ozsVzZOesp_ickIbdaYmQR9_0TA4xN40MDMjUeFI';
+  var supabase = supabase.createClient(supabaseUrl, supabaseKey);
 </script>
 </head>
 <body>
