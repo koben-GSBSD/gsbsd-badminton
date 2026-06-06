@@ -9,13 +9,13 @@
     (function proteksiHalaman() {
       const raw = localStorage.getItem('hm_session');
       if (!raw) {
-        window.location.replace('index.html');
+        window.location.replace('Login.html');
         return;
       }
       const s = JSON.parse(raw);
       if (s && Date.now() > s.expiresAt) {
         localStorage.removeItem('hm_session');
-        window.location.replace('index.html');
+        window.location.replace('Login.html');
       }
     })();
   </script>
@@ -43,6 +43,44 @@
     /* Modal Animation */
     .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+    /* LAYOUT CETAK A4 MINIMALIS & PROPORSIONAL */
+    @media print {
+      @page {
+        size: A4;
+        margin: 20mm 15mm;
+      }
+      body {
+        background: white !important;
+        color: black !important;
+      }
+      .print\:hidden {
+        display: none !important;
+      }
+      #print-section {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        background: white !important;
+        color: black !important;
+      }
+      /* Cegah pemotongan teks/tabel di tengah halaman */
+      tr, h3, .print-avoid-break {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      table {
+        width: 100% !important;
+        table-layout: auto !important;
+        word-wrap: break-word !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        word-break: break-word !important;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen flex justify-center selection:bg-orange-500/30">
@@ -50,7 +88,7 @@
   <div class="w-full max-w-md bg-slate-900 min-h-screen relative shadow-2xl flex flex-col">
     
     <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-5 py-4 print:hidden">
-      <div class="flex justify-between items-center mb-2">
+      <div class="flex justify-between items-center">
         <div class="flex items-center space-x-3">
           <img src="logocuanmabar.png" alt="Logo" class="w-10 h-10 object-contain" 
                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23f97316%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-family=%22sans-serif%22 font-weight=%22bold%22 font-size=%2216%22 fill=%22white%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22%3EHM%3C/text%3E%3C/svg%3E'"/>
@@ -59,21 +97,14 @@
             <p class="text-[10px] text-emerald-500 font-semibold mt-1 tracking-wide">Financial Community App - Cuan Terus!</p>
           </div>
         </div>
-        <div class="flex space-x-3">
+        <div class="flex space-x-4">
           <button onclick="window.print()" class="text-slate-400 hover:text-white transition-colors" title="Cetak Laporan">
             <i data-lucide="printer" class="w-5 h-5"></i>
           </button>
-          <button onclick="syncData()" id="syncBtn" class="text-emerald-500 hover:text-emerald-400 transition-all" title="Sync Data">
-            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+          <button onclick="handleLogout()" class="text-red-400 hover:text-red-300 transition-all" title="Keluar / Logout">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
           </button>
         </div>
-      </div>
-      
-      <div class="flex items-center justify-between mt-1 bg-slate-800/50 rounded-lg px-2 py-1">
-        <span id="syncStatus" class="text-[10px] text-slate-500">Tersimpan di Lokal Memory</span>
-        <a href="https://docs.google.com/spreadsheets" target="_blank" class="text-[10px] flex items-center text-blue-400 hover:text-blue-300 font-medium">
-          Buka di GSheets <i data-lucide="external-link" class="w-3 h-3 ml-1"></i>
-        </a>
       </div>
     </header>
 
@@ -147,17 +178,11 @@
       });
     }
 
-    function syncData() {
-      const btn = document.getElementById('syncBtn');
-      const status = document.getElementById('syncStatus');
-      btn.querySelector('i').classList.add('animate-spin');
-      status.innerText = "Menyimpan ke GSheets...";
-      
-      setTimeout(() => {
-        btn.querySelector('i').classList.remove('animate-spin');
-        status.innerText = "Berhasil di-sync ke GSheets!";
-        setTimeout(() => { status.innerText = "Tersimpan di Lokal Memory"; }, 3000);
-      }, 1500);
+    function handleLogout() {
+      if(confirm("Apakah Anda yakin ingin keluar dari halaman CuanMabar?")) {
+        localStorage.removeItem('hm_session');
+        window.location.replace('Login.html');
+      }
     }
 
     // --- 3. RENDER FUNCTIONS WITH CLEAN EMPTY STATES ---
@@ -244,7 +269,6 @@
 
     function renderKas() {
       let balance = transactions.reduce((acc, t) => t.type === 'in' ? acc + t.amount : acc - t.amount, 0);
-      
       let html = `
         <div class="flex justify-between items-center mb-2">
           <h2 class="text-xl font-bold text-white">Buku Kas</h2>
@@ -293,7 +317,6 @@
 
     function renderIuran() {
       let collected = members.filter(m => m.status === 'lunas').reduce((sum, m) => sum + m.dueAmount, 0);
-      
       let html = `
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-bold text-white">Daftar Iuran</h2>
@@ -405,8 +428,6 @@
     }
 
     // --- 4. CRUD & MODALS ---
-    
-    // -- Modal Kas --
     function openModalKas(id) {
       editingId = id;
       let tx = id ? transactions.find(t => t.id === id) : null;
@@ -465,7 +486,6 @@
       if(confirm("Hapus transaksi ini?")) { transactions = transactions.filter(t => t.id !== id); saveLocal(); updateUI(); }
     }
 
-    // -- Modal Member --
     function openModalMember() {
       let html = `
         <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -505,7 +525,6 @@
       if(confirm("Hapus pemain dari daftar?")) { members = members.filter(m => m.id !== id); saveLocal(); updateUI(); }
     }
 
-    // -- Modal Inventory --
     function openModalInv(id) {
       editingId = id;
       let tx = id ? inventoryTxs.find(t => t.id === id) : null;
@@ -573,9 +592,11 @@
 
     function closeModal() { document.getElementById('modal-container').innerHTML = ''; editingId = null; }
 
-    // --- 5. RENDER PRINT SECTION ---
+    // --- 5. RENDER REKAP PRINT OPTIMIZED UNTUK A4 (EFEKTIF & PROPORSIONAL) ---
     function renderPrintView() {
       let balance = transactions.reduce((acc, t) => t.type === 'in' ? acc + t.amount : acc - t.amount, 0);
+      let tIn = transactions.filter(t => t.type === 'in').reduce((sum, t) => sum + t.amount, 0);
+      let tOut = transactions.filter(t => t.type === 'out').reduce((sum, t) => sum + t.amount, 0);
       
       const summary = {};
       inventoryTxs.forEach(tx => {
@@ -584,104 +605,126 @@
       });
 
       let html = `
-        <div class="text-center mb-8 border-b-2 border-black pb-4">
-          <h1 class="text-3xl font-black">LAPORAN KEUANGAN & INVENTORI MABAR</h1>
-          <p class="text-gray-500">Dihasilkan otomatis oleh aplikasi resmi: CUANMABAR - Hostmabar.com</p>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-6 mb-8">
-          <div class="border border-black p-4 rounded">
-            <h3 class="font-bold mb-1 text-sm text-gray-700 uppercase tracking-wider">Ringkasan Keuangan</h3>
-            <p class="text-xs text-gray-500 mb-2">Total Saldo Kas Berjalan</p>
-            <p class="font-black text-2xl">${formatRp(balance)}</p>
+        <div style="font-family: 'Nunito', sans-serif; color: #000; margin: 0 auto; max-width: 100%;">
+          
+          <div style="text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 12px; margin-bottom: 20px;">
+            <h1 style="font-family: 'norwester', sans-serif; font-size: 24pt; margin: 0; color: #000;">CUANMABAR</h1>
+            <p style="font-size: 10pt; color: #475569; margin: 4px 0 0 0; font-weight: 700; letter-spacing: 0.5px;">
+              Laporan Finansial & Mutasi Inventori Komunitas — hostmabar.com
+            </p>
           </div>
-          <div class="border border-black p-4 rounded">
-            <h3 class="font-bold mb-1 text-sm text-gray-700 uppercase tracking-wider">Sisa Stok Inventori</h3>
-            <p class="text-xs text-gray-500 mb-2">Akumulasi sisa stok barang</p>
-            <div class="space-y-1">
-              ${Object.keys(summary).length === 0 ? '<p class="text-sm text-gray-400 italic">Stok Kosong</p>' : 
-                Object.entries(summary).map(([item, qty]) => `
-                  <p class="text-sm font-bold flex justify-between">
-                    <span>${item}</span> <span>: ${qty} Unit/Slop</span>
-                  </p>
-                `).join('')}
+          
+          <div style="display: table; width: 100%; margin-bottom: 25px; table-layout: fixed;" class="print-avoid-break">
+            <div style="display: table-cell; width: 50%; padding-right: 10px; vertical-align: top;">
+              <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; background-color: #f8fafc;">
+                <h4 style="margin: 0 0 6px 0; font-size: 10pt; color: #475569; text-transform: uppercase; font-weight: 800;">Ikhtisar Keuangan</h4>
+                <p style="font-size: 8pt; color: #64748b; margin: 0 0 4px 0;">Saldo Kas Berjalan</p>
+                <div style="font-size: 18pt; font-weight: 800; color: #000; margin-bottom: 6px;">${formatRp(balance)}</div>
+                <div style="font-size: 9pt; color: #334155;">
+                  Total Masuk: <span style="font-weight: 700; color: #16a34a;">${formatRp(tIn)}</span><br>
+                  Total Keluar: <span style="font-weight: 700; color: #dc2626;">${formatRp(tOut)}</span>
+                </div>
+              </div>
+            </div>
+            <div style="display: table-cell; width: 50%; padding-left: 10px; vertical-align: top;">
+              <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; background-color: #f8fafc; height: 100%;">
+                <h4 style="margin: 0 0 6px 0; font-size: 10pt; color: #475569; text-transform: uppercase; font-weight: 800;">Status Stok Inventori</h4>
+                <p style="font-size: 8pt; color: #64748b; margin: 0 0 6px 0;">Sisa stok aktual saat ini</p>
+                <div style="space-y-1">
+                  ${Object.keys(summary).length === 0 ? '<p style="font-size: 9pt; color: #64748b; margin: 0; font-style: italic;">Tidak ada data stok</p>' : 
+                    Object.entries(summary).map(([item, qty]) => `
+                      <div style="font-size: 9.5pt; font-weight: 700; color: #1e293b; margin-bottom: 3px; display: flex; justify-content: space-between;">
+                        <span>• ${item}</span>
+                        <span>: ${qty} Unit</span>
+                      </div>
+                    `).join('')}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <h3 class="font-bold mb-3 text-lg border-b border-gray-400 pb-1 uppercase tracking-wide">1. Catatan Buku Transaksi Kas</h3>
-        <table class="w-full text-left border-collapse mb-8 text-xs">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="border border-black p-2 w-24">Tanggal</th>
-              <th class="border border-black p-2 w-28">Kategori</th>
-              <th class="border border-black p-2">Keterangan / Deskripsi</th>
-              <th class="border border-black p-2 w-32 text-right">Nominal</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${transactions.length === 0 ? `<tr><td colspan="4" class="text-center p-4 italic text-gray-400">Belum ada rekaman data transaksi kas.</td></tr>` : 
-              transactions.map(t => `
-              <tr>
-                <td class="border border-black p-2">${t.date}</td>
-                <td class="border border-black p-2 capitalize font-medium">${t.category}</td>
-                <td class="border border-black p-2 text-gray-700">${t.description}</td>
-                <td class="border border-black p-2 text-right font-bold ${t.type==='in'?'text-green-700':'text-red-700'}">
-                  ${t.type==='in'?'+':'-'} ${formatRp(t.amount)}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <h3 class="font-bold mb-3 text-lg border-b border-gray-400 pb-1 uppercase tracking-wide">2. Status Monitoring Iuran Member</h3>
-        <table class="w-full text-left border-collapse mb-8 text-xs">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="border border-black p-2">Nama Member / Pemain</th>
-              <th class="border border-black p-2 w-32">Status Tagihan</th>
-              <th class="border border-black p-2 w-40 text-right">Nominal Periode Ini</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${members.length === 0 ? `<tr><td colspan="3" class="text-center p-4 italic text-gray-400">Belum ada daftar tagihan iuran member.</td></tr>` : 
-              members.map(m => `
-              <tr>
-                <td class="border border-black p-2 font-medium">${m.name}</td>
-                <td class="border border-black p-2 uppercase font-bold ${m.status==='lunas'?'text-green-700':m.status==='belum'?'text-blue-700':'text-red-700'}">${m.status}</td>
-                <td class="border border-black p-2 text-right">${formatRp(m.dueAmount)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+          
+          <div style="margin-bottom: 25px;" class="print-avoid-break">
+            <h3 style="font-size: 11pt; text-transform: uppercase; margin: 0 0 8px 0; border-left: 4px solid #f97316; padding-left: 8px; font-weight: 800; color: #0f172a;">1. Catatan Buku Transaksi Kas</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
+              <thead>
+                <tr style="background-color: #f1f5f9; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: left; width: 15%;">Tanggal</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: left; width: 20%;">Kategori</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: left;">Keterangan / Deskripsi</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: right; width: 22%;">Nominal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${transactions.length === 0 ? '<tr><td colspan="4" style="text-align: center; padding: 15px; color: #64748b; font-style: italic;">Belum ada rekaman data transaksi kas bulanan.</td></tr>' : 
+                  transactions.map(t => `
+                  <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="border: 1px solid #cbd5e1; padding: 7px;">${t.date}</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; text-transform: capitalize;">${t.category}</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; color: #334155;">${t.description}</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; text-align: right; font-weight: 700; color: ${t.type==='in'?'#15803d':'#b91c1c'};">
+                      ${t.type==='in'?'+':'-'} ${formatRp(t.amount)}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          
+          <div style="margin-bottom: 25px;" class="print-avoid-break">
+            <h3 style="font-size: 11pt; text-transform: uppercase; margin: 0 0 8px 0; border-left: 4px solid #f97316; padding-left: 8px; font-weight: 800; color: #0f172a;">2. Status Monitoring Iuran Member</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
+              <thead>
+                <tr style="background-color: #f1f5f9; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: left;">Nama Member / Pemain</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: center; width: 25%;">Status Tagihan</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: right; width: 25%;">Nominal Periode Ini</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${members.length === 0 ? '<tr><td colspan="3" style="text-align: center; padding: 15px; color: #64748b; font-style: italic;">Belum ada daftar tagihan iuran member.</td></tr>' : 
+                  members.map(m => `
+                  <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; font-weight: 500;">${m.name}</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; text-align: center; font-weight: 700; text-transform: uppercase; color: ${m.status==='lunas'?'#15803d':m.status==='belum'?'#1d4ed8':'#b91c1c'};">
+                      ${m.status === 'lunas' ? '✅ Lunas' : m.status === 'belum' ? '⏳ Belum' : '❌ Nunggak'}
+                    </td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; text-align: right;">${formatRp(m.dueAmount)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
 
-        <h3 class="font-bold mb-3 text-lg border-b border-gray-400 pb-1 uppercase tracking-wide">3. Riwayat Mutasi Log Inventori</h3>
-        <table class="w-full text-left border-collapse mb-8 text-xs">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="border border-black p-2 w-24">Tanggal</th>
-              <th class="border border-black p-2 w-44">Nama Barang/Item</th>
-              <th class="border border-black p-2">Keterangan Pemakaian / Log</th>
-              <th class="border border-black p-2 w-24 text-center">Jumlah (Qty)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${inventoryTxs.length === 0 ? `<tr><td colspan="4" class="text-center p-4 italic text-gray-400">Belum ada rekaman riwayat inventori.</td></tr>` : 
-              inventoryTxs.map(tx => `
-              <tr>
-                <td class="border border-black p-2">${tx.date}</td>
-                <td class="border border-black p-2 font-medium">${tx.itemName}</td>
-                <td class="border border-black p-2 text-gray-700">${tx.description}</td>
-                <td class="border border-black p-2 text-center font-bold ${tx.type==='in'?'text-green-700':'text-red-700'}">
-                  ${tx.type==='in'?'+':'-'}${tx.qty}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div class="mt-12 text-center text-xs text-gray-400 italic border-t border-gray-200 pt-4">
-          Dokumen ini sah dikeluarkan melalui sistem financial hostmabar.com secara realtime.
+          <div style="margin-bottom: 25px;" class="print-avoid-break">
+            <h3 style="font-size: 11pt; text-transform: uppercase; margin: 0 0 8px 0; border-left: 4px solid #f97316; padding-left: 8px; font-weight: 800; color: #0f172a;">3. Riwayat Mutasi Log Inventori</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
+              <thead>
+                <tr style="background-color: #f1f5f9; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: left; width: 15%;">Tanggal</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: left; width: 30%;">Nama Barang / Item</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: left;">Keterangan Pemakaian / Log</th>
+                  <th style="border: 1px solid #cbd5e1; padding: 7px; text-align: center; width: 15%;">Jumlah</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${inventoryTxs.length === 0 ? '<tr><td colspan="4" style="text-align: center; padding: 15px; color: #64748b; font-style: italic;">Belum ada rekaman riwayat log mutasi barang.</td></tr>' : 
+                  inventoryTxs.map(tx => `
+                  <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="border: 1px solid #cbd5e1; padding: 7px;">${tx.date}</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; font-weight: 500;">${tx.itemName}</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; color: #475569;">${tx.description}</td>
+                    <td style="border: 1px solid #cbd5e1; padding: 7px; text-align: center; font-weight: 700; color: ${tx.type==='in'?'#15803d':'#b91c1c'};">
+                      ${tx.type==='in'?'+':'-'}${tx.qty}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          
+          <div style="margin-top: 35px; text-align: center; font-size: 8pt; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; font-style: italic;">
+            Laporan ini sah dikeluarkan secara otomatis melalui sistem finansial internal CUANMABAR — hostmabar.com.
+          </div>
         </div>
       `;
       document.getElementById('print-section').innerHTML = html;
