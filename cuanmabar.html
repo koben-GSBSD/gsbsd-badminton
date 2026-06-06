@@ -7,16 +7,16 @@
   
   <script>
     (function proteksiHalaman() {
-      const raw = localStorage.getItem('hm_session');
-      if (!raw) {
-        window.location.replace('Login.html');
-        return;
-      }
-      const s = JSON.parse(raw);
-      if (s && Date.now() > s.expiresAt) {
-        localStorage.removeItem('hm_session');
-        window.location.replace('Login.html');
-      }
+      try {
+        const raw = localStorage.getItem('hm_session');
+        if (!raw) { window.location.replace('login.html'); return; }
+        const s = JSON.parse(raw);
+        if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
+        if (s.expiresAt && Date.now() > s.expiresAt) {
+          localStorage.removeItem('hm_session');
+          window.location.replace('login.html'); return;
+        }
+      } catch(e) { window.location.replace('login.html'); }
     })();
   </script>
 
@@ -48,13 +48,15 @@
     @media print {
       @page {
         size: A4 portrait;
-        margin: 15mm 15mm 15mm 15mm; /* Margin ideal cetak kertas A4 standard */
+        margin: 12mm 14mm 12mm 14mm;
       }
       * {
         box-sizing: border-box !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
+
+      /* KUNCI: Reset semua layout Tailwind agar tidak ada blok hitam / offset */
       body {
         background: #ffffff !important;
         color: #000000 !important;
@@ -62,41 +64,47 @@
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
+        display: block !important;        /* override flex */
+        justify-content: unset !important;
       }
-      .print\:hidden {
+
+      /* Sembunyikan semua elemen app, hanya tampilkan print-section */
+      body > * {
         display: none !important;
       }
       #print-section {
         display: block !important;
         width: 100% !important;
         max-width: 100% !important;
-        margin: 0 auto !important;
+        margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
         color: #000000 !important;
       }
-      /* Mengendalikan Pemotongan Elemen Otomatis */
+
+      /* Page break control */
       tr, .print-avoid-break {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
       }
-      h3, h2 {
+      h3, h2, h1 {
         page-break-after: avoid !important;
         break-after: avoid !important;
-        margin-top: 15pt !important;
-        margin-bottom: 8pt !important;
       }
+
+      /* Table global print rules */
       table {
         width: 100% !important;
         max-width: 100% !important;
-        table-layout: fixed !important; /* Memaksa kolom patuh lebar persentase, mencegah overflow teks */
+        table-layout: fixed !important;
         border-collapse: collapse !important;
-        margin-bottom: 18pt !important;
+        margin-bottom: 14pt !important;
       }
       th, td {
-        padding: 6pt 8pt !important;
+        padding: 5pt 7pt !important;
         border: 1px solid #cbd5e1 !important;
         word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
         white-space: normal !important;
         font-size: 9pt !important;
         vertical-align: middle !important;
@@ -108,6 +116,14 @@
       }
     }
   </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SRPN7KZ7FC"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-SRPN7KZ7FC');
+</script>
 </head>
 <body class="min-h-screen flex justify-center selection:bg-orange-500/30">
 
@@ -155,7 +171,7 @@
     <div id="modal-container"></div>
   </div>
 
-  <div id="print-section" class="hidden print:block bg-white text-black w-full">
+  <div id="print-section" style="display:none;" class="bg-white text-black w-full">
     </div>
 
   <script>
@@ -203,9 +219,9 @@
     }
 
     function handleLogout() {
-      if(confirm("Apakah Anda yakin ingin keluar dari halaman CuanMabar?")) {
+      if (confirm('Apakah Anda yakin ingin keluar dari CUANMABAR?')) {
         localStorage.removeItem('hm_session');
-        window.location.replace('Login.html');
+        window.location.href = 'login.html';
       }
     }
 
@@ -637,7 +653,7 @@
             </p>
           </div>
           
-          <table style="width: 100%; table-layout: fixed; border: none !important; margin-bottom: 20px; border-collapse: separate !important; border-spacing: 12px 0; margin-left: -12px; margin-right: -12px;" class="print-avoid-break">
+          <table style="width: 100%; table-layout: fixed; border: none !important; margin-bottom: 20px; border-collapse: separate !important; border-spacing: 8px 0; margin-left: 0; margin-right: 0;" class="print-avoid-break">
             <tr>
               <td style="width: 50%; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; padding: 14px; background-color: #f8fafc !important; vertical-align: top;">
                 <h4 style="margin: 0 0 6px 0; font-size: 10pt; color: #334155; text-transform: uppercase; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">Ikhtisar Keuangan</h4>
