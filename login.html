@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
@@ -5,6 +6,19 @@
 <title>HOSTMABAR — Login</title>
 <link href="https://fonts.cdnfonts.com/css/norwester" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SRPN7KZ7FC"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('js', new Date());
+  gtag('config', 'G-SRPN7KZ7FC');
+</script>
+
+<!-- Supabase — SATU kali saja di sini -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
   :root {
     --orange:#F7941D; --pink:#E8174A;
@@ -280,23 +294,9 @@
   }
   .hint-box .hint-val{font-weight:700;color:#f0f0f8;}
 </style>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-SRPN7KZ7FC"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-SRPN7KZ7FC');
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  // GANTI DENGAN URL DAN KEY DARI PROJECT SETTINGS SUPABASE KOBEN
-  // MENGGUNAKAN 'var' AGAR TIDAK ERROR MESKIPUN DOUBLE
-  var supabaseUrl = 'https://pxfpskzwkfpxslsvqbpz.supabase.co'; 
-  var supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4ZnBza3p3a2ZweHNsc3ZxYnB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDIxODUsImV4cCI6MjA5NTYxODE4NX0.KQ8ozsVzZOesp_ickIbdaYmQR9_0TA4xN40MDMjUeFI';
-  var supabase = supabase.createClient(supabaseUrl, supabaseKey);
-</script>
+
 </head>
+<body>
 <body>
 
 <div class="login-wrap">
@@ -370,156 +370,151 @@
   <div class="success-bar"><div class="success-bar-fill" id="successBarFill"></div></div>
 </div>
 
+
 <script>
-// ===================================================
-// --- KODE MESIN LOGIN BARU (SUPABASE) ---
-// ===================================================
+  // ════════════════════════════════════════════════════════════════
+  // SUPABASE CLIENT — inisialisasi dengan nama berbeda dari library
+  // ════════════════════════════════════════════════════════════════
+  const SUPABASE_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
 
-// 1. Fungsi untuk menampilkan pesan error
-function showError(pesan) {
-  const errorEl = document.querySelector('.error-msg');
-  if(errorEl) {
-    errorEl.innerHTML = `⚠️ ${pesan}`;
-    errorEl.classList.add('show');
-  } else {
-    alert(pesan);
+  // Gunakan window.supabase (dari CDN) untuk createClient
+  // Simpan ke variabel berbeda: "db" agar tidak bentrok
+  const { createClient } = window.supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ════════════════════════════════════════════════════════════════
+  // HELPER UI
+  // ════════════════════════════════════════════════════════════════
+  function showError(msg) {
+    const el  = document.getElementById('errorMsg');
+    const txt = document.getElementById('errorText');
+    txt.textContent = msg;
+    el.classList.remove('show');
+    void el.offsetWidth; // reset animasi shake
+    el.classList.add('show');
   }
-}
+  function hideError() {
+    document.getElementById('errorMsg').classList.remove('show');
+  }
+  function togglePassword() {
+    const inp = document.getElementById('password');
+    const btn = document.getElementById('togglePw');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+  }
 
-// 2. Fungsi untuk menyembunyikan error saat user mengetik
-function hideError() {
-  const errorEl = document.querySelector('.error-msg');
-  if(errorEl) errorEl.classList.remove('show');
-}
+  document.getElementById('username').addEventListener('input', hideError);
+  document.getElementById('password').addEventListener('input', hideError);
 
-// 3. Fitur melihat password (tombol mata)
-function togglePassword() {
-  const inp = document.getElementById('password');
-  const btn = document.querySelector('.toggle-pw');
-  if(!inp || !btn) return;
-  const isHidden = inp.type === 'password';
-  inp.type = isHidden ? 'text' : 'password';
-  btn.textContent = isHidden ? '🙈' : '👁';
-}
-
-// Pasang sensor agar error hilang saat mulai mengetik
-const userInp = document.getElementById('username');
-const passInp = document.getElementById('password');
-if(userInp) userInp.addEventListener('input', hideError);
-if(passInp) passInp.addEventListener('input', hideError);
-
-// 4. Fungsi Utama Login
-async function doLogin(e) {
-  // Mencegah refresh halaman (pengaman jika tombol ada di dalam <form>)
-  if (e && typeof e.preventDefault === 'function') {
+  // ════════════════════════════════════════════════════════════════
+  // FUNGSI LOGIN UTAMA
+  // Form memanggil doLogin(event) — nama harus cocok dengan onsubmit
+  // ════════════════════════════════════════════════════════════════
+  async function doLogin(e) {
     e.preventDefault();
-  }
-  
-  // Ambil nilai dari inputan
-  // INGAT: USERNAME YANG DIKETIK HARUS BERUPA EMAIL, MISAL koben.gsbsd@hostmabar.com
-  const emailInput = userInp ? userInp.value.trim() : ''; 
-  const passwordInput = passInp ? passInp.value : '';
-  
-  const btn = document.querySelector('.btn-login');
-  const text = btn ? btn.querySelector('span:not(.spin)') : null;
-  const spin = btn ? btn.querySelector('.spin') : null;
-  
-  if (!emailInput || !passwordInput) {
-    showError('Username (Email) dan password harus diisi.');
-    return;
-  }
-  
-  // Memulai animasi loading
-  if(btn) btn.disabled = true;
-  if(text) text.textContent = 'Memeriksa...';
-  if(spin) spin.style.display = 'block';
-  
-  try {
-    // A. Lakukan Pengecekan Login ke Brankas Supabase
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: emailInput,
-      password: passwordInput,
-    });
 
-    if (authError) throw authError;
+    const usernameInput = document.getElementById('username').value.trim().toLowerCase();
+    const passwordInput = document.getElementById('password').value;
+    const btn  = document.getElementById('loginBtn');
+    const text = document.getElementById('loginBtnText');
+    const spin = document.getElementById('loginSpin');
 
-    // B. Lolos Login! Sekarang ambil data profil URL tujuan
-    const userId = authData.user.id;
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('redirect_url, tanggal_kedaluwarsa')
-      .eq('id', userId)
-      .single();
+    if (!usernameInput || !passwordInput) {
+      showError('Username dan password harus diisi.');
+      return;
+    }
 
-    if (profileError) throw profileError;
+    // Loading state
+    btn.disabled = true;
+    spin.style.display = 'block';
+    text.textContent = 'Memeriksa...';
+    hideError();
 
-    // C. Cek Masa Berlangganan (Kedaluwarsa)
-    if (profileData && profileData.tanggal_kedaluwarsa) {
-      const now = new Date();
-      const expiryDate = new Date(profileData.tanggal_kedaluwarsa);
-      if (now > expiryDate) {
-         showError('Masa berlangganan komunitas Anda telah habis.');
-         await supabase.auth.signOut(); 
-         if(btn) btn.disabled = false;
-         if(text) text.textContent = 'Masuk ke Sistem';
-         if(spin) spin.style.display = 'none';
-         return;
+    try {
+      // Query ke tabel akun_komunitas — cocokkan username + password
+      const { data, error } = await db
+        .from('akun_komunitas')
+        .select('redirect_url, tanggal_kedaluwarsa, paket_langganan')
+        .eq('username', usernameInput)
+        .eq('password', passwordInput)
+        .single();
+
+      if (error || !data) {
+        throw new Error('Username atau password tidak ditemukan.');
       }
+
+      // Cek masa kedaluwarsa jika ada
+      if (data.tanggal_kedaluwarsa) {
+        const expiry = new Date(data.tanggal_kedaluwarsa);
+        if (new Date() > expiry) {
+          throw new Error('Masa berlangganan Anda telah habis. Hubungi Koben untuk perpanjangan.');
+        }
+      }
+
+      // Simpan sesi ke localStorage
+      const sessionData = {
+        username: usernameInput,
+        paket: data.paket_langganan || 'free',
+        redirect: data.redirect_url,
+        loginAt: Date.now(),
+        expiresAt: Date.now() + (8 * 60 * 60 * 1000) // 8 jam
+      };
+      localStorage.setItem('hm_session', JSON.stringify(sessionData));
+
+      // Tampilkan animasi sukses
+      const overlay = document.getElementById('successOverlay');
+      overlay.classList.add('show');
+      setTimeout(() => {
+        document.getElementById('successBarFill').style.width = '100%';
+      }, 50);
+
+      // Redirect ke halaman komunitas
+      setTimeout(() => {
+        window.location.href = data.redirect_url;
+      }, 1500);
+
+    } catch (err) {
+      btn.disabled = false;
+      spin.style.display = 'none';
+      text.textContent = 'Masuk ke Sistem';
+      showError(err.message || 'Login gagal. Coba lagi.');
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+      console.error('Login error:', err.message);
     }
+  }
 
-    // D. Sukses Login Sepenuhnya! Mainkan Animasi Bar
-    const overlay = document.querySelector('.success-overlay');
-    const barFill = document.querySelector('.success-bar-fill');
-    if(overlay) overlay.classList.add('show');
-    if(barFill) setTimeout(() => { barFill.style.width = '100%'; }, 10);
-    
-    // E. Lempar (Redirect) ke halaman sesuai paket mereka
-    const targetUrl = (profileData && profileData.redirect_url) ? profileData.redirect_url : 'trialversion.html';
-    setTimeout(() => {
-        window.location.href = targetUrl;
-    }, 800);
-
-  } catch (err) {
-    // Jika Gagal Login (Password Salah atau Bukan Email)
-    if(btn) btn.disabled = false;
-    if(text) text.textContent = 'Masuk ke Sistem';
-    if(spin) spin.style.display = 'none';
-    
-    showError('Login gagal. Pastikan memakai Email dan Password dengan benar.');
-    if(passInp) {
-       passInp.value = '';
-       passInp.focus();
+  // ════════════════════════════════════════════════════════════════
+  // CEK SESI — auto-login jika masih aktif
+  // ════════════════════════════════════════════════════════════════
+  function checkSession() {
+    try {
+      const raw = localStorage.getItem('hm_session');
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (!s || !s.loginAt || !s.redirect) return;
+      if (s.expiresAt && Date.now() > s.expiresAt) {
+        localStorage.removeItem('hm_session');
+        return;
+      }
+      // Sesi masih valid — langsung redirect
+      const overlay = document.getElementById('successOverlay');
+      overlay.classList.add('show');
+      setTimeout(() => {
+        document.getElementById('successBarFill').style.width = '100%';
+      }, 50);
+      setTimeout(() => {
+        window.location.href = s.redirect;
+      }, 800);
+    } catch(e) {
+      localStorage.removeItem('hm_session');
     }
-    console.error("Detail kegagalan:", err.message);
   }
-}
 
-// 5. Fitur Auto-Login (Langsung masuk jika browser sudah menyimpan sesi)
-async function checkSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (session) {
-     const { data: profile } = await supabase
-      .from('profiles')
-      .select('redirect_url')
-      .eq('id', session.user.id)
-      .single();
-      
-     if (profile && profile.redirect_url) {
-        const overlay = document.querySelector('.success-overlay');
-        const barFill = document.querySelector('.success-bar-fill');
-        if(overlay) overlay.classList.add('show');
-        if(barFill) setTimeout(() => { barFill.style.width = '100%'; }, 10);
-        
-        setTimeout(() => {
-           window.location.href = profile.redirect_url;
-        }, 500);
-     }
-  }
-}
-
-// Panggil cek sesi otomatis saat halaman pertama kali dibuka
-checkSession();
+  // Focus username & cek sesi
+  document.getElementById('username').focus();
+  checkSession();
 </script>
 </body>
 </html>
