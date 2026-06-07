@@ -412,13 +412,28 @@ function togglePassword() {
   btn.textContent = inp.type === 'password' ? '👁' : '🙈';
 }
 function showSuccess(redirectUrl) {
+  // Bersihkan tanda kutip dan spasi yang mungkin tersimpan di database
+  const cleanUrl = (redirectUrl || '')
+    .replace(/['"]/g, '')   // hapus tanda kutip
+    .trim();                 // hapus spasi
+
+  // Pastikan URL valid — hanya izinkan nama file .html
+  const safeUrl = /^[\w\-]+\.html$/.test(cleanUrl) ? cleanUrl : null;
+
+  if (!safeUrl) {
+    console.error('redirect_url tidak valid:', redirectUrl);
+    showError('Halaman tujuan tidak ditemukan. Hubungi HOSTMABAR.');
+    setLoading(false);
+    return;
+  }
+
   const overlay = document.getElementById('successOverlay');
   overlay.classList.add('show');
   setTimeout(() => {
     document.getElementById('successBarFill').style.width = '100%';
   }, 80);
   setTimeout(() => {
-    window.location.href = redirectUrl;
+    window.location.href = safeUrl;
   }, 1600);
 }
 
@@ -465,7 +480,7 @@ async function doLogin(e) {
       .from('profiles')
       .select('username_komunitas, paket_langganan, redirect_url, tanggal_kedaluwarsa')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
       await db.auth.signOut();
@@ -484,14 +499,17 @@ async function doLogin(e) {
       }
     }
 
-    // ── STEP 4: Simpan info sesi tambahan di localStorage ─────────
-    // (Supabase Auth session sudah tersimpan otomatis)
-    localStorage.setItem('hm_komunitas', JSON.stringify({
-      username: profile.username_komunitas,
-      paket: profile.paket_langganan,
-      redirect: profile.redirect_url,
-      loginAt: Date.now()
-    }));
+    // ── STEP 4: Simpan sesi ke localStorage
+    // Key 'hm_session' dibaca oleh session guard di semua halaman app
+    const sessionPayload = {
+      username : profile.username_komunitas,
+      paket    : profile.paket_langganan,
+      redirect : profile.redirect_url,
+      loginAt  : Date.now(),
+      expiresAt: Date.now() + (8 * 60 * 60 * 1000) // 8 jam
+    };
+    localStorage.setItem('hm_session',   JSON.stringify(sessionPayload));
+    localStorage.setItem('hm_komunitas', JSON.stringify(sessionPayload));
 
     // ── STEP 5: Sukses → redirect ─────────────────────────────────
     showSuccess(profile.redirect_url);
@@ -521,7 +539,7 @@ async function checkActiveSession() {
       .from('profiles')
       .select('redirect_url, tanggal_kedaluwarsa')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!profile || !profile.redirect_url) return;
 
@@ -535,11 +553,18 @@ async function checkActiveSession() {
       }
     }
 
-    // Sesi valid → langsung redirect
+    // Sesi valid — tulis ulang hm_session agar session guard halaman app bisa baca
+    const sp = {
+      redirect : profile.redirect_url,
+      loginAt  : Date.now(),
+      expiresAt: Date.now() + (8 * 60 * 60 * 1000)
+    };
+    localStorage.setItem('hm_session',   JSON.stringify(sp));
+    localStorage.setItem('hm_komunitas', JSON.stringify(sp));
+
     showSuccess(profile.redirect_url);
 
   } catch(e) {
-    // Kalau gagal cek sesi, biarkan tampil form login
     console.log('Session check skipped:', e.message);
   }
 }
