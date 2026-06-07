@@ -409,7 +409,7 @@ if(userInp) userInp.addEventListener('input', hideError);
 if(passInp) passInp.addEventListener('input', hideError);
 
 // 4. Fungsi Utama Login
-async function handleLogin(e) {
+async function doLogin(e) {
   // Mencegah refresh halaman (pengaman jika tombol ada di dalam <form>)
   if (e && typeof e.preventDefault === 'function') {
     e.preventDefault();
