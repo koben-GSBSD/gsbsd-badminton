@@ -4,6 +4,23 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>HOSTMABAR — Basic</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// -- SESSION GUARD -- jalankan sebelum DOM dimuat
+(function() {
+  try {
+    var raw = localStorage.getItem('hm_session');
+    if (!raw) { window.location.replace('login.html'); return; }
+    var s = JSON.parse(raw);
+    if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
+    if (s.expiresAt && Date.now() > s.expiresAt) {
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('login.html'); return;
+    }
+  } catch(e) { window.location.replace('login.html'); }
+})();
+</script>
 <link href="https://fonts.cdnfonts.com/css/norwester" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -412,14 +429,28 @@
 <script>
   // ── LOGOUT ─────────────────────────────────────────────────────────────────
 function prosesLogout() {
-  // Munculkan peringatan konfirmasi sebelum keluar
-  if(confirm('Apakah Anda yakin ingin keluar dari halaman komunitas?')) {
-    // Menghapus tiket/sesi dari penyimpanan browser
-    localStorage.removeItem('hm_session');
-    
-    // Mengarahkan pengguna kembali ke halaman login utama
-    window.location.href = 'index.html';
+  document.getElementById('logoutModal').style.display = 'flex';
+}
+function tutupLogoutModal() {
+  document.getElementById('logoutModal').style.display = 'none';
+}
+function konfirmasiLogout() {
+  tutupLogoutModal();
+  localStorage.removeItem('hm_session');
+  localStorage.removeItem('hm_komunitas');
+  try {
+    const { createClient } = window.supabase;
+    const dbAuth = createClient(
+      'https://pxfpskzwkfpxslsvqbpz.supabase.co',
+      'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp'
+    );
+    dbAuth.auth.signOut().finally(() => {
+      window.location.href = 'login.html';
+    });
+  } catch(e) {
+    window.location.href = 'login.html';
   }
+}
 }
 // ── LIMITS ──────────────────────────────────────────────────────────────
 const MAX_PLAYERS = 16;
@@ -633,70 +664,41 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),3200);
 }
 // SKRIP PENJAGA KEAMANAN HALAMAN
-(function proteksiHalaman() {
-  const raw = localStorage.getItem('hm_session');
-  // Jika tidak ada tiket sesi, langsung tendang ke halaman login
-  if (!raw) {
-    window.location.replace('index.html');
-    return;
-  }
   
-  const s = JSON.parse(raw);
-  // Jika tiket ada tapi waktunya sudah lewat (kedaluwarsa), tendang ke login
-  if (Date.now() > s.expiresAt) {
-    localStorage.removeItem('hm_session');
-    alert('Sesi Anda telah berakhir. Silakan login kembali.');
-    window.location.replace('index.html');
-  }
-})();  
 </script>
   <!-- ========================================== -->
 <!-- SKRIP PENJAGA KEAMANAN & CEK LANGGANAN     -->
 <!-- ========================================== -->
 <script>
+
+
+// ── SESSION GUARD ────────────────────────────────────────────────────────
 (function proteksiHalaman() {
-  // 1. Cek apakah pengguna punya tiket masuk (sudah login)
-  const raw = localStorage.getItem('hm_session');
-  if (!raw) {
-    window.location.replace('index.html'); // Tendang ke halaman login
-    return;
-  }
-  
-  const session = JSON.parse(raw);
-  
-  // 2. Cek apakah waktu sesi harian (8 jam) sudah habis
-  if (Date.now() > session.expiresAt) {
-    localStorage.removeItem('hm_session');
-    alert('Sesi login Anda telah berakhir demi keamanan. Silakan masuk kembali.');
-    window.location.replace('index.html');
-    return;
-  }
-
-  // 3. LOGIKA BERLANGGANAN: Cek apakah paket sudah kedaluwarsa
-  // Kita reset jam hari ini ke 00:00:00 agar adil membandingkan tanggalnya saja
-  const hariIni = new Date();
-  hariIni.setHours(0,0,0,0); 
-  
-  const batasWaktu = new Date(session.tgl_kedaluwarsa);
-  
-  // Jika paket BUKAN free, dan hari ini sudah melewati tanggal kedaluwarsa
-  if (session.paket !== 'free' && hariIni > batasWaktu) {
-    alert('Masa aktif paket berlangganan Anda telah habis. Silakan hubungi Admin HostMabar untuk perpanjangan.');
-    
-    // Hapus tiketnya dan kembalikan ke halaman login
-    localStorage.removeItem('hm_session');
-    window.location.replace('index.html');
-    return;
-  }
-
-  // 4. JIKA LOLOS SEMUA PENGECEKAN
-  // Anda bisa menggunakan variabel ini untuk menampilkan nama komunitas di layar
-  console.log("Akses diizinkan. User: " + session.user + " | Paket: " + session.paket);
-  
-  // (Opsional) Jika Anda punya elemen HTML dengan id="namaKomunitas", kode ini akan mengisinya otomatis:
-  // document.getElementById('namaKomunitas').textContent = session.user.toUpperCase();
-
+  try {
+    const raw = localStorage.getItem('hm_session');
+    if (!raw) { window.location.replace('login.html'); return; }
+    const s = JSON.parse(raw);
+    if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
+    if (s.expiresAt && Date.now() > s.expiresAt) {
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('login.html'); return;
+    }
+  } catch(e) { window.location.replace('login.html'); }
 })();
 </script>
+
+<!-- LOGOUT MODAL — custom, no browser confirm() -->
+<div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#1e1e28;border:1.5px solid #38384a;border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+    <div style="font-size:38px;margin-bottom:10px;">🚪</div>
+    <div style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:#f0f0f8;margin-bottom:6px;">Keluar dari HOSTMABAR?</div>
+    <div style="font-size:13px;color:#9898b0;margin-bottom:22px;line-height:1.5;">Sesi kamu akan diakhiri dan<br>kembali ke halaman login.</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="tutupLogoutModal()" style="flex:1;padding:11px;background:#2a2a36;border:1.5px solid #38384a;border-radius:10px;color:#e0e0ee;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Batal</button>
+      <button onclick="konfirmasiLogout()" style="flex:1;padding:11px;background:linear-gradient(135deg,#E8174A,#c0102e);border:none;border-radius:10px;color:#fff;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(232,23,74,.4);">Ya, Keluar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
