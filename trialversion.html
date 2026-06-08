@@ -412,14 +412,12 @@
 <script>
   // ── LOGOUT ─────────────────────────────────────────────────────────────────
 function prosesLogout() {
-  // Munculkan peringatan konfirmasi sebelum keluar
-  if(confirm('Apakah Anda yakin ingin keluar dari halaman komunitas?')) {
-    // Menghapus tiket/sesi dari penyimpanan browser
+  if (confirm('Apakah Anda yakin ingin keluar dari halaman komunitas?')) {
     localStorage.removeItem('hm_session');
-    
-    // Mengarahkan pengguna kembali ke halaman login utama
-    window.location.href = 'index.html';
+    localStorage.removeItem('hm_komunitas');
+    window.location.href = 'login.html';
   }
+}
 }
 // ── LIMITS ──────────────────────────────────────────────────────────────
 const MAX_PLAYERS = 4;
@@ -633,21 +631,21 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),3200);
 }
   // SKRIP PENJAGA KEAMANAN HALAMAN
+
+
+// ── SESSION GUARD ────────────────────────────────────────────────────────
 (function proteksiHalaman() {
-  const raw = localStorage.getItem('hm_session');
-  // Jika tidak ada tiket sesi, langsung tendang ke halaman login
-  if (!raw) {
-    window.location.replace('index.html');
-    return;
-  }
-  
-  const s = JSON.parse(raw);
-  // Jika tiket ada tapi waktunya sudah lewat (kedaluwarsa), tendang ke login
-  if (Date.now() > s.expiresAt) {
-    localStorage.removeItem('hm_session');
-    alert('Sesi Anda telah berakhir. Silakan login kembali.');
-    window.location.replace('index.html');
-  }
+  try {
+    const raw = localStorage.getItem('hm_session');
+    if (!raw) { window.location.replace('login.html'); return; }
+    const s = JSON.parse(raw);
+    if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
+    if (s.expiresAt && Date.now() > s.expiresAt) {
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('login.html'); return;
+    }
+  } catch(e) { window.location.replace('login.html'); }
 })();
 </script>
 </body>
