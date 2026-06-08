@@ -430,35 +430,20 @@
   </div>
 </div>
 
-<!-- LOGOUT CONFIRM MODAL -->
-<div class="logout-modal-overlay" id="logoutModalOverlay">
-  <div class="logout-modal-box">
-    <div class="logout-modal-icon">🚪</div>
-    <div class="logout-modal-title">Keluar dari HOSTMABAR?</div>
-    <div class="logout-modal-sub">Sesi kamu akan diakhiri dan<br>kamu akan kembali ke halaman login.</div>
-    <div class="logout-modal-btns">
-      <button class="btn btn-secondary" onclick="closeLogoutModal()">Batal</button>
-      <button class="btn btn-logout-confirm" onclick="konfirmasiLogout()">Ya, Keluar</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
   // ── LOGOUT ─────────────────────────────────────────────────────────────────
 function prosesLogout() {
-  // Tampilkan modal konfirmasi custom — tidak pakai confirm() browser
-  document.getElementById('logoutModalOverlay').classList.add('open');
+  document.getElementById('logoutModal').style.display = 'flex';
 }
-function closeLogoutModal() {
-  document.getElementById('logoutModalOverlay').classList.remove('open');
+function tutupLogoutModal() {
+  document.getElementById('logoutModal').style.display = 'none';
 }
 function konfirmasiLogout() {
-  closeLogoutModal();
+  tutupLogoutModal();
   localStorage.removeItem('hm_session');
   localStorage.removeItem('hm_komunitas');
-  // Sign out dari Supabase Auth agar sesi cloud juga bersih
   try {
     const { createClient } = window.supabase;
     const dbAuth = createClient(
@@ -751,17 +736,18 @@ function showToast(msg){
   } catch(e) { window.location.replace('login.html'); }
 })();
 </script>
+
+<!-- LOGOUT MODAL — custom, no browser confirm() -->
+<div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#1e1e28;border:1.5px solid #38384a;border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+    <div style="font-size:38px;margin-bottom:10px;">🚪</div>
+    <div style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:#f0f0f8;margin-bottom:6px;">Keluar dari HOSTMABAR?</div>
+    <div style="font-size:13px;color:#9898b0;margin-bottom:22px;line-height:1.5;">Sesi kamu akan diakhiri dan<br>kembali ke halaman login.</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="tutupLogoutModal()" style="flex:1;padding:11px;background:#2a2a36;border:1.5px solid #38384a;border-radius:10px;color:#e0e0ee;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Batal</button>
+      <button onclick="konfirmasiLogout()" style="flex:1;padding:11px;background:linear-gradient(135deg,#E8174A,#c0102e);border:none;border-radius:10px;color:#fff;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(232,23,74,.4);">Ya, Keluar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
-  /* LOGOUT CONFIRM MODAL */
-  .logout-modal-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
-  .logout-modal-overlay.open{opacity:1;pointer-events:all;}
-  .logout-modal-box{background:#1e1e28;border:1.5px solid #38384a;border-radius:20px;padding:26px 22px;width:100%;max-width:340px;text-align:center;transform:scale(.92);transition:transform .25s;box-shadow:0 20px 60px rgba(0,0,0,.6);}
-  .logout-modal-overlay.open .logout-modal-box{transform:scale(1);}
-  .logout-modal-icon{font-size:40px;margin-bottom:10px;}
-  .logout-modal-title{font-family:"Poppins",sans-serif;font-size:16px;font-weight:800;color:#f0f0f8;margin-bottom:6px;}
-  .logout-modal-sub{font-size:13px;color:#9898b0;margin-bottom:20px;line-height:1.5;}
-  .logout-modal-btns{display:flex;gap:10px;}
-  .logout-modal-btns .btn{flex:1;}
-  .btn-logout-confirm{background:linear-gradient(135deg,#E8174A,#c0102e);color:#fff;border:none;box-shadow:0 3px 12px rgba(232,23,74,.4);}
-  .btn-logout-confirm:hover{filter:brightness(1.1);}
