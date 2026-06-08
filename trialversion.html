@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>HOSTMABAR — Trial</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.cdnfonts.com/css/norwester" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -106,6 +107,18 @@
   .c-plus:hover{background:rgba(247,148,29,.3);}
   .c-minus{background:rgba(231,76,60,.12);color:#ff7070;border:1.5px solid rgba(231,76,60,.3);}
   .c-minus:hover{background:rgba(231,76,60,.25);}
+
+
+  /* LEADERBOARD */
+  .lb-table{width:100%;border-collapse:collapse;}
+  .lb-table th{font-family:"Poppins",sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#b0b0cc;text-align:left;padding:7px 9px;border-bottom:1px solid var(--border);}
+  .lb-table th.right,.lb-table td.right{text-align:right;}
+  .lb-table td{padding:10px 9px;border-bottom:1px solid rgba(56,56,74,.4);}
+  .lb-table tr:last-child td{border-bottom:none;}
+  .player-name{font-weight:700;font-size:14px;font-family:"Poppins",sans-serif;color:#f0f0f8;}
+  .win-rate{font-size:11px;color:#9898b0;font-weight:600;}
+  .stat-chip{font-family:"Poppins",sans-serif;font-size:12px;font-weight:700;background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:2px 7px;display:inline-block;color:#d8d8f0;}
+  .pts-chip{font-size:14px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;border-color:rgba(247,148,29,.3);}
 
   /* LIMIT PROGRESS BAR */
   .limit-bar-wrap{margin-top:10px;}
@@ -224,6 +237,7 @@
   <div class="tabs">
     <button class="tab active" onclick="switchTab('setup',this)">⚙️ Setup</button>
     <button class="tab" onclick="switchTab('match',this)">🏸 Match</button>
+    <button class="tab" onclick="switchTab('leaderboard',this)">🏆 Board</button>
     <button class="tab" onclick="switchTab('counter',this)">🔢 Counter</button>
   </div>
 
@@ -345,6 +359,15 @@
 
   </div>
 
+
+  <!-- LEADERBOARD -->
+  <div id="tab-leaderboard" class="section">
+    <div class="card">
+      <div class="card-title">🏆 Leaderboard</div>
+      <div id="leaderboardContent"></div>
+    </div>
+  </div>
+
   <!-- ══ COUNTER ════════════════════════════════════════════════════════ -->
   <div id="tab-counter" class="section">
     <div class="card">
@@ -415,7 +438,19 @@ function prosesLogout() {
   if (confirm('Apakah Anda yakin ingin keluar dari halaman komunitas?')) {
     localStorage.removeItem('hm_session');
     localStorage.removeItem('hm_komunitas');
-    window.location.href = 'login.html';
+    // Sign out dari Supabase Auth agar sesi cloud juga bersih
+    try {
+      const { createClient } = window.supabase;
+      const db = createClient(
+        'https://pxfpskzwkfpxslsvqbpz.supabase.co',
+        'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp'
+      );
+      db.auth.signOut().finally(() => {
+        window.location.href = 'login.html';
+      });
+    } catch(e) {
+      window.location.href = 'login.html';
+    }
   }
 }
 // ── LIMITS ──────────────────────────────────────────────────────────────
@@ -495,6 +530,7 @@ function switchTab(name,btn){
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
   if(name==='match')populateSelects();
+  if(name==='leaderboard')renderLeaderboard();
   if(name==='counter')renderCounter();
 }
 
@@ -573,6 +609,55 @@ function renderMatchHistory(){
   }).join('');
 }
 
+
+// ── LEADERBOARD ────────────────────────────────────────────────────────────
+function calcStats(){
+  const stats={};
+  state.players.forEach(p=>{stats[p]={name:p,played:0,wins:0,losses:0,points:0,scoreDiff:0,scoreFor:0,scoreAgainst:0};});
+  state.matches.forEach(m=>{
+    const winners=m.winner==='A'?m.teamA:m.teamB,losers=m.winner==='A'?m.teamB:m.teamA;
+    const ws=m.winner==='A'?m.scoreA:m.scoreB,ls=m.winner==='A'?m.scoreB:m.scoreA,diff=ws-ls;
+    winners.forEach(p=>{if(!stats[p])stats[p]={name:p,played:0,wins:0,losses:0,points:0,scoreDiff:0,scoreFor:0,scoreAgainst:0};
+      const s=stats[p];s.played++;s.wins++;s.points+=3;s.scoreDiff+=diff;s.scoreFor+=ws;s.scoreAgainst+=ls;});
+    losers.forEach(p=>{if(!stats[p])stats[p]={name:p,played:0,wins:0,losses:0,points:0,scoreDiff:0,scoreFor:0,scoreAgainst:0};
+      const s=stats[p];s.played++;s.losses++;s.points+=1;s.scoreDiff-=diff;s.scoreFor+=ls;s.scoreAgainst+=ws;});
+  });
+  return Object.values(stats).sort((a,b)=>b.points-a.points||b.scoreDiff-a.scoreDiff||b.wins-a.wins);
+}
+function renderLeaderboard(){
+  const el=document.getElementById('leaderboardContent');
+  const stats=calcStats();
+  if(!stats.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏆</div>Tambah pemain & match dulu</div>';return;}
+  const ri=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="font-family:Poppins;font-size:17px;font-weight:900;color:var(--muted)">${i+1}</span>`;
+  const tieSet=new Set();
+  for(let i=0;i<stats.length-1;i++)if(stats[i].points===stats[i+1].points){tieSet.add(i);tieSet.add(i+1);}
+  el.innerHTML=`<table class="lb-table"><thead><tr>
+    <th>#</th><th>Pemain</th><th class="right">Main</th><th class="right">M</th><th class="right">K</th><th class="right">Pts</th><th class="right">+/−</th>
+  </tr></thead><tbody>
+  ${stats.map((s,i)=>{
+    const dc=s.scoreDiff>0?'var(--green)':s.scoreDiff<0?'var(--red)':'var(--muted)';
+    const ds=s.scoreDiff>0?'+'+s.scoreDiff:''+s.scoreDiff;
+    const tie=tieSet.has(i);
+    return '<tr style="'+(tie?'background:rgba(247,148,29,.04)':'')+'">'+
+      '<td style="font-size:18px">'+ri(i)+'</td>'+
+      '<td><div class="player-name">'+s.name+'</div>'+
+        '<div class="win-rate">'+(s.played>0?Math.round(s.wins/s.played*100):0)+'% win'+(tie?' · <span style="color:var(--orange);font-size:10px">TIE</span>':'')+'</div>'+
+      '</td>'+
+      '<td class="right"><span class="stat-chip">'+s.played+'</span></td>'+
+      '<td class="right"><span class="stat-chip" style="color:var(--green)">'+s.wins+'</span></td>'+
+      '<td class="right"><span class="stat-chip" style="color:var(--red)">'+s.losses+'</span></td>'+
+      '<td class="right"><span class="stat-chip pts-chip">'+s.points+'</span></td>'+
+      '<td class="right">'+
+        '<span class="stat-chip" style="color:'+dc+';border-color:'+dc+'33">'+(s.played>0?ds:'—')+'</span>'+
+        (s.played>0?'<div style="font-size:10px;color:var(--muted);text-align:right">'+s.scoreFor+':'+s.scoreAgainst+'</div>':'') +
+      '</td>'+
+    '</tr>';
+  }).join('')}</tbody></table>
+  <div style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center">
+    Menang +3 · Kalah +1 · Tie-breaker: Score Diff · ${state.matches.length} game selesai
+  </div>`;
+}
+
 // ── COUNTER ───────────────────────────────────────────────────────────────
 function renderCounter(){
   const el=document.getElementById('counterGrid');
@@ -606,7 +691,7 @@ function resetAll(){
   document.getElementById('matchLimitWarn').classList.remove('show');
   renderAll();updateLimitUI();
 }
-function renderAll(){renderPlayerList();populateSelects();renderMatchHistory();renderCounter();uSI();updateLimitUI();}
+function renderAll(){renderPlayerList();populateSelects();renderMatchHistory();renderLeaderboard();renderCounter();uSI();updateLimitUI();}
 function esc(s){return s.replace(/'/g,"\\'");}
 
 // ── UPGRADE MODAL ──────────────────────────────────────────────────────────
