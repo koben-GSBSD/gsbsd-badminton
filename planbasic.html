@@ -6,7 +6,6 @@
 <title>HOSTMABAR — Basic</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// -- SESSION GUARD -- jalankan sebelum DOM dimuat
 (function() {
   try {
     var raw = localStorage.getItem('hm_session');
@@ -451,7 +450,6 @@ function konfirmasiLogout() {
     window.location.href = 'login.html';
   }
 }
-}
 // ── LIMITS ──────────────────────────────────────────────────────────────
 const MAX_PLAYERS = 16;
 const MAX_MATCHES = 24;
@@ -688,10 +686,10 @@ function showToast(msg){
 })();
 </script>
 
-<!-- LOGOUT MODAL — custom, no browser confirm() -->
+<!-- LOGOUT MODAL -->
 <div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
   <div style="background:#1e1e28;border:1.5px solid #38384a;border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);">
-    <div style="font-size:38px;margin-bottom:10px;">🚪</div>
+    <div style="font-size:38px;margin-bottom:10px;">&#128682;</div>
     <div style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:#f0f0f8;margin-bottom:6px;">Keluar dari HOSTMABAR?</div>
     <div style="font-size:13px;color:#9898b0;margin-bottom:22px;line-height:1.5;">Sesi kamu akan diakhiri dan<br>kembali ke halaman login.</div>
     <div style="display:flex;gap:10px;">
