@@ -6,14 +6,16 @@
   <title>CUANMABAR - Financial Community App</title>
   
   <script>
-    (function proteksiHalaman() {
+    // SESSION GUARD — jalankan sebelum DOM dimuat
+    (function() {
       try {
-        const raw = localStorage.getItem('hm_session');
+        var raw = localStorage.getItem('hm_session');
         if (!raw) { window.location.replace('login.html'); return; }
-        const s = JSON.parse(raw);
+        var s = JSON.parse(raw);
         if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
         if (s.expiresAt && Date.now() > s.expiresAt) {
           localStorage.removeItem('hm_session');
+          localStorage.removeItem('hm_komunitas');
           window.location.replace('login.html'); return;
         }
       } catch(e) { window.location.replace('login.html'); }
@@ -124,6 +126,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SRPN7KZ7FC');
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="min-h-screen flex justify-center selection:bg-orange-500/30">
 
@@ -219,8 +222,29 @@
     }
 
     function handleLogout() {
-      if (confirm('Apakah Anda yakin ingin keluar dari CUANMABAR?')) {
-        localStorage.removeItem('hm_session');
+      const m = document.getElementById('logoutModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+    function tutupLogoutModal() {
+      const m = document.getElementById('logoutModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+    function konfirmasiLogout() {
+      tutupLogoutModal();
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      try {
+        const { createClient } = window.supabase;
+        const dbAuth = createClient(
+          'https://pxfpskzwkfpxslsvqbpz.supabase.co',
+          'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp'
+        );
+        dbAuth.auth.signOut().finally(() => {
+          window.location.href = 'login.html';
+        });
+      } catch(e) {
         window.location.href = 'login.html';
       }
     }
@@ -769,6 +793,34 @@
     // Jalankan inisialisasi aplikasi pertama kali dibuka
     updateUI();
 
-  </script>
+  
+// ── SESSION GUARD ────────────────────────────────────────────────────────
+(function proteksiHalaman() {
+  try {
+    const raw = localStorage.getItem('hm_session');
+    if (!raw) { window.location.replace('login.html'); return; }
+    const s = JSON.parse(raw);
+    if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
+    if (s.expiresAt && Date.now() > s.expiresAt) {
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('login.html'); return;
+    }
+  } catch(e) { window.location.replace('login.html'); }
+})();
+</script>
+
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-5" style="background:rgba(0,0,0,.75);">
+  <div class="relative" style="background:#1e1e28;border:1.5px solid #38384a;border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+    <div style="font-size:38px;margin-bottom:10px;">&#128682;</div>
+    <div style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:#f0f0f8;margin-bottom:6px;">Keluar dari CUANMABAR?</div>
+    <div style="font-size:13px;color:#9898b0;margin-bottom:22px;line-height:1.5;">Sesi kamu akan diakhiri dan<br>kembali ke halaman login.</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="tutupLogoutModal()" style="flex:1;padding:11px;background:#2a2a36;border:1.5px solid #38384a;border-radius:10px;color:#e0e0ee;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Batal</button>
+      <button onclick="konfirmasiLogout()" style="flex:1;padding:11px;background:linear-gradient(135deg,#E8174A,#c0102e);border:none;border-radius:10px;color:#fff;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(232,23,74,.4);">Ya, Keluar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
