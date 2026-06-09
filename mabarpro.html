@@ -180,29 +180,14 @@
     display:block;
   }
 
-  /* ── PRINT / SAVE AS PDF ─────────────────────────────────────── */
+  /* ── PRINT TO PDF ────────────────────────────────────────────── */
   #print-section { display: none; }
-
   @media print {
-    @page { size: A4 portrait; margin: 12mm 14mm 12mm 14mm; }
-    * { box-sizing: border-box !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important; }
+    @page { size: A4 portrait; margin: 12mm 14mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box !important; }
     body > * { display: none !important; }
-    #print-section {
-      display: block !important;
-      width: 100% !important; max-width: 100% !important;
-      margin: 0 !important; padding: 0 !important;
-      background: #fff !important; color: #000 !important;
-    }
-    tr, .pr-avoid { page-break-inside: avoid !important; break-inside: avoid !important; }
-    h2, h3 { page-break-after: avoid !important; break-after: avoid !important; }
-    table { width: 100% !important; table-layout: fixed !important;
-            border-collapse: collapse !important; margin-bottom: 14pt !important; }
-    th, td { padding: 5pt 7pt !important; border: 1px solid #cbd5e1 !important;
-             word-wrap: break-word !important; font-size: 9pt !important;
-             vertical-align: middle !important; white-space: normal !important; }
-    th { background: #f1f5f9 !important; font-weight: 700 !important; color: #0f172a !important; }
+    #print-section { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    tr { page-break-inside: avoid !important; break-inside: avoid !important; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -372,6 +357,7 @@
     </div>
   </div>
 </div>
+<div id="print-section"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -392,12 +378,8 @@ function konfirmasiLogout() {
       'https://pxfpskzwkfpxslsvqbpz.supabase.co',
       'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp'
     );
-    dbAuth.auth.signOut().finally(() => {
-      window.location.href = 'login.html';
-    });
-  } catch(e) {
-    window.location.href = 'login.html';
-  }
+    dbAuth.auth.signOut().finally(() => { window.location.href = 'login.html'; });
+  } catch(e) { window.location.href = 'login.html'; }
 }
 // ── STATE ──────────────────────────────────────────────────────────────────
 let state={players:[],matches:[],playCount:{},session:{date:'',name:''}};
@@ -619,71 +601,63 @@ function changeCount(name,delta){
 function downloadPDF(source) {
   if(!state.matches.length){showToast('⚠️ Belum ada data pertandingan!');return;}
 
-  const sdate = state.session.date  || new Date().toLocaleDateString('id-ID');
-  const sname = state.session.name  || 'Sesi Mabar';
+  const sdate = state.session.date || new Date().toLocaleDateString('id-ID');
+  const sname = state.session.name || 'Sesi Mabar';
 
-  // ── bangun konten print ────────────────────────────────────────
+  // ── calcStats sudah ada di kode, pakai langsung
   let content = '';
 
-  // HEADER BERSAMA (tampil di Match & Board)
+  // HEADER bersama
   content += `
     <div style="text-align:center;border-bottom:2.5pt solid #E8174A;padding-bottom:14px;margin-bottom:20px;">
-      <div style="font-size:28pt;font-weight:900;letter-spacing:3px;color:#1a1a2e;font-family:'Poppins',sans-serif;line-height:1;">
+      <div style="font-size:26pt;font-weight:900;letter-spacing:3px;color:#1a1a2e;font-family:'Poppins',sans-serif;line-height:1;">
         HOST<span style="color:#E8174A;">MABAR</span>
       </div>
-      <div style="font-size:9pt;color:#555;letter-spacing:2px;text-transform:uppercase;margin-top:4px;font-weight:700;">
-        Badminton Community · Double
-      </div>
-      <div style="font-size:9pt;color:#888;margin-top:6px;">
-        📅 ${sdate} &nbsp;|&nbsp; 📋 ${sname}
-      </div>
+      <div style="font-size:8.5pt;color:#555;letter-spacing:2px;text-transform:uppercase;margin-top:3px;font-weight:700;">Badminton Community · Double</div>
+      <div style="font-size:9pt;color:#888;margin-top:5px;">📅 ${sdate} &nbsp;|&nbsp; 📋 ${sname}</div>
     </div>`;
 
   if (source === 'match') {
-    // ── RIWAYAT PERTANDINGAN ──────────────────────────────────────
+    // ── RIWAYAT PERTANDINGAN
     content += `
-      <h2 style="font-family:'Poppins',sans-serif;font-size:13pt;font-weight:900;
-                 color:#0f172a;margin:0 0 12px 0;padding-left:10px;
-                 border-left:4px solid #F7941D;text-transform:uppercase;letter-spacing:1px;">
-        🏸 Riwayat Pertandingan
-      </h2>
-      <table>
+      <h2 style="font-family:'Poppins',sans-serif;font-size:12pt;font-weight:900;color:#0f172a;
+                 margin:0 0 10px 0;padding-left:10px;border-left:4px solid #F7941D;
+                 text-transform:uppercase;letter-spacing:1px;">🏸 Riwayat Pertandingan</h2>
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:12px;">
         <thead>
-          <tr>
-            <th style="width:7%;">#</th>
-            <th style="width:42%;text-align:left;">Tim A vs Tim B</th>
-            <th style="width:16%;text-align:center;">Skor</th>
-            <th style="width:20%;text-align:center;">Pemenang</th>
-            <th style="width:15%;text-align:center;">Waktu</th>
+          <tr style="background:#f1f5f9;">
+            <th style="width:7%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">#</th>
+            <th style="width:40%;padding:6px 8px;border:1px solid #cbd5e1;text-align:left;font-size:9pt;">Tim A vs Tim B</th>
+            <th style="width:15%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">Skor</th>
+            <th style="width:22%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">Pemenang</th>
+            <th style="width:16%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">Waktu</th>
           </tr>
         </thead>
         <tbody>
           ${state.matches.map((m,i) => `
-            <tr class="pr-avoid">
-              <td style="text-align:center;font-weight:700;">${i+1}</td>
-              <td style="text-align:left;">
-                <span style="font-weight:700;">${m.teamA.join(' & ')}</span>
+            <tr style="page-break-inside:avoid;">
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;font-size:9pt;">${i+1}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:9pt;">
+                <strong>${m.teamA.join(' & ')}</strong>
                 <span style="color:#888;"> vs </span>
-                <span style="font-weight:700;">${m.teamB.join(' & ')}</span>
+                <strong>${m.teamB.join(' & ')}</strong>
               </td>
-              <td style="text-align:center;font-weight:800;color:#E8174A;">${m.scoreA} — ${m.scoreB}</td>
-              <td style="text-align:center;">
-                <span style="background:${m.winner==='A'?'#fef3c7':'#e0f2fe'};
-                             color:${m.winner==='A'?'#92400e':'#075985'};
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:800;color:#E8174A;font-size:10pt;">${m.scoreA}–${m.scoreB}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;">
+                <span style="background:${m.winner==='A'?'#fef3c7':'#dbeafe'};
+                             color:${m.winner==='A'?'#92400e':'#1e40af'};
                              padding:2px 8px;border-radius:8px;font-weight:700;font-size:8pt;">
                   Tim ${m.winner} Menang
                 </span>
               </td>
-              <td style="text-align:center;color:#888;">${m.time||'-'}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;color:#888;font-size:8.5pt;">${m.time||'-'}</td>
             </tr>`).join('')}
         </tbody>
       </table>
-      <div style="margin-top:10px;font-size:9pt;color:#555;text-align:right;">
-        Total: <strong>${state.matches.length} pertandingan</strong>
-      </div>`;
+      <div style="font-size:8.5pt;color:#666;text-align:right;">Total: <strong>${state.matches.length} pertandingan</strong></div>`;
 
   } else {
-    // ── LEADERBOARD ───────────────────────────────────────────────
+    // ── LEADERBOARD
     const stats = calcStats();
     const ri = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
     const tieSet = new Set();
@@ -691,22 +665,20 @@ function downloadPDF(source) {
       if(stats[i].points===stats[i+1].points){tieSet.add(i);tieSet.add(i+1);}
 
     content += `
-      <h2 style="font-family:'Poppins',sans-serif;font-size:13pt;font-weight:900;
-                 color:#0f172a;margin:0 0 12px 0;padding-left:10px;
-                 border-left:4px solid #E8174A;text-transform:uppercase;letter-spacing:1px;">
-        🏆 Leaderboard
-      </h2>
-      <table>
+      <h2 style="font-family:'Poppins',sans-serif;font-size:12pt;font-weight:900;color:#0f172a;
+                 margin:0 0 10px 0;padding-left:10px;border-left:4px solid #E8174A;
+                 text-transform:uppercase;letter-spacing:1px;">🏆 Leaderboard</h2>
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:12px;">
         <thead>
-          <tr>
-            <th style="width:8%;text-align:center;">#</th>
-            <th style="width:28%;text-align:left;">Pemain</th>
-            <th style="width:10%;text-align:center;">Main</th>
-            <th style="width:9%;text-align:center;">M</th>
-            <th style="width:9%;text-align:center;">K</th>
-            <th style="width:11%;text-align:center;">Pts</th>
-            <th style="width:12%;text-align:center;">Win%</th>
-            <th style="width:13%;text-align:center;">+/−</th>
+          <tr style="background:#f1f5f9;">
+            <th style="width:8%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">#</th>
+            <th style="width:26%;padding:6px 8px;border:1px solid #cbd5e1;text-align:left;font-size:9pt;">Pemain</th>
+            <th style="width:10%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">Main</th>
+            <th style="width:9%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">M</th>
+            <th style="width:9%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">K</th>
+            <th style="width:10%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">Pts</th>
+            <th style="width:12%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">Win%</th>
+            <th style="width:16%;padding:6px 8px;border:1px solid #cbd5e1;text-align:center;font-size:9pt;">+/−</th>
           </tr>
         </thead>
         <tbody>
@@ -714,45 +686,39 @@ function downloadPDF(source) {
             const dc = s.scoreDiff>0?'#16a34a':s.scoreDiff<0?'#dc2626':'#888';
             const ds = s.scoreDiff>0?'+'+s.scoreDiff:''+s.scoreDiff;
             const wr = s.played>0?Math.round(s.wins/s.played*100):0;
-            return `<tr class="pr-avoid" style="${tieSet.has(i)?'background:#fffbeb':''}">
-              <td style="text-align:center;font-size:13pt;">${ri(i)}</td>
-              <td style="text-align:left;font-weight:700;">${s.name}${tieSet.has(i)?' <span style="font-size:7pt;color:#92400e;background:#fef3c7;padding:1px 5px;border-radius:4px;">TIE</span>':''}</td>
-              <td style="text-align:center;">${s.played}</td>
-              <td style="text-align:center;color:#16a34a;font-weight:700;">${s.wins}</td>
-              <td style="text-align:center;color:#dc2626;font-weight:700;">${s.losses}</td>
-              <td style="text-align:center;font-weight:900;color:#E8174A;">${s.points}</td>
-              <td style="text-align:center;">${wr}%</td>
-              <td style="text-align:center;font-weight:700;color:${dc};">${s.played>0?ds:'—'}</td>
+            const rowBg = i===0?'#fffbeb':i===1?'#f8fafc':i===2?'#f0fdf4':'#fff';
+            return `<tr style="background:${rowBg};page-break-inside:avoid;">
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-size:13pt;">${ri(i)}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-weight:700;font-size:9pt;">
+                ${s.name}${tieSet.has(i)?' <span style="font-size:7pt;color:#92400e;background:#fef3c7;padding:1px 5px;border-radius:4px;font-weight:700;">TIE</span>':''}
+              </td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-size:9pt;">${s.played}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#16a34a;font-size:9pt;">${s.wins}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#dc2626;font-size:9pt;">${s.losses}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:900;color:#E8174A;font-size:10pt;">${s.points}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-size:9pt;">${wr}%</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:${dc};font-size:9pt;">${s.played>0?ds:'—'}</td>
             </tr>`;
           }).join('')}
         </tbody>
       </table>
-      <div style="margin-top:10px;font-size:9pt;color:#555;text-align:right;">
-        Menang +3 · Kalah +1 · Tie-breaker: Score Differential · ${state.matches.length} game selesai
+      <div style="font-size:8.5pt;color:#666;text-align:right;">
+        Menang +3 · Kalah +1 · Tie-breaker: Score Diff · ${state.matches.length} game selesai
       </div>`;
   }
 
   // FOOTER
   content += `
-    <div style="margin-top:24px;padding-top:10px;border-top:1pt solid #e2e8f0;
-                text-align:center;font-size:8pt;color:#94a3b8;">
-      HOSTMABAR · hostmabar.com · #Badminton #Mabar
+    <div style="margin-top:20px;padding-top:8px;border-top:1pt solid #e2e8f0;
+                text-align:center;font-size:7.5pt;color:#94a3b8;">
+      HOSTMABAR · hostmabar.com · Digenerate otomatis
     </div>`;
 
-  // Inject ke print-section lalu print
-  const ps = document.getElementById('print-section');
-  ps.innerHTML = `<div style="width:100%;max-width:100%;background:#fff;color:#000;font-family:'Poppins',Arial,sans-serif;font-size:10pt;line-height:1.5;">${content}</div>`;
+  // ── Inject ke print-section & print
+  document.getElementById('print-section').innerHTML =
+    '<div style="width:100%;background:#fff;color:#000;font-family:Arial,sans-serif;">' + content + '</div>';
 
-  // Ganti button text sementara
-  const btnId = source==='match'?'dlMatchBtn':'dlBoardBtn';
-  const btn = document.getElementById(btnId);
-  const origText = btn.innerText;
-  btn.disabled = true;
-
-  setTimeout(() => {
-    window.print();
-    btn.disabled = false;
-  }, 150);
+  setTimeout(() => window.print(), 100);
 }
 
 // ── TOAST ──────────────────────────────────────────────────────────────────
@@ -788,5 +754,18 @@ function esc(s){return s.replace(/'/g,"\\'");}
   } catch(e) { window.location.replace('login.html'); }
 })();
 </script>
+
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#1e1e28;border:1.5px solid #38384a;border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+    <div style="font-size:38px;margin-bottom:10px;">&#128682;</div>
+    <div style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:#f0f0f8;margin-bottom:6px;">Keluar dari HOSTMABAR?</div>
+    <div style="font-size:13px;color:#9898b0;margin-bottom:22px;line-height:1.5;">Sesi kamu akan diakhiri dan<br>kembali ke halaman login.</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="tutupLogoutModal()" style="flex:1;padding:11px;background:#2a2a36;border:1.5px solid #38384a;border-radius:10px;color:#e0e0ee;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Batal</button>
+      <button onclick="konfirmasiLogout()" style="flex:1;padding:11px;background:linear-gradient(135deg,#E8174A,#c0102e);border:none;border-radius:10px;color:#fff;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(232,23,74,.4);">Ya, Keluar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
