@@ -585,7 +585,7 @@ function recordMatch(){
   const left=MAX_MATCHES-state.matches.length;
   if(left===2)showToast('⚠️ Sisa 2 match trial! Upgrade untuk lanjut tanpa batas.');
   else if(left===0)showToast('🔒 Batas 8 match trial tercapai!');
-  else showToast('✅ Match disimpan! (${state.matches.length}/${MAX_MATCHES})');
+  else showToast('✅ Match disimpan!');
 }
 function deleteMatch(id){
   if(!confirm('Hapus pertandingan ini?'))return;
