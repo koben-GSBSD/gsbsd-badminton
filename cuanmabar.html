@@ -10,15 +10,15 @@
     (function() {
       try {
         var raw = localStorage.getItem('hm_session');
-        if (!raw) { window.location.replace('login-cuanmabar.html'); return; }
+        if (!raw) { window.location.replace('login.html'); return; }
         var s = JSON.parse(raw);
-        if (!s || !s.loginAt) { window.location.replace('login-cuanmabar.html'); return; }
+        if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
         if (s.expiresAt && Date.now() > s.expiresAt) {
           localStorage.removeItem('hm_session');
           localStorage.removeItem('hm_komunitas');
-          window.location.replace('login-cuanmabar.html'); return;
+          window.location.replace('login.html'); return;
         }
-      } catch(e) { window.location.replace('login-cuanmabar.html'); }
+      } catch(e) { window.location.replace('login.html'); }
     })();
   </script>
 
@@ -183,19 +183,218 @@
     const defaultMembers = [];
     const defaultInv = [];
 
-    let transactions = JSON.parse(localStorage.getItem('cm_kas')) || defaultKas;
-    let members = JSON.parse(localStorage.getItem('cm_members')) || defaultMembers;
-    let inventoryTxs = JSON.parse(localStorage.getItem('cm_inv')) || defaultInv;
-    
+    // ── SUPABASE CLIENT ────────────────────────────────────────────────────
+    const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
+    const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
+    const db = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false
+      }
+    });
+
+    // ── DATA STATE (localStorage = cache offline) ────────────────────────────
+    let transactions = JSON.parse(localStorage.getItem('cm_kas'))     || defaultKas;
+    let members      = JSON.parse(localStorage.getItem('cm_members')) || defaultMembers;
+    let inventoryTxs = JSON.parse(localStorage.getItem('cm_inv'))     || defaultInv;
+    let _userId      = null;
+    let _isSyncing   = false;
+
     let activeTab = 'dashboard';
     let editingId = null;
+
+    // ── SYNC STATUS UI ───────────────────────────────────────────────────────
+    function showSyncStatus(msg, color) {
+      const el = document.getElementById('sync-status');
+      if (!el) return;
+      el.textContent = msg;
+      el.style.color = color || '#64748b';
+      if (color === '#22c55e') setTimeout(() => { el.style.opacity = '0.5'; }, 2500);
+      else el.style.opacity = '1';
+    }
+
+    // ── LOAD DATA DARI SUPABASE + CEK LANGGANAN ────────────────────────────
+    async function loadCloudData() {
+      try {
+        showSyncStatus('⏳ Memuat...', '#f59e0b');
+
+        // Coba ambil session dari Supabase Auth
+        let { data: { session } } = await db.auth.getSession();
+
+        // Fallback: jika session null, coba refresh token
+        if (!session) {
+          const { data: refreshed } = await db.auth.refreshSession();
+          session = refreshed?.session || null;
+        }
+
+        if (!session) {
+          // Session benar-benar habis → redirect ke login
+          showSyncStatus('⚠️ Sesi habis — login ulang', '#ef4444');
+          setTimeout(() => {
+            localStorage.removeItem('hm_session');
+            localStorage.removeItem('hm_komunitas');
+            window.location.href = 'login-cuanmabar.html';
+          }, 2000);
+          return;
+        }
+        _userId = session.user.id;
+
+        // ── 1. Cek status langganan dari profiles ──────────────────────────
+        const { data: prof } = await db
+          .from('profiles')
+          .select('username_komunitas, paket_langganan, tanggal_aktif, tanggal_kedaluarsa')
+          .eq('id', _userId)
+          .single();
+
+        if (prof) {
+          renderSubscriptionBadge(prof);
+          // Cek expired — data TETAP ADA, hanya akses diblokir
+          if (prof.tanggal_kedaluarsa) {
+            const exp = new Date(prof.tanggal_kedaluarsa);
+            exp.setHours(23, 59, 59, 999);
+            if (Date.now() > exp.getTime()) {
+              showSyncStatus('⛔ Akses berakhir', '#ef4444');
+              showExpiredBanner(prof);
+              updateUI(); return; // stop di sini, data tidak di-load ke UI
+            }
+          }
+        }
+
+        // ── 2. Load data keuangan ──────────────────────────────────────────
+        const { data, error } = await db
+          .from('cuanmabar_data')
+          .select('data_type, payload')
+          .eq('user_id', _userId);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          data.forEach(row => {
+            if (row.data_type === 'kas')     { transactions  = row.payload; localStorage.setItem('cm_kas',     JSON.stringify(transactions)); }
+            if (row.data_type === 'members') { members       = row.payload; localStorage.setItem('cm_members', JSON.stringify(members)); }
+            if (row.data_type === 'inv')     { inventoryTxs  = row.payload; localStorage.setItem('cm_inv',     JSON.stringify(inventoryTxs)); }
+          });
+          showSyncStatus('✅ Tersimpan online', '#22c55e');
+        } else {
+          showSyncStatus('✅ Data siap', '#22c55e');
+          await saveCloud();
+        }
+        updateUI();
+      } catch(e) {
+        console.error('loadCloudData:', e.message);
+        showSyncStatus('📶 Offline — data lokal', '#f59e0b');
+        updateUI();
+      }
+    }
+
+    // ── BADGE LANGGANAN DI HEADER ────────────────────────────────────────────
+    function renderSubscriptionBadge(prof) {
+      const el = document.getElementById('subs-badge');
+      if (!el || !prof) return;
+      const paket = (prof.paket_langganan || '').toUpperCase();
+      const exp   = prof.tanggal_kedaluarsa
+        ? new Date(prof.tanggal_kedaluarsa).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'})
+        : '—';
+      const aktif = prof.tanggal_aktif
+        ? new Date(prof.tanggal_aktif).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'})
+        : '—';
+      const isExpired = prof.tanggal_kedaluarsa && Date.now() > new Date(prof.tanggal_kedaluarsa).getTime();
+      el.innerHTML = `
+        <span style="font-size:11px;font-weight:700;font-family:'Poppins',sans-serif;
+                     padding:3px 10px;border-radius:20px;
+                     background:${isExpired ? 'rgba(239,68,68,.2)' : 'rgba(247,148,29,.2)'};
+                     border:1.5px solid ${isExpired ? '#ef4444' : '#F7941D'};
+                     color:${isExpired ? '#ef4444' : '#FFB347'};">
+          ${isExpired ? '⛔' : '⚡'} ${paket || 'BASIC'}
+        </span>
+        <span style="font-size:10px;color:#64748b;margin-left:6px;">
+          Aktif: ${aktif} · Hingga: ${exp}
+        </span>`;
+    }
+
+    // ── BANNER EXPIRED (akses diblokir, data aman) ───────────────────────────
+    function showExpiredBanner(prof) {
+      // Sembunyikan konten utama
+      const appContent = document.getElementById('app-content');
+      if (appContent) appContent.style.display = 'none';
+      const nav = document.querySelector('nav');
+      if (nav) nav.style.display = 'none';
+
+      // Tampilkan banner
+      let banner = document.getElementById('expired-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'expired-banner';
+        document.body.appendChild(banner);
+      }
+      const exp = prof.tanggal_kedaluarsa
+        ? new Date(prof.tanggal_kedaluarsa).toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'})
+        : '—';
+      banner.innerHTML = `
+        <div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px;">
+          <div style="background:#1e1e28;border:2px solid rgba(239,68,68,.4);border-radius:24px;
+                      padding:36px 28px;max-width:400px;width:100%;text-align:center;">
+            <div style="font-size:52px;margin-bottom:12px;">⛔</div>
+            <div style="font-family:'Poppins',sans-serif;font-size:20px;font-weight:900;
+                        color:#f0f0f8;margin-bottom:8px;">Akses Berakhir</div>
+            <div style="font-size:13px;color:#94a3b8;margin-bottom:6px;line-height:1.6;">
+              Langganan <strong style="color:#FFB347;">${(prof.paket_langganan||'BASIC').toUpperCase()}</strong>
+              kamu berakhir pada <strong style="color:#f87171;">${exp}</strong>.
+            </div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:24px;line-height:1.6;">
+              📦 Data keuangan kamu <strong style="color:#22c55e;">tetap tersimpan</strong> dan aman.<br>
+              Perpanjang akses untuk melanjutkan pencatatan.
+            </div>
+            <a href="https://wa.me/6281234567890?text=Halo+HOSTMABAR%2C+saya+ingin+perpanjang+CUANMABAR"
+               target="_blank"
+               style="display:block;padding:13px 24px;background:linear-gradient(135deg,#F7941D,#E8174A);
+                      color:#fff;border-radius:12px;font-family:'Poppins',sans-serif;font-size:14px;
+                      font-weight:800;text-decoration:none;margin-bottom:12px;
+                      box-shadow:0 4px 16px rgba(247,148,29,.4);">
+              💬 Perpanjang via WhatsApp
+            </a>
+            <button onclick="handleLogout()"
+                    style="background:none;border:none;color:#64748b;font-size:12px;
+                           cursor:pointer;font-family:'Poppins',sans-serif;">
+              Logout
+            </button>
+          </div>
+        </div>`;
+    }
+
+    // ── SIMPAN KE SUPABASE (upsert) ──────────────────────────────────────────
+    async function saveCloud() {
+      if (!_userId || _isSyncing) return;
+      _isSyncing = true;
+      showSyncStatus('💾 Menyimpan...', '#f59e0b');
+      try {
+        const now = new Date().toISOString();
+        const rows = [
+          { user_id: _userId, data_type: 'kas',     payload: transactions,  updated_at: now },
+          { user_id: _userId, data_type: 'members', payload: members,       updated_at: now },
+          { user_id: _userId, data_type: 'inv',     payload: inventoryTxs, updated_at: now },
+        ];
+        const { error } = await db
+          .from('cuanmabar_data')
+          .upsert(rows, { onConflict: 'user_id,data_type' });
+        if (error) throw error;
+        showSyncStatus('✅ Tersimpan online', '#22c55e');
+      } catch(e) {
+        console.error('saveCloud error:', e.message, e);
+        showSyncStatus('⚠️ Gagal sync — ' + (e.message || 'cek koneksi'), '#ef4444');
+      } finally {
+        _isSyncing = false;
+      }
+    }
 
     // --- 2. HELPERS ---
     const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
     const saveLocal = () => {
-      localStorage.setItem('cm_kas', JSON.stringify(transactions));
+      localStorage.setItem('cm_kas',     JSON.stringify(transactions));
       localStorage.setItem('cm_members', JSON.stringify(members));
-      localStorage.setItem('cm_inv', JSON.stringify(inventoryTxs));
+      localStorage.setItem('cm_inv',     JSON.stringify(inventoryTxs));
+      saveCloud(); // sync ke Supabase (async)
     };
 
     const updateUI = () => {
@@ -242,10 +441,10 @@
           'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp'
         );
         dbAuth.auth.signOut().finally(() => {
-          window.location.href = '';
+          window.location.href = 'login.html';
         });
       } catch(e) {
-        window.location.href = '';
+        window.location.href = 'login.html';
       }
     }
 
@@ -791,22 +990,22 @@
     }
 
     // Jalankan inisialisasi aplikasi pertama kali dibuka
-    updateUI();
+    loadCloudData();
 
   
 // ── SESSION GUARD ────────────────────────────────────────────────────────
 (function proteksiHalaman() {
   try {
     const raw = localStorage.getItem('hm_session');
-    if (!raw) { window.location.replace(''); return; }
+    if (!raw) { window.location.replace('login.html'); return; }
     const s = JSON.parse(raw);
-    if (!s || !s.loginAt) { window.location.replace(''); return; }
+    if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
     if (s.expiresAt && Date.now() > s.expiresAt) {
       localStorage.removeItem('hm_session');
       localStorage.removeItem('hm_komunitas');
-      window.location.replace(''); return;
+      window.location.replace('login.html'); return;
     }
-  } catch(e) { window.location.replace(''); }
+  } catch(e) { window.location.replace('login.html'); }
 })();
 </script>
 
