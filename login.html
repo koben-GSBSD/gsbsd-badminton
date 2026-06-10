@@ -349,8 +349,7 @@
       </div>
 
         <!-- hCaptcha Widget -->
-        <div class="h-captcha" data-sitekey="ee9e03f0-3c9a-4046-ba1a-bd0a32c4d02c" data-theme="dark"></div>
-        <div class="captcha-err" id="captchaErr">⚠️ Selesaikan verifikasi CAPTCHA terlebih dahulu.</div>
+        <div class="h-captcha" data-sitekey="ee9e03f0-3c9a-4046-ba1a-bd0a32c4d02c" data-theme="dark" data-callback="onCaptchaDone" data-expired-callback="onCaptchaExpired"></div>
 
       <button type="submit" class="btn-login" id="loginBtn">
         <div class="spin" id="loginSpin"></div>
@@ -460,6 +459,11 @@ document.getElementById('passwordInput').addEventListener('input', hideError);
 // ════════════════════════════════════════════════════════════════════
 // LOGIN UTAMA — Supabase Auth
 // ════════════════════════════════════════════════════════════════════
+// ── hCaptcha token management ──────────────────────────────────────────
+let _captchaToken = '';
+function onCaptchaDone(token)    { _captchaToken = token; }
+function onCaptchaExpired()      { _captchaToken = ''; }
+
 async function doLogin(e) {
   e.preventDefault();
 
@@ -471,19 +475,18 @@ async function doLogin(e) {
     return;
   }
 
-  // Cek captcha sebelum kirim ke server
-  document.getElementById('captchaErr').classList.remove('show');
-
   setLoading(true);
   hideError();
 
   try {
     // ── STEP 1: Login via Supabase Auth ──────────────────────────
     const { data: authData, error: authError } =
-      await db.auth.signInWithPassword({
+      // Ambil token captcha tepat saat submit
+    const hcToken = _captchaToken || ((typeof hcaptcha !== 'undefined') ? hcaptcha.getResponse() : '');
+    await db.auth.signInWithPassword({
       email,
       password,
-      options: { captchaToken: hcaptcha.getResponse() }
+      options: { captchaToken: hcToken }
     });
 
     if (authError) {
@@ -548,6 +551,7 @@ async function doLogin(e) {
     document.getElementById('passwordInput').value = '';
     document.getElementById('passwordInput').focus();
     // Reset captcha agar bisa dicoba ulang
+    _captchaToken = '';
     if (typeof hcaptcha !== 'undefined') hcaptcha.reset();
     console.error('Login error:', err.message);
   }
