@@ -292,10 +292,7 @@
   .hint-box .hint-val{font-weight:700;color:#f0f0f8;}
 
 
-  /* hCaptcha */
-  .h-captcha{display:flex;justify-content:center;margin:14px 0 4px;}
 </style>
-<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body>
 
@@ -345,12 +342,6 @@
             onclick="togglePassword()" title="Tampilkan password">👁</button>
         </div>
       </div>
-        <div class="h-captcha"
-          data-sitekey="ee9e03f0-3c9a-4046-ba1a-bd0a32c4d02c"
-          data-theme="dark"
-          data-callback="onHCaptchaDone"
-          data-expired-callback="onHCaptchaExpired">
-        </div>
 
       <button type="submit" class="btn-login" id="loginBtn">
         <div class="spin" id="loginSpin"></div>
@@ -460,11 +451,6 @@ document.getElementById('passwordInput').addEventListener('input', hideError);
 // ════════════════════════════════════════════════════════════════════
 // LOGIN UTAMA — Supabase Auth
 // ════════════════════════════════════════════════════════════════════
-// ── hCaptcha ─────────────────────────────────────────────────────────────
-let _hcToken = '';
-function onHCaptchaDone(token)  { _hcToken = token; }
-function onHCaptchaExpired()    { _hcToken = ''; }
-
 async function doLogin(e) {
   e.preventDefault();
 
@@ -482,17 +468,11 @@ async function doLogin(e) {
   try {
     // ── STEP 1: Login via Supabase Auth ──────────────────────────
     const { data: authData, error: authError } =
-      await db.auth.signInWithPassword({
-      email,
-      password,
-      options: { captchaToken: _hcToken }
-    });
+      await db.auth.signInWithPassword({ email, password });
 
     if (authError) {
       // Terjemahkan error Supabase ke bahasa Indonesia
-      if (authError.message.includes('captcha')) {
-        throw new Error('Selesaikan verifikasi hCaptcha terlebih dahulu.');
-      } else if (authError.message.includes('Invalid login credentials')) {
+      if (authError.message.includes('Invalid login credentials')) {
         throw new Error('Email atau password salah. Coba lagi.');
       } else if (authError.message.includes('Email not confirmed')) {
         throw new Error('Email belum dikonfirmasi. Hubungi HOSTMABAR.');
@@ -549,8 +529,6 @@ async function doLogin(e) {
     showError(err.message);
     document.getElementById('passwordInput').value = '';
     document.getElementById('passwordInput').focus();
-    _hcToken = '';
-    if (typeof hcaptcha !== 'undefined') hcaptcha.reset();
     // Reset captcha agar bisa dicoba ulang
     console.error('Login error:', err.message);
   }
