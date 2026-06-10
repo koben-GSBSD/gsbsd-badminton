@@ -10,15 +10,15 @@
     (function() {
       try {
         var raw = localStorage.getItem('hm_session');
-        if (!raw) { window.location.replace('login-cuanmabar.html'); return; }
+        if (!raw) { window.location.replace('login.html'); return; }
         var s = JSON.parse(raw);
-        if (!s || !s.loginAt) { window.location.replace('login-cuanmabar.html'); return; }
+        if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
         if (s.expiresAt && Date.now() > s.expiresAt) {
           localStorage.removeItem('hm_session');
           localStorage.removeItem('hm_komunitas');
-          window.location.replace('login-cuanmabar.html'); return;
+          window.location.replace('login.html'); return;
         }
-      } catch(e) { window.location.replace('login-cuanmabar.html'); }
+      } catch(e) { window.location.replace('login.html'); }
     })();
   </script>
 
@@ -194,12 +194,15 @@
       }
     });
 
-    // ── DATA STATE (localStorage = cache offline) ────────────────────────────
-    let transactions = JSON.parse(localStorage.getItem('cm_kas'))     || defaultKas;
-    let members      = JSON.parse(localStorage.getItem('cm_members')) || defaultMembers;
-    let inventoryTxs = JSON.parse(localStorage.getItem('cm_inv'))     || defaultInv;
+    // ── DATA STATE ──────────────────────────────────────────────────────────
+    // localStorage key HARUS per-user agar data tidak tercampur antar komunitas
+    // Key diset setelah _userId diketahui di loadCloudData()
+    let transactions = [];  // init kosong — akan diisi dari Supabase
+    let members      = [];
+    let inventoryTxs = [];
     let _userId      = null;
     let _isSyncing   = false;
+    let _lsKey       = { kas: 'cm_kas', mem: 'cm_members', inv: 'cm_inv' }; // default, override per user
 
     let activeTab = 'dashboard';
     let editingId = null;
@@ -229,7 +232,6 @@
         }
 
         if (!session) {
-          // Session benar-benar habis → redirect ke login
           showSyncStatus('⚠️ Sesi habis — login ulang', '#ef4444');
           setTimeout(() => {
             localStorage.removeItem('hm_session');
@@ -239,6 +241,14 @@
           return;
         }
         _userId = session.user.id;
+
+        // ── Set localStorage key per-user (namespace isolation) ───────────
+        // Setiap komunitas punya key sendiri → tidak bisa tercampur
+        _lsKey = {
+          kas: 'cm_kas_'  + _userId,
+          mem: 'cm_mem_'  + _userId,
+          inv: 'cm_inv_'  + _userId
+        };
 
         // ── 1. Cek status langganan dari profiles ──────────────────────────
         const { data: prof } = await db
@@ -270,19 +280,46 @@
         if (error) throw error;
 
         if (data && data.length > 0) {
+          // Data ada di cloud — pakai data cloud, simpan ke localStorage user ini
           data.forEach(row => {
-            if (row.data_type === 'kas')     { transactions  = row.payload; localStorage.setItem('cm_kas',     JSON.stringify(transactions)); }
-            if (row.data_type === 'members') { members       = row.payload; localStorage.setItem('cm_members', JSON.stringify(members)); }
-            if (row.data_type === 'inv')     { inventoryTxs  = row.payload; localStorage.setItem('cm_inv',     JSON.stringify(inventoryTxs)); }
+            if (row.data_type === 'kas') {
+              transactions = row.payload;
+              localStorage.setItem(_lsKey.kas, JSON.stringify(transactions));
+            }
+            if (row.data_type === 'members') {
+              members = row.payload;
+              localStorage.setItem(_lsKey.mem, JSON.stringify(members));
+            }
+            if (row.data_type === 'inv') {
+              inventoryTxs = row.payload;
+              localStorage.setItem(_lsKey.inv, JSON.stringify(inventoryTxs));
+            }
           });
-          showSyncStatus('✅ Tersimpan online', '#22c55e');
+          showSyncStatus('✅ Data dimuat', '#22c55e');
         } else {
+          // Akun baru — coba load dari localStorage user ini (offline cache)
+          const lsKas = localStorage.getItem(_lsKey.kas);
+          const lsMem = localStorage.getItem(_lsKey.mem);
+          const lsInv = localStorage.getItem(_lsKey.inv);
+          if (lsKas) transactions  = JSON.parse(lsKas);
+          if (lsMem) members       = JSON.parse(lsMem);
+          if (lsInv) inventoryTxs  = JSON.parse(lsInv);
           showSyncStatus('✅ Data siap', '#22c55e');
+          // Inisialisasi baris di Supabase (payload kosong) agar upsert berikutnya bekerja
           await saveCloud();
         }
         updateUI();
       } catch(e) {
         console.error('loadCloudData:', e.message);
+        // Offline — load dari localStorage user ini jika ada
+        if (_lsKey.kas !== 'cm_kas') { // userId sudah diketahui
+          const lsKas = localStorage.getItem(_lsKey.kas);
+          const lsMem = localStorage.getItem(_lsKey.mem);
+          const lsInv = localStorage.getItem(_lsKey.inv);
+          if (lsKas) transactions  = JSON.parse(lsKas);
+          if (lsMem) members       = JSON.parse(lsMem);
+          if (lsInv) inventoryTxs  = JSON.parse(lsInv);
+        }
         showSyncStatus('📶 Offline — data lokal', '#f59e0b');
         updateUI();
       }
@@ -391,10 +428,12 @@
     // --- 2. HELPERS ---
     const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
     const saveLocal = () => {
-      localStorage.setItem('cm_kas',     JSON.stringify(transactions));
-      localStorage.setItem('cm_members', JSON.stringify(members));
-      localStorage.setItem('cm_inv',     JSON.stringify(inventoryTxs));
-      saveCloud(); // sync ke Supabase (async)
+      // Simpan ke localStorage user-specific (tidak bisa tercampur antar user)
+      localStorage.setItem(_lsKey.kas, JSON.stringify(transactions));
+      localStorage.setItem(_lsKey.mem, JSON.stringify(members));
+      localStorage.setItem(_lsKey.inv, JSON.stringify(inventoryTxs));
+      // Sync ke Supabase
+      saveCloud();
     };
 
     const updateUI = () => {
@@ -441,10 +480,10 @@
           'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp'
         );
         dbAuth.auth.signOut().finally(() => {
-          window.location.href = 'login-cuanmabar.html';
+          window.location.href = 'login.html';
         });
       } catch(e) {
-        window.location.href = 'login-cuanmabar.html';
+        window.location.href = 'login.html';
       }
     }
 
@@ -534,7 +573,7 @@
       let html = `
         <div class="flex justify-between items-center mb-2">
           <h2 class="text-xl font-bold text-white">Buku Kas</h2>
-          <button class="bg-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-300 border border-slate-700 flex items-center">
+          <button onclick="openHistoriModal()" class="bg-slate-800 hover:bg-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-300 border border-slate-700 flex items-center transition-colors">
             <i data-lucide="calendar" class="w-4 h-4 mr-2 text-slate-400"></i> Histori
           </button>
         </div>
@@ -852,6 +891,151 @@
       if(confirm("Hapus log ini?")) { inventoryTxs = inventoryTxs.filter(t => t.id !== id); saveLocal(); updateUI(); }
     }
 
+
+    // ── HISTORI PER BULAN ────────────────────────────────────────────────────
+    function openHistoriModal() {
+      // Kumpulkan semua bulan unik dari data transaksi
+      const monthMap = {};
+      transactions.forEach(tx => {
+        if (!tx.date) return;
+        const [y, m] = tx.date.split('-');
+        const key = `${y}-${m}`;
+        if (!monthMap[key]) monthMap[key] = { year: y, month: m, txs: [] };
+        monthMap[key].txs.push(tx);
+      });
+
+      // Urutkan bulan dari terbaru
+      const months = Object.values(monthMap).sort((a, b) =>
+        `${b.year}-${b.month}`.localeCompare(`${a.year}-${a.month}`)
+      );
+
+      const BULAN = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+      const BULAN_FULL = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+      if (months.length === 0) {
+        document.getElementById('modal-container').innerHTML = `
+          <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
+            <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter text-center">
+              <div class="text-4xl mb-3">📅</div>
+              <p class="text-white font-bold mb-1">Belum Ada Histori</p>
+              <p class="text-slate-400 text-sm mb-4">Catat transaksi pertama untuk mulai melihat histori.</p>
+              <button onclick="closeModal()" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg text-sm font-semibold">Tutup</button>
+            </div>
+          </div>`;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      // Grid kalender bulan
+      const gridItems = months.map(m => {
+        const totalIn  = m.txs.filter(t => t.type === 'in').reduce((s,t) => s + t.amount, 0);
+        const totalOut = m.txs.filter(t => t.type === 'out').reduce((s,t) => s + t.amount, 0);
+        const net = totalIn - totalOut;
+        return `
+          <button onclick="openHistoriDetail('${m.year}','${m.month}')"
+            class="bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/50 hover:border-orange-500/50
+                   rounded-xl p-3 text-left transition-all">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${m.year}</span>
+              <span class="text-xs text-slate-500">${m.txs.length} txn</span>
+            </div>
+            <div class="text-white font-bold text-lg leading-tight">${BULAN_FULL[parseInt(m.month)]}</div>
+            <div class="mt-2 text-xs ${net >= 0 ? 'text-emerald-400' : 'text-red-400'} font-semibold">
+              ${net >= 0 ? '+' : ''}${formatRp(net)}
+            </div>
+          </button>`;
+      }).join('');
+
+      document.getElementById('modal-container').innerHTML = `
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl modal-enter overflow-hidden">
+            <div class="flex justify-between items-center px-5 py-4 border-b border-slate-700">
+              <div>
+                <h3 class="text-white font-bold text-base">📅 Histori Kas</h3>
+                <p class="text-slate-400 text-xs mt-0.5">Pilih bulan untuk melihat transaksi</p>
+              </div>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[70vh]">
+              <div class="grid grid-cols-2 gap-2.5">
+                ${gridItems}
+              </div>
+            </div>
+          </div>
+        </div>`;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openHistoriDetail(year, month) {
+      const BULAN_FULL = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      const label = `${BULAN_FULL[parseInt(month)]} ${year}`;
+      const monthKey = `${year}-${month}`;
+
+      const txs = transactions
+        .filter(tx => tx.date && tx.date.startsWith(monthKey))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const totalIn  = txs.filter(t => t.type === 'in').reduce((s,t) => s + t.amount, 0);
+      const totalOut = txs.filter(t => t.type === 'out').reduce((s,t) => s + t.amount, 0);
+      const net = totalIn - totalOut;
+
+      const txRows = txs.length === 0
+        ? `<p class="text-slate-500 text-sm text-center py-6">Tidak ada transaksi bulan ini.</p>`
+        : txs.map(tx => `
+            <div class="bg-slate-700/50 rounded-lg p-3 border border-slate-600/40">
+              <div class="flex justify-between items-start">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-600 text-slate-300 capitalize">${tx.category}</span>
+                    <span class="text-xs text-slate-500">${tx.date}</span>
+                  </div>
+                  <p class="text-slate-200 text-sm truncate">${tx.description}</p>
+                </div>
+                <div class="font-bold text-sm ml-3 whitespace-nowrap ${tx.type === 'in' ? 'text-emerald-400' : 'text-red-400'}">
+                  ${tx.type === 'in' ? '+' : '-'}${formatRp(tx.amount)}
+                </div>
+              </div>
+            </div>`).join('');
+
+      document.getElementById('modal-container').innerHTML = `
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)openHistoriModal()">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl modal-enter overflow-hidden">
+            <div class="flex justify-between items-center px-5 py-4 border-b border-slate-700">
+              <div class="flex items-center gap-2">
+                <button onclick="openHistoriModal()" class="text-slate-400 hover:text-orange-400 text-lg leading-none mr-1">←</button>
+                <div>
+                  <h3 class="text-white font-bold text-base">${label}</h3>
+                  <p class="text-slate-400 text-xs mt-0.5">${txs.length} transaksi</p>
+                </div>
+              </div>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+            </div>
+
+            <!-- Ringkasan bulan -->
+            <div class="grid grid-cols-3 gap-0 border-b border-slate-700">
+              <div class="px-4 py-3 text-center border-r border-slate-700">
+                <p class="text-xs text-slate-400 mb-1">Pemasukan</p>
+                <p class="text-emerald-400 font-bold text-sm">${formatRp(totalIn)}</p>
+              </div>
+              <div class="px-4 py-3 text-center border-r border-slate-700">
+                <p class="text-xs text-slate-400 mb-1">Pengeluaran</p>
+                <p class="text-red-400 font-bold text-sm">${formatRp(totalOut)}</p>
+              </div>
+              <div class="px-4 py-3 text-center">
+                <p class="text-xs text-slate-400 mb-1">Net</p>
+                <p class="${net >= 0 ? 'text-emerald-400' : 'text-red-400'} font-bold text-sm">${net >= 0 ? '+' : ''}${formatRp(net)}</p>
+              </div>
+            </div>
+
+            <!-- List transaksi -->
+            <div class="p-4 overflow-y-auto max-h-[55vh] space-y-2">
+              ${txRows}
+            </div>
+          </div>
+        </div>`;
+      if (window.lucide) lucide.createIcons();
+    }
+
     function closeModal() { document.getElementById('modal-container').innerHTML = ''; editingId = null; }
 
     // --- 5. RENDER REKAP PRINT OPTIMIZED UNTUK A4 (100% PROPORSIONAL & TIDAK AKAN OVERFLOW/TERPOTONG) ---
@@ -997,15 +1181,15 @@
 (function proteksiHalaman() {
   try {
     const raw = localStorage.getItem('hm_session');
-    if (!raw) { window.location.replace('login-cuanmabar.html'); return; }
+    if (!raw) { window.location.replace('login.html'); return; }
     const s = JSON.parse(raw);
-    if (!s || !s.loginAt) { window.location.replace('login-cuanmabar.html'); return; }
+    if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
     if (s.expiresAt && Date.now() > s.expiresAt) {
       localStorage.removeItem('hm_session');
       localStorage.removeItem('hm_komunitas');
-      window.location.replace('login-cuanmabar.html'); return;
+      window.location.replace('login.html'); return;
     }
-  } catch(e) { window.location.replace('login-cuanmabar.html'); }
+  } catch(e) { window.location.replace('login.html'); }
 })();
 </script>
 
