@@ -8,71 +8,42 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --orange: #F7941D; 
-    --pink: #E8174A;
+    --orange: #F7941D; --pink: #E8174A;
     --grad: linear-gradient(135deg, #F7941D 0%, #E8174A 100%);
-    --bg: #0f0f13; 
-    --surface: #2a2a36; 
-    --card: #1e1e28;
-    --border: #38384a; 
-    --text: #f0f0f8; 
-    --muted: #9898b0;
+    --bg: #0f0f13; --surface: #2a2a36; --card: #1e1e28;
+    --border: #38384a; --text: #f0f0f8; --muted: #9898b0;
     --green: #2ecc71;
+    --cyan: #38bdf8; --cyan-grad: linear-gradient(135deg,#38bdf8 0%,#0ea5e9 100%);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Nunito", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    overflow-x: hidden;
-  }
-
-  /* EFEK BACKGROUND */
+  body { font-family: "Nunito", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
   body::before {
     content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-    background: radial-gradient(ellipse 70% 60% at 20% 20%, rgba(247,148,29,.09) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(232,23,74,.08) 0%, transparent 60%);
+    background:
+      radial-gradient(ellipse 70% 60% at 20% 20%, rgba(247,148,29,.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(232,23,74,.08) 0%, transparent 60%);
   }
-
   a { text-decoration: none; }
   .container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 
   /* ─── NAVIGASI ─── */
-  nav {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 24px 0;
-  }
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
   .nav-logo { display: flex; align-items: center; gap: 12px; }
-  .logo-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    box-shadow: inset 0 0 0 1.5px rgba(247,148,29,.3); background: #0F0F13;
-  }
+  .nav-logo img { height: 48px; width: 48px; object-fit: cover; border-radius: 10px; box-shadow: 0 4px 18px rgba(247,148,29,.3); }
   .nav-logo-text { font-family: "Norwester", sans-serif; font-size: 24px; letter-spacing: 2px; color: #fff; }
-  .btn-login {
-    background: var(--surface); color: #fff; padding: 10px 24px; border-radius: 8px;
-    font-family: "Poppins", sans-serif; font-weight: 700; font-size: 14px;
-    border: 1px solid var(--border); transition: 0.3s;
-  }
-  .btn-login:hover { background: #fff; color: var(--bg); }
 
-  /* ─── HERO SECTION ─── */
+
+  /* ─── HERO ─── */
   .hero { text-align: center; padding: 80px 0 60px; }
   .badge {
     display: inline-block; background: rgba(247,148,29,.15); color: var(--orange);
     padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 800;
     letter-spacing: 1px; margin-bottom: 24px; border: 1px solid rgba(247,148,29,.3);
   }
-  .hero h1 {
-    font-family: "Norwester", sans-serif; font-size: 56px; line-height: 1.1;
-    letter-spacing: 2px; margin-bottom: 24px;
-  }
-  .text-gradient {
-    background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
+  .hero h1 { font-family: "Norwester", sans-serif; font-size: 56px; line-height: 1.1; letter-spacing: 2px; margin-bottom: 24px; }
+  .text-gradient { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   .hero p { font-size: 18px; color: var(--muted); max-width: 600px; margin: 0 auto 40px; }
-  
-  .hero-btns { display: flex; gap: 16px; justify-content: center; }
+  .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
   .btn-primary {
     background: var(--grad); color: #fff; padding: 16px 32px; border-radius: 12px;
     font-family: "Poppins", sans-serif; font-weight: 800; font-size: 16px;
@@ -86,9 +57,96 @@
   }
   .btn-secondary:hover { border-color: var(--muted); }
 
-  /* ─── KEUNGGULAN SECTION ─── */
-  .features { padding: 60px 0; }
+  /* ─── PRODUK CARDS ─── */
+  .products { padding: 70px 0 40px; }
+  .section-label {
+    text-align: center; font-family: "Poppins", sans-serif; font-size: 12px; font-weight: 800;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
+  }
   .section-title { text-align: center; font-family: "Poppins", sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 48px; }
+  .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  .product-card {
+    border-radius: 24px; padding: 36px 32px; position: relative; overflow: hidden;
+    transition: transform 0.25s, box-shadow 0.25s;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .product-card:hover { transform: translateY(-6px); }
+
+  /* Card Mabar — orange/pink */
+  .product-card.mabar {
+    background: linear-gradient(145deg, #1e1e28 0%, #15151f 100%);
+    border: 1.5px solid rgba(247,148,29,.3);
+    box-shadow: 0 8px 40px rgba(247,148,29,.08);
+  }
+  .product-card.mabar:hover { box-shadow: 0 16px 60px rgba(247,148,29,.18); border-color: rgba(247,148,29,.6); }
+  .product-card.mabar::before {
+    content: ""; position: absolute; top: -60px; right: -60px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(247,148,29,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Card Cuan — cyan/blue */
+  .product-card.cuan {
+    background: linear-gradient(145deg, #0f1a2e 0%, #0a1628 100%);
+    border: 1.5px solid rgba(56,189,248,.25);
+    box-shadow: 0 8px 40px rgba(56,189,248,.06);
+  }
+  .product-card.cuan:hover { box-shadow: 0 16px 60px rgba(56,189,248,.15); border-color: rgba(56,189,248,.5); }
+  .product-card.cuan::before {
+    content: ""; position: absolute; top: -60px; right: -60px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(56,189,248,.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .product-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 20px;
+    font-family: "Poppins", sans-serif; font-size: 11px; font-weight: 800;
+    letter-spacing: 1.5px; text-transform: uppercase; width: fit-content;
+  }
+  .mabar .product-badge { background: rgba(247,148,29,.15); color: #FFB347; border: 1px solid rgba(247,148,29,.3); }
+  .cuan  .product-badge { background: rgba(56,189,248,.12); color: var(--cyan); border: 1px solid rgba(56,189,248,.25); }
+
+  .product-title {
+    font-family: "Norwester", sans-serif; font-size: 34px; font-weight: 400;
+    letter-spacing: 2px; line-height: 1; color: #fff;
+  }
+  .product-desc { font-size: 14px; color: var(--muted); line-height: 1.7; flex: 1; }
+
+  .product-features { display: flex; flex-direction: column; gap: 8px; }
+  .product-feat-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #d0d0e8;
+  }
+  .product-feat-item .dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .mabar .dot { background: var(--orange); }
+  .cuan  .dot { background: var(--cyan); }
+
+  .product-cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 24px; border-radius: 12px;
+    font-family: "Poppins", sans-serif; font-size: 14px; font-weight: 800;
+    transition: all 0.2s; margin-top: 4px; border: none; cursor: pointer;
+    text-decoration: none;
+  }
+  .mabar .product-cta {
+    background: var(--grad); color: #fff;
+    box-shadow: 0 6px 20px rgba(232,23,74,.35);
+  }
+  .mabar .product-cta:hover { filter: brightness(1.1); transform: translateY(-2px); }
+  .cuan .product-cta {
+    background: var(--cyan-grad); color: #0f172a;
+    box-shadow: 0 6px 20px rgba(56,189,248,.3);
+  }
+  .cuan .product-cta:hover { filter: brightness(1.08); transform: translateY(-2px); }
+
+  /* ─── FEATURES ─── */
+  .features { padding: 60px 0; }
   .grid-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
   .feat-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 16px;
@@ -99,7 +157,7 @@
   .feat-title { font-family: "Poppins", sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 12px; color: #fff; }
   .feat-desc { font-size: 14px; color: var(--muted); }
 
-  /* ─── PRICING SECTION ─── */
+  /* ─── PRICING ─── */
   .pricing { padding: 80px 0; }
   .grid-pricing { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 32px; }
   .price-card {
@@ -118,51 +176,40 @@
   .price-old { text-decoration: line-through; color: var(--muted); font-size: 16px; font-weight: 600; }
   .price-new { font-family: "Poppins", sans-serif; font-size: 40px; font-weight: 900; color: #fff; line-height: 1; }
   .price-new span { font-size: 16px; font-weight: 500; color: var(--muted); }
-  
   .price-list { list-style: none; margin-bottom: 32px; }
   .price-list li { font-size: 14px; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
   .price-list li.disabled { color: #5a5a72; }
   .price-list li.disabled::before { content: "❌"; font-size: 12px; }
   .price-list li:not(.disabled)::before { content: "✅"; font-size: 12px; }
-  
-  /* EXCLUSIVE BANNER */
-  .exclusive-banner {
-    background: linear-gradient(135deg, rgba(247,148,29,.1) 0%, rgba(232,23,74,.1) 100%);
-    border: 1px dashed var(--orange); border-radius: 20px; padding: 32px;
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px;
-  }
-  .exc-text h3 { font-family: "Norwester", sans-serif; font-size: 28px; letter-spacing: 1px; color: #fff; margin-bottom: 8px; }
-  .exc-text p { font-size: 14px; color: var(--muted); max-width: 600px; }
-  .btn-ig {
-    background: #E1306C; color: #fff; padding: 14px 28px; border-radius: 12px;
-    font-family: "Poppins", sans-serif; font-weight: 700; font-size: 14px; transition: 0.2s;
-  }
-  .btn-ig:hover { filter: brightness(1.1); 
-  }
-  .btn-wa {
-    background: #25D366; color: #fff; padding: 14px 28px; border-radius: 12px;
-    font-family: "Poppins", sans-serif; font-weight: 700; font-size: 14px; transition: 0.2s;
-    display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
-  }
-  .btn-wa:hover { filter: brightness(1.1); }
 
-  /* ─── FOOTER ─── */
-  footer { text-align: center; padding: 40px 0; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
-  
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    .hero h1 { font-size: 40px; }
-    .hero-btns { flex-direction: column; }
-    .exclusive-banner { flex-direction: column; text-align: center; }
+  /* CUANMABAR ADDON CARD */
+  .cuan-addon {
+    background: linear-gradient(135deg, #0f1a2e 0%, #0a1628 100%);
+    border: 1.5px solid rgba(56,189,248,.3);
+    border-radius: 20px; padding: 40px 32px;
+    box-shadow: 0 8px 40px rgba(56,189,248,.08);
+    position: relative; overflow: hidden;
   }
-  /* ─── SIMULASI INVESTASI ─── */
+  .cuan-addon::before {
+    content: "ADD-ON"; position: absolute; top: 16px; right: -28px;
+    background: var(--cyan-grad); color: #0f172a;
+    font-size: 10px; font-weight: 900; font-family: "Poppins", sans-serif;
+    padding: 6px 40px; transform: rotate(45deg); letter-spacing: 1px;
+  }
+  .cuan-addon::after {
+    content: ""; position: absolute; bottom: -40px; right: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(56,189,248,.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* SIMULATION */
   .sim-container {
     position: relative; width: 100%; max-width: 500px;
-    margin: 10px auto 40px; /* Posisi di tengah dengan jarak */
+    margin: 10px auto 40px;
     background: linear-gradient(135deg, #1e1e28 0%, #15151e 100%);
     border: 1px solid var(--border); border-radius: 24px;
-    padding: 40px 30px; box-shadow: 0 20px 50px rgba(247,148,29,0.1);
-    overflow: hidden;
+    padding: 40px 30px; box-shadow: 0 20px 50px rgba(247,148,29,0.1); overflow: hidden;
   }
   .sim-container::before {
     content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
@@ -170,27 +217,16 @@
                 radial-gradient(circle at 90% 90%, rgba(232,23,74,0.1) 0%, transparent 50%);
   }
   .sim-content { position: relative; z-index: 1; }
-  .sim-headline {
-    text-align: center; font-family: 'Poppins', sans-serif; font-weight: 800;
-    font-size: 22px; line-height: 1.3; margin-bottom: 12px;
-  }
-  .sim-headline span {
-    background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 26px;
-  }
+  .sim-headline { text-align: center; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 22px; line-height: 1.3; margin-bottom: 12px; }
+  .sim-headline span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 26px; }
   .sim-sub { text-align: center; font-size: 14px; color: #b0b0c8; margin-bottom: 30px; }
-  .sim-calc-box {
-    background: #1e1e28; border: 1px solid var(--border); border-radius: 16px;
-    padding: 24px 20px 20px; position: relative;
-  }
+  .sim-calc-box { background: #1e1e28; border: 1px solid var(--border); border-radius: 16px; padding: 24px 20px 20px; position: relative; }
   .sim-calc-badge {
     position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
     background: var(--grad); color: #fff; padding: 4px 16px; border-radius: 20px;
     font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1px;
   }
-  .sim-step {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 0; border-bottom: 1px dashed var(--border);
-  }
+  .sim-step { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--border); }
   .sim-label { font-size: 13px; color: #b0b0c8; width: 60%; line-height: 1.4; }
   .sim-label b { color: #fff; }
   .sim-val { font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 700; color: #fff; text-align: right; }
@@ -203,6 +239,34 @@
   .sim-final h2 { font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 900; color: #fff; line-height: 1; margin-bottom: 4px; }
   .sim-final span { font-size: 14px; color: #b0b0c8; font-weight: 500; }
   @keyframes pulseSim { 0% { box-shadow: 0 0 0 0 rgba(247,148,29,0.4); } 70% { box-shadow: 0 0 0 15px rgba(247,148,29,0); } 100% { box-shadow: 0 0 0 0 rgba(247,148,29,0); } }
+
+  /* BANNERS */
+  .exclusive-banner {
+    background: linear-gradient(135deg, rgba(247,148,29,.1) 0%, rgba(232,23,74,.1) 100%);
+    border: 1px dashed var(--orange); border-radius: 20px; padding: 32px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px;
+  }
+  .exc-text h3 { font-family: "Norwester", sans-serif; font-size: 28px; letter-spacing: 1px; color: #fff; margin-bottom: 8px; }
+  .exc-text p { font-size: 14px; color: var(--muted); max-width: 600px; }
+  .btn-ig { background: #E1306C; color: #fff; padding: 14px 28px; border-radius: 12px; font-family: "Poppins", sans-serif; font-weight: 700; font-size: 14px; transition: 0.2s; }
+  .btn-ig:hover { filter: brightness(1.1); }
+  .btn-wa {
+    background: #25D366; color: #fff; padding: 14px 28px; border-radius: 12px;
+    font-family: "Poppins", sans-serif; font-weight: 700; font-size: 14px; transition: 0.2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-wa:hover { filter: brightness(1.1); }
+
+  /* FOOTER */
+  footer { text-align: center; padding: 40px 0; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 40px; }
+    .hero-btns { flex-direction: column; }
+    .product-grid { grid-template-columns: 1fr; }
+    .exclusive-banner { flex-direction: column; text-align: center; }
+  }
 </style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-SRPN7KZ7FC"></script>
@@ -216,27 +280,72 @@
 <body>
 
 <div class="container">
-  
+
+  <!-- NAVIGASI -->
   <nav>
     <div class="nav-logo">
-      <img src="logo.png" alt="Logo HostMabar" style="height: 40px; width: auto; object-fit: contain;">
+      <img src="logo.png" alt="HOSTMABAR"/>
       <div class="nav-logo-text">HOSTMABAR</div>
     </div>
-    <a href="login.html" class="btn-login">Login Pengurus</a>
+
   </nav>
 
+  <!-- HERO -->
   <section class="hero">
     <div class="badge">#1 Mabar Management System</div>
     <h1>Bikin Mabar Makin Profesional & Adil.<br><span class="text-gradient">Bebas Pusing!</span></h1>
-    <p>Manajemen permainan pertama di Indonesia yang paham banget kebutuhan Host & Player di lapangan. Gak ada lagi cerita pemain yang tertinggal atau ke-skip main.</p>
+    <p>Manajemen komunitas badminton pertama di Indonesia yang paham kebutuhan Host, Player, dan Bendahara di lapangan.</p>
     <div class="hero-btns">
-      <a href="#harga" class="btn-primary">Lihat Paket Harga</a>
+      <a href="#produk" class="btn-primary">🏸 Lihat Semua Produk</a>
       <a href="login.html" class="btn-secondary">Coba Login Sekarang</a>
     </div>
   </section>
 
+  <!-- PRODUK UTAMA -->
+  <section class="products" id="produk">
+    <div class="section-label">Ekosistem HOSTMABAR</div>
+    <div class="section-title">Dua Produk, Satu Komunitas</div>
+
+    <div class="product-grid">
+
+      <!-- MABAR TRACKER -->
+      <div class="product-card mabar">
+        <div class="product-badge">🏸 Mabar Tracker</div>
+        <div class="product-title">HOSTMABAR</div>
+        <div class="product-desc">
+          Aplikasi manajemen sesi mabar lengkap untuk Host & Pengurus komunitas. Kelola pemain, catat skor, lihat leaderboard, semua dalam satu layar.
+        </div>
+        <div class="product-features">
+          <div class="product-feat-item"><div class="dot"></div>Input & tracking skor real-time</div>
+          <div class="product-feat-item"><div class="dot"></div>Leaderboard otomatis & score differential</div>
+          <div class="product-feat-item"><div class="dot"></div>Counter jumlah main per pemain</div>
+          <div class="product-feat-item"><div class="dot"></div>Download laporan PDF</div>
+        </div>
+        <a href="login.html" class="product-cta">Masuk sebagai Pengurus →</a>
+      </div>
+
+      <!-- CUANMABAR -->
+      <div class="product-card cuan">
+        <div class="product-badge">💰 Keuangan Komunitas</div>
+        <div class="product-title">CUANMABAR</div>
+        <div class="product-desc">
+          Aplikasi pencatatan keuangan komunitas khusus untuk Bendahara & Owner. Kelola kas, iuran member, dan inventori shuttlecock secara online dan terpisah.
+        </div>
+        <div class="product-features">
+          <div class="product-feat-item"><div class="dot"></div>Pencatatan kas masuk & keluar</div>
+          <div class="product-feat-item"><div class="dot"></div>Monitoring iuran member</div>
+          <div class="product-feat-item"><div class="dot"></div>Manajemen inventori shuttlecock</div>
+          <div class="product-feat-item"><div class="dot"></div>Data tersimpan online per komunitas</div>
+        </div>
+        <a href="login-cuanmabar.html" class="product-cta">Masuk sebagai Bendahara →</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- KEUNGGULAN -->
   <section class="features">
-    <div class="section-title">Kenapa Pilih HostMabar?</div>
+    <div class="section-title">Kenapa Pilih HOSTMABAR?</div>
     <div class="grid-features">
       <div class="feat-card">
         <div class="feat-icon">📱</div>
@@ -261,17 +370,15 @@
     </div>
   </section>
 
+  <!-- PRICING -->
   <section class="pricing" id="harga">
     <div class="section-title">Investasi Komunitas Anda</div>
-    
+
     <div class="grid-pricing">
-      
       <div class="price-card">
         <div class="price-title">PAKET TRIAL</div>
         <div class="price-subtitle">Cocok untuk komunitas kecil bermain santai 1 lapangan.</div>
-        <div class="price-box">
-          <div class="price-new">FREE</div>
-        </div>
+        <div class="price-box"><div class="price-new">FREE</div></div>
         <ul class="price-list">
           <li>Maksimal 4 Pemain</li>
           <li>Maksimal 8 Pertandingan</li>
@@ -314,29 +421,46 @@
       </div>
     </div>
 
+    <!-- CUANMABAR ADD-ON -->
+    <div class="cuan-addon" style="margin-bottom: 32px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;position:relative;z-index:1;">
+        <div>
+          <div style="font-family:'Poppins',sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:8px;">💰 Add-on Keuangan</div>
+          <div style="font-family:'Norwester',sans-serif;font-size:28px;letter-spacing:2px;color:#fff;margin-bottom:8px;">CUANMABAR</div>
+          <div style="font-size:14px;color:var(--muted);max-width:500px;margin-bottom:16px;">Tambahkan fitur pencatatan keuangan komunitas untuk Bendahara. Data online, aman, dan terpisah dari akses pengurus mabar.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <div style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--cyan);font-weight:700;">✅ Kas & Arus Dana</div>
+            <div style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--cyan);font-weight:700;">✅ Iuran Member</div>
+            <div style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--cyan);font-weight:700;">✅ Inventori Shuttlecock</div>
+            <div style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--cyan);font-weight:700;">✅ Data Online</div>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:#fff;">+49k<span style="font-size:14px;font-weight:500;color:var(--muted);">/bulan</span></div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">add-on ke paket manapun</div>
+          <a href="login-cuanmabar.html" style="display:inline-block;padding:12px 24px;background:var(--cyan-grad);color:#0f172a;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:800;box-shadow:0 6px 20px rgba(56,189,248,.3);">Coba CUANMABAR →</a>
+        </div>
+      </div>
+    </div>
+
     <!-- SIMULASI INVESTASI -->
     <div class="sim-container">
       <div class="sim-content">
         <div class="sim-headline">Hanya Seharga <br><span>1 Slop Shuttlecock!</span></div>
         <div class="sim-sub">Komunitas dapat bertumbuh profesional, semua pemain mendapat kesempatan bermain adil dan tercatat.</div>
-        
         <div class="sim-calc-box">
           <div class="sim-calc-badge">SIMULASI INVESTASI</div>
-          
           <div class="sim-step">
             <div class="sim-label">Biaya Paket<br><b>Mabar Pro</b></div>
             <div class="sim-val">Rp 149.000<br><span style="font-size: 11px; color: #b0b0c8; font-weight: normal;">/ bulan</span></div>
           </div>
-          
           <div class="sim-step">
             <div class="sim-label">Jika seminggu 2x main<br><b>(Dibagi 8x mabar)</b></div>
             <div class="sim-val" style="color: #FFB347;">Rp 18.625<br><span style="font-size: 11px; color: #b0b0c8; font-weight: normal;">/ sesi mabar</span></div>
           </div>
-
           <div class="sim-step" style="border-bottom: none;">
             <div class="sim-label">Jika bermain di<br><b>3 Lapangan</b></div>
           </div>
-
           <div class="sim-final">
             <p>Biaya Investasi Hanya</p>
             <h2>6 Ribuan</h2>
@@ -346,6 +470,7 @@
       </div>
     </div>
 
+    <!-- EXCLUSIVE BANNER -->
     <div class="exclusive-banner">
       <div class="exc-text">
         <h3>🏆 Mabar Exclusive Koben</h3>
@@ -360,8 +485,7 @@
         <h3>💬 Chat lebih detail</h3>
         <p>Mau tanya-tanya lebih detail atau custom tampilan Hostmabar khusus untuk komunitas kamu, langsung aja klik tombol chat. Koben akan dengan senang hati membantu komunitas-komunitas untuk bertumbuh bersama.</p>
       </div>
-      <!-- Ganti angka 6281234567890 dengan nomor WhatsApp asli Anda -->
-      <a href="https://wa.me/62895704016969?text=Halo+HOSTMABAR%2C+saya+ingin+info+detail+Custom+Version'; target="_blank" class="btn-wa">
+      <a href="https://wa.me/62895704016969?text=Halo+HOSTMABAR%2C+saya+ingin+info+detail+Custom+Version" target="_blank" class="btn-wa">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
           <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.005-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
         </svg>
@@ -372,10 +496,9 @@
   </section>
 
   <footer>
-    <p>Dikembangkan oleh <b>Koben.gsbsd</b> dari dan untuk komunitas<br>&copy; 2026 HostMabar.com</p>
+    <p>Dikembangkan oleh <b>Koben.gsbsd</b> dari dan untuk komunitas<br>&copy; 2026 HOSTMABAR.com</p>
   </footer>
 
 </div>
-
 </body>
 </html>
