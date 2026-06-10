@@ -528,9 +528,7 @@ async function doLogin(e) {
     setLoading(false);
     showError(err.message);
     document.getElementById('passwordInput').value = '';
-    document.getElementById('passwordInput').focus();
-    // Reset captcha agar bisa dicoba ulang
-    console.error('Login error:', err.message);
+    document.getElementById('passwordInput').focus();    console.error('Login error:', err.message);
   }
 }
 
