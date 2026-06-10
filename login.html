@@ -290,7 +290,14 @@
     font-family:"Poppins",sans-serif;
   }
   .hint-box .hint-val{font-weight:700;color:#f0f0f8;}
+
+  /* hCaptcha */
+  .h-captcha { display:flex; justify-content:center; margin:14px 0 6px; }
+  .captcha-err { display:none; font-size:12px; color:#fca5a5; text-align:center;
+    margin-bottom:8px; font-weight:600; }
+  .captcha-err.show { display:block; }
 </style>
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body>
 
@@ -340,6 +347,10 @@
             onclick="togglePassword()" title="Tampilkan password">👁</button>
         </div>
       </div>
+
+        <!-- hCaptcha Widget -->
+        <div class="h-captcha" data-sitekey="ee9e03f0-3c9a-4046-ba1a-bd0a32c4d02c" data-theme="dark"></div>
+        <div class="captcha-err" id="captchaErr">⚠️ Selesaikan verifikasi CAPTCHA terlebih dahulu.</div>
 
       <button type="submit" class="btn-login" id="loginBtn">
         <div class="spin" id="loginSpin"></div>
@@ -460,6 +471,14 @@ async function doLogin(e) {
     return;
   }
 
+  // Validasi hCaptcha
+  const captchaRes = hcaptcha.getResponse();
+  if (!captchaRes) {
+    document.getElementById('captchaErr').classList.add('show');
+    return;
+  }
+  document.getElementById('captchaErr').classList.remove('show');
+
   setLoading(true);
   hideError();
 
@@ -527,6 +546,8 @@ async function doLogin(e) {
     showError(err.message);
     document.getElementById('passwordInput').value = '';
     document.getElementById('passwordInput').focus();
+    // Reset captcha agar bisa dicoba ulang
+    if (typeof hcaptcha !== 'undefined') hcaptcha.reset();
     console.error('Login error:', err.message);
   }
 }
