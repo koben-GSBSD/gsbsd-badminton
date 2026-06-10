@@ -353,7 +353,13 @@
 const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
 const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
 const { createClient } = window.supabase;
-const db = createClient(SUPA_URL, SUPA_KEY);
+const db = createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false
+  }
+});
 
 // ════════════════════════════════════════════════════════════════════
 // HELPER UI
