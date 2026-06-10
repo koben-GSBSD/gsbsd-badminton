@@ -471,12 +471,7 @@ async function doLogin(e) {
     return;
   }
 
-  // Validasi hCaptcha
-  const captchaRes = hcaptcha.getResponse();
-  if (!captchaRes) {
-    document.getElementById('captchaErr').classList.add('show');
-    return;
-  }
+  // Cek captcha sebelum kirim ke server
   document.getElementById('captchaErr').classList.remove('show');
 
   setLoading(true);
@@ -485,11 +480,17 @@ async function doLogin(e) {
   try {
     // ── STEP 1: Login via Supabase Auth ──────────────────────────
     const { data: authData, error: authError } =
-      await db.auth.signInWithPassword({ email, password });
+      await db.auth.signInWithPassword({
+      email,
+      password,
+      options: { captchaToken: hcaptcha.getResponse() }
+    });
 
     if (authError) {
       // Terjemahkan error Supabase ke bahasa Indonesia
-      if (authError.message.includes('Invalid login credentials')) {
+      if (authError.message.includes('captcha')) {
+        throw new Error('Selesaikan verifikasi CAPTCHA terlebih dahulu.');
+      } else if (authError.message.includes('Invalid login credentials')) {
         throw new Error('Email atau password salah. Coba lagi.');
       } else if (authError.message.includes('Email not confirmed')) {
         throw new Error('Email belum dikonfirmasi. Hubungi HOSTMABAR.');
