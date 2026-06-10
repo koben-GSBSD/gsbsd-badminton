@@ -473,7 +473,7 @@ async function doLogin(e) {
       paket    : profile.paket_langganan,
       redirect : profile.redirect_url,
       loginAt  : Date.now(),
-      expiresAt: Date.now() + (8 * 60 * 60 * 1000) // 8 jam
+      expiresAt: Date.now() + (4 * 60 * 60 * 1000) // 4 jam
     };
     localStorage.setItem('hm_session',   JSON.stringify(sessionPayload));
     localStorage.setItem('hm_komunitas', JSON.stringify(sessionPayload));
@@ -521,7 +521,7 @@ async function checkActiveSession() {
     const sp = {
       redirect : profile.redirect_url,
       loginAt  : Date.now(),
-      expiresAt: Date.now() + (8 * 60 * 60 * 1000)
+      expiresAt: Date.now() + (4 * 60 * 60 * 1000)
     };
     localStorage.setItem('hm_session',   JSON.stringify(sp));
     localStorage.setItem('hm_komunitas', JSON.stringify(sp));
