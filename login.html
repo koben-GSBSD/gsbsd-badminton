@@ -290,6 +290,8 @@
     font-family:"Poppins",sans-serif;
   }
   .hint-box .hint-val{font-weight:700;color:#f0f0f8;}
+
+
 </style>
 </head>
 <body>
@@ -381,7 +383,13 @@ const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
 
 // Buat client dengan nama 'db' agar tidak bentrok dengan variable 'supabase' dari CDN
 const { createClient } = window.supabase;
-const db = createClient(SUPA_URL, SUPA_KEY);
+const db = createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false
+  }
+});
 
 // ════════════════════════════════════════════════════════════════════
 // HELPER UI
@@ -478,7 +486,7 @@ async function doLogin(e) {
     // ── STEP 2: Ambil profil komunitas dari tabel profiles ────────
     const { data: profile, error: profileError } = await db
       .from('profiles')
-      .select('username_komunitas, paket_langganan, redirect_url, tanggal_kedaluwarsa')
+      .select('username_komunitas, paket_langganan, redirect_url, tanggal_kedaluarsa')
       .eq('id', userId)
       .maybeSingle();
 
@@ -488,8 +496,8 @@ async function doLogin(e) {
     }
 
     // ── STEP 3: Cek masa kedaluwarsa ──────────────────────────────
-    if (profile.tanggal_kedaluwarsa) {
-      const expiry = new Date(profile.tanggal_kedaluwarsa);
+    if (profile.tanggal_kedaluarsa) {
+      const expiry = new Date(profile.tanggal_kedaluarsa);
       expiry.setHours(23, 59, 59); // sampai akhir hari kedaluwarsa
       if (new Date() > expiry) {
         await db.auth.signOut();
@@ -512,6 +520,8 @@ async function doLogin(e) {
     localStorage.setItem('hm_komunitas', JSON.stringify(sessionPayload));
 
     // ── STEP 5: Sukses → redirect ─────────────────────────────────
+    // Supabase sudah simpan session otomatis di localStorage setelah signInWithPassword
+    // Tidak perlu manual set — langsung redirect
     showSuccess(profile.redirect_url);
 
   } catch (err) {
@@ -519,6 +529,7 @@ async function doLogin(e) {
     showError(err.message);
     document.getElementById('passwordInput').value = '';
     document.getElementById('passwordInput').focus();
+    // Reset captcha agar bisa dicoba ulang
     console.error('Login error:', err.message);
   }
 }
@@ -537,15 +548,15 @@ async function checkActiveSession() {
     // Ambil redirect_url dari profil
     const { data: profile } = await db
       .from('profiles')
-      .select('redirect_url, tanggal_kedaluwarsa')
+      .select('redirect_url, tanggal_kedaluarsa')
       .eq('id', userId)
       .maybeSingle();
 
     if (!profile || !profile.redirect_url) return;
 
     // Cek kedaluwarsa
-    if (profile.tanggal_kedaluwarsa) {
-      const expiry = new Date(profile.tanggal_kedaluwarsa);
+    if (profile.tanggal_kedaluarsa) {
+      const expiry = new Date(profile.tanggal_kedaluarsa);
       expiry.setHours(23, 59, 59);
       if (new Date() > expiry) {
         await db.auth.signOut();
