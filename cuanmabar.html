@@ -10,15 +10,15 @@
     (function() {
       try {
         var raw = localStorage.getItem('hm_session');
-        if (!raw) { window.location.replace('login.html'); return; }
+        if (!raw) { window.location.replace('login-cuanmabar.html'); return; }
         var s = JSON.parse(raw);
-        if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
+        if (!s || !s.loginAt) { window.location.replace('login-cuanmabar.html'); return; }
         if (s.expiresAt && Date.now() > s.expiresAt) {
           localStorage.removeItem('hm_session');
           localStorage.removeItem('hm_komunitas');
-          window.location.replace('login.html'); return;
+          window.location.replace('login-cuanmabar.html'); return;
         }
-      } catch(e) { window.location.replace('login.html'); }
+      } catch(e) { window.location.replace('login-cuanmabar.html'); }
     })();
   </script>
 
@@ -441,10 +441,10 @@
           'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp'
         );
         dbAuth.auth.signOut().finally(() => {
-          window.location.href = 'login.html';
+          window.location.href = 'login-cuanmabar.html';
         });
       } catch(e) {
-        window.location.href = 'login.html';
+        window.location.href = 'login-cuanmabar.html';
       }
     }
 
@@ -997,15 +997,15 @@
 (function proteksiHalaman() {
   try {
     const raw = localStorage.getItem('hm_session');
-    if (!raw) { window.location.replace('login.html'); return; }
+    if (!raw) { window.location.replace('login-cuanmabar.html'); return; }
     const s = JSON.parse(raw);
-    if (!s || !s.loginAt) { window.location.replace('login.html'); return; }
+    if (!s || !s.loginAt) { window.location.replace('login-cuanmabar.html'); return; }
     if (s.expiresAt && Date.now() > s.expiresAt) {
       localStorage.removeItem('hm_session');
       localStorage.removeItem('hm_komunitas');
-      window.location.replace('login.html'); return;
+      window.location.replace('login-cuanmabar.html'); return;
     }
-  } catch(e) { window.location.replace('login.html'); }
+  } catch(e) { window.location.replace('login-cuanmabar.html'); }
 })();
 </script>
 
