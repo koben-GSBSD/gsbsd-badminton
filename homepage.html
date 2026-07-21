@@ -40,6 +40,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdro
 .btn-ghost{color:var(--text);background:transparent;border:1.5px solid var(--border)}
 .btn-ghost:hover{border-color:var(--text)}
 .hamburger{display:none;background:none;border:none;font-size:24px;cursor:pointer;color:var(--text)}
+.btn-mobile-login{display:none}
 
 /* ===== Hero ===== */
 .hero{padding:88px 0 72px;background:
@@ -164,9 +165,37 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:48px
   .nav-links{display:none;position:absolute;top:68px;left:0;right:0;background:var(--surface);flex-direction:column;padding:20px 24px;border-bottom:1px solid var(--border);gap:16px}
   .nav-links.open{display:flex}
   .hamburger{display:block}
-  .nav-cta .btn-ghost{display:none}
+  /* Header mobile/tablet: hanya 1 tombol (Login) + hamburger — sebelumnya
+     "Masuk" tersembunyi total (btn-ghost{display:none}) sehingga tidak
+     terjangkau sama sekali di HP. Coba Gratis tetap sangat menonjol di
+     hero, pricing & CTA band, jadi aman disederhanakan di header. */
+  .nav-cta .btn-ghost, .nav-cta .btn-primary{display:none}
+  .nav-cta .btn-mobile-login{display:inline-block}
   .mockup-float{left:0}
   .mockup-float2{right:0}
+
+  /* Perbesar teks kecil supaya tetap nyaman dibaca di HP & tablet
+     (sebelumnya 12-14px terasa terlalu kecil) */
+  body{font-size:15px}
+  .eyebrow{font-size:13.5px}
+  .nav-links a{font-size:16px}
+  .hero-badge{font-size:14px}
+  .hero p{font-size:16px}
+  .hero-stats div span{font-size:14px}
+  .sport-card p{font-size:14.5px}
+  .feature-card h3{font-size:17px}
+  .feature-card p{font-size:15px}
+  .proof-stat span{font-size:14px}
+  .testi p{font-size:15px}
+  .testi .who b{font-size:15px}
+  .testi .who span{font-size:13px}
+  .price-card .desc{font-size:14px}
+  .price-card li{font-size:15px}
+  .price-card .amount small{font-size:15px}
+  .compare table{font-size:14.5px}
+  details p{font-size:15px}
+  .footer-grid p,.footer-grid a{font-size:15px}
+  .footer-bottom{font-size:14px}
 }
 </style>
 </head>
@@ -184,6 +213,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:48px
     <div class="nav-cta">
       <a class="btn btn-ghost" href="loginpage.html">Masuk</a>
       <a class="btn btn-primary" href="https://wa.me/62895704016969?text=Hallo+Koben%2C+saya+tertarik+FREE+TRIAL+Hostmabar%21" target="_blank" rel="noopener">Coba Gratis</a>
+      <a class="btn btn-primary btn-mobile-login" href="loginpage.html">Login</a>
       <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
     </div>
   </div>
