@@ -20,11 +20,11 @@
 body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:70px}
 .wrap{max-width:860px;margin:0 auto;padding:0 16px}
 
-/* ── Demo strip ── */
-.demo-strip{background:#FFFBEB;border-bottom:1px solid #FDE68A}
+/* ── Strip navigasi cabang ── */
+.demo-strip{background:var(--surface);border-bottom:1px solid var(--border)}
 .demo-inner{display:flex;align-items:center;gap:10px;padding:8px 16px;flex-wrap:wrap;max-width:860px;margin:0 auto}
-.demo-inner span{font-size:11px;font-weight:800;color:#92400E}
-.pill{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:99px;border:1.5px solid #FDE68A;background:#fff;cursor:pointer;font-family:inherit;color:var(--muted)}
+.demo-inner span{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.pill{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--muted)}
 .pill.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* ── Header ── */
@@ -226,12 +226,12 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 </head>
 <body>
 
-<!-- Strip demo: ganti cabang -->
+<!-- Strip navigasi cabang -->
 <div class="demo-strip">
   <div class="demo-inner">
-    <span>DEMO — ganti cabang:</span>
+    <span>Cabang:</span>
     <div id="pills"></div>
-    <a href="mabarpro.html" style="margin-left:auto;font-size:11px;font-weight:800;color:#92400E">← Dashboard</a>
+    <a href="mabarpro.html" style="margin-left:auto;font-size:11px;font-weight:800;color:var(--accent)">← Dashboard</a>
   </div>
 </div>
 
@@ -245,7 +245,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <div class="header-sub" id="headerSub">Sports Community · Badminton</div>
     </div>
     <div class="header-right">
-      <div class="badge-pro">⚡ PRO</div>
+      <div class="badge-pro" id="pakBadge">⚡ PRO</div>
       <button class="btn btn-secondary btn-sm btn-logout" onclick="logout()">🚪 Logout</button>
     </div>
   </div>
@@ -269,7 +269,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
         </div>
         <div style="flex:1;min-width:170px">
           <label>Nama Komunitas</label>
-          <input type="text" id="commName" placeholder="GSBSD BSD City" oninput="updateComm()">
+          <input type="text" id="commName" placeholder="Nama komunitas kamu" oninput="updateComm()">
         </div>
         <div style="flex:1;min-width:170px">
           <label>Logo Komunitas</label>
@@ -383,7 +383,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 
     <div class="pdf-banner">
       <div><h3>📄 Download Laporan PDF</h3><p>Leaderboard + Riwayat · Siap posting Instagram</p></div>
-      <button class="btn btn-pdf" onclick="dummy('Print / Save PDF')">🖨️ Print / Save PDF</button>
+      <button class="btn btn-pdf" onclick="printMatchReport()">🖨️ Print / Save PDF</button>
     </div>
 
     <div class="card">
@@ -412,7 +412,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
     </div>
     <div class="pdf-banner">
       <div><h3>📄 Download Laporan PDF</h3><p>Leaderboard + Riwayat · logo & nama komunitas ikut tercetak</p></div>
-      <button class="btn btn-pdf" onclick="dummy('Print / Save PDF')">🖨️ Print / Save PDF</button>
+      <button class="btn btn-pdf" onclick="printBoardReport()">🖨️ Print / Save PDF</button>
     </div>
   </div>
 
@@ -536,24 +536,11 @@ const levelOrder = c => (LEVELS.find(x=>x.code===c)||{order:0}).order;
 const levelLabel = c => (LEVELS.find(x=>x.code===c)||{label:c}).label;
 
 // ═══════════════════════════════════════════════════════════════════
-// DATABASE MEMBER — permanen, lintas cabang. Live: cloud per komunitas.
+// DATABASE MEMBER — permanen, lintas cabang, disimpan per akun (localStorage).
 // members = [{name, level, joined, hadir:[tanggal sesi yang dihadiri]}]
+// Diisi ulang dari data tersimpan tepat setelah __appData siap (lihat bawah).
 // ═══════════════════════════════════════════════════════════════════
-const dA = n => new Date(Date.now()-n*864e5).toISOString().split('T')[0];
-const MEMBERS = [
-  {name:'Andri',  level:'Inter', joined:dA(320), hadir:[dA(2),dA(9),dA(16),dA(23),dA(30),dA(37),dA(44),dA(51)]},
-  {name:'Bimo',   level:'Inter', joined:dA(300), hadir:[dA(2),dA(9),dA(16),dA(30),dA(44),dA(58)]},
-  {name:'Dewi',   level:'Beg+',  joined:dA(400), hadir:[dA(2),dA(9),dA(16),dA(23),dA(30),dA(37)]},
-  {name:'Rina',   level:'Beg',   joined:dA(150), hadir:[dA(2),dA(9),dA(23),dA(37),dA(51)]},
-  {name:'Sasha',  level:'Beg+',  joined:dA(200), hadir:[dA(2),dA(16),dA(30),dA(44)]},
-  {name:'Gilang', level:'Inter', joined:dA(280), hadir:[dA(2),dA(51),dA(65)]},
-  {name:'Hana',   level:'Beg',   joined:dA(90),  hadir:[dA(2),dA(23)]},
-  {name:'Fajar',  level:'New',   joined:dA(12),  hadir:[dA(2),dA(9)]},
-  {name:'Kirana', level:'New',   joined:dA(8),   hadir:[dA(4)]},
-  {name:'Indra',  level:'Beg+',  joined:dA(250), hadir:[dA(44),dA(58),dA(72)]},
-  {name:'Joko',   level:'Beg',   joined:dA(180), hadir:[dA(65),dA(79)]},
-  {name:'Lukman', level:'Inter', joined:dA(500), hadir:[dA(95),dA(110)]}
-];
+const MEMBERS = [];
 function mLast(m){ return m.hadir.length ? m.hadir.reduce((a,b)=>a>b?a:b) : m.joined; }
 // Definisi status (Koben, Juli 2026):
 // Rutin = ≥4 kehadiran dalam 30 hari · Aktif = hadir dalam 60 hari terakhir
@@ -616,33 +603,62 @@ const PAIR_MODES = {
     info:'Rank-based — pasangan disusun dari peringkat sementara: peringkat 1 & 4 melawan 2 & 3, jadi match makin seimbang seiring sesi berjalan. Ronde-ronde awal ≈ acak.' }
 };
 
-// ── STATE per cabang (in-memory dummy; live: localStorage namespaced per user+sport) ──
+// ── STATE per cabang — disimpan di localStorage, namespaced per akun (username dari hm_session) ──
+// Sebelumnya data ini hanya in-memory (hilang tiap refresh) dan diisi contoh dummy (Andri, Bimo, dst).
+// Sekarang: disimpan persisten per akun di browser ini, mulai kosong untuk akun baru.
 function freshState(){ return {players:[],matches:[],playCount:{},partnerHist:{},session:{date:new Date().toISOString().split('T')[0],name:''}}; }
 const today = new Date().toISOString().split('T')[0];
-const stateBySport = {
-  badminton: {
-    players:[
-      {name:'Andri',level:'Inter'},{name:'Bimo',level:'Inter'},{name:'Sasha',level:'Beg+'},{name:'Rina',level:'Beg'},
-      {name:'Dewi',level:'Beg+'},{name:'Fajar',level:'New'},{name:'Gilang',level:'Inter'},{name:'Hana',level:'Beg'}
-    ],
-    matches:[
-      {id:1,teamA:['Andri','Bimo'],teamB:['Sasha','Rina'],scoreA:21,scoreB:18,winner:'A',time:'19:12'},
-      {id:2,teamA:['Dewi','Fajar'],teamB:['Gilang','Hana'],scoreA:24,scoreB:22,winner:'A',time:'19:31'},
-      {id:3,teamA:['Sasha','Gilang'],teamB:['Andri','Dewi'],scoreA:17,scoreB:21,winner:'B',time:'19:50'}
-    ],
-    playCount:{Andri:2,Bimo:1,Sasha:2,Rina:1,Dewi:2,Fajar:1,Gilang:2,Hana:1},
-    partnerHist:{'Andri|Bimo':1,'Rina|Sasha':1,'Dewi|Fajar':1,'Gilang|Hana':1,'Gilang|Sasha':1,'Andri|Dewi':1},
-    session:{date:today,name:'Mabar Kamis Malam'}
-  },
-  pickleball: {
-    players:[
-      {name:'Citra',level:'Beg+'},{name:'Doni',level:'Inter'},{name:'Eka',level:'Beg'},{name:'Farhan',level:'Beg+'},
-      {name:'Gita',level:'New'},{name:'Hadi',level:'Inter'},{name:'Intan',level:'Beg'},{name:'Jaka',level:'Beg+'}
-    ],
-    matches:[], playCount:{}, partnerHist:{}, session:{date:today,name:'Open Play Sabtu'}
-  },
-  padel: freshState(), tennis: freshState()
-};
+
+function dataStorageKey(){
+  try{
+    const raw = localStorage.getItem('hm_session');
+    const s = raw ? JSON.parse(raw) : null;
+    const uname = (s && s.username) ? s.username : 'guest';
+    return 'hostmabar_v3_data::' + uname;
+  }catch(e){ return 'hostmabar_v3_data::guest'; }
+}
+function loadAppData(){
+  const emptyStates = { badminton:freshState(), pickleball:freshState(), padel:freshState(), tennis:freshState() };
+  const emptyTournaments = { badminton:freshTournament(), pickleball:freshTournament(), padel:freshTournament(), tennis:freshTournament() };
+  const empty = { stateBySport:emptyStates, tournamentBySport:emptyTournaments, commProfile:{name:'',logoData:null}, members:[] };
+  try{
+    const raw = localStorage.getItem(dataStorageKey());
+    if(!raw) return empty;
+    const parsed = JSON.parse(raw) || {};
+    const sb = parsed.stateBySport || {};
+    const tb = parsed.tournamentBySport || {};
+    return {
+      stateBySport: {
+        badminton: sb.badminton || freshState(),
+        pickleball: sb.pickleball || freshState(),
+        padel: sb.padel || freshState(),
+        tennis: sb.tennis || freshState()
+      },
+      tournamentBySport: {
+        badminton: tb.badminton || freshTournament(),
+        pickleball: tb.pickleball || freshTournament(),
+        padel: tb.padel || freshTournament(),
+        tennis: tb.tennis || freshTournament()
+      },
+      commProfile: parsed.commProfile || {name:'',logoData:null},
+      members: Array.isArray(parsed.members) ? parsed.members : []
+    };
+  }catch(e){
+    console.warn('Gagal load data lokal, mulai kosong:', e.message);
+    return empty;
+  }
+}
+function saveAppData(){
+  try{
+    localStorage.setItem(dataStorageKey(), JSON.stringify({
+      stateBySport, tournamentBySport, members: MEMBERS,
+      commProfile: { name: commProfile.name, logoData: commProfile.logoData }
+    }));
+  }catch(e){ console.warn('Gagal menyimpan data lokal:', e.message); }
+}
+const __appData = loadAppData();
+const stateBySport = __appData.stateBySport;
+__appData.members.forEach(m=>MEMBERS.push(m)); // restore database member permanen dari localStorage
 
 // ═══════════════════════════════════════════════════════════════════
 // TURNAMEN — Knock-out & Group Knock-out (Thomas/Uber style)
@@ -661,7 +677,7 @@ function freshTournament(){
   return { format:null, entries:[], numGroups:2, qualifyPerGroup:2, groups:[], bracket:[], hasPrelim:false,
     qualPrelimCount:0, qualDirectEntries:[], editing:null, editingGrup:null, stage:'setup' };
 }
-const tournamentBySport = { badminton:freshTournament(), pickleball:freshTournament(), padel:freshTournament(), tennis:freshTournament() };
+const tournamentBySport = __appData.tournamentBySport;
 
 let sport = new URLSearchParams(location.search).get('sport') || 'badminton';
 if(!SPORT_CONFIG[sport]) sport = 'badminton';
@@ -753,14 +769,14 @@ function generateNext(){
 }
 
 // ── SESI ──
-document.getElementById('sessionDate').addEventListener('change',e=>{state.session.date=e.target.value;uSI();});
-document.getElementById('sessionName').addEventListener('input',e=>{state.session.name=e.target.value;uSI();});
+document.getElementById('sessionDate').addEventListener('change',e=>{state.session.date=e.target.value;uSI();saveAppData();});
+document.getElementById('sessionName').addEventListener('input',e=>{state.session.name=e.target.value;uSI();saveAppData();});
 function uSI(){
   const txt=(state.session.name||'Sesi')+' · '+(state.session.date||'—');
   document.getElementById('sessionInfo').textContent=txt;
   const b=document.getElementById('boardSessInfo'); if(b)b.textContent=txt;
 }
-function resetAll(){ if(!confirm('Reset semua data '+SPORT_CONFIG[sport].label+'? (dummy — hanya data contoh)'))return; stateBySport[sport]=freshState(); applySport(); showToast('🗑️ Data '+SPORT_CONFIG[sport].label+' direset'); }
+function resetAll(){ if(!confirm('Reset semua data '+SPORT_CONFIG[sport].label+'? Data sesi, pemain & match yang sudah dicatat akan hilang permanen.'))return; stateBySport[sport]=freshState(); applySport(); saveAppData(); showToast('🗑️ Data '+SPORT_CONFIG[sport].label+' direset'); }
 
 // ── PEMAIN SESI vs MEMBER ──────────────────────────────────────────
 // Member = database permanen. Pemain sesi = dipilih dari member (tap).
@@ -772,6 +788,7 @@ function toggleHadir(name){
   const t = new Date().toISOString().split('T')[0];
   if(!m.hadir.includes(t)) m.hadir.push(t);
   renderPlayerList(); renderMemberPicker(); populateSelects(); renderCounter();
+  saveAppData();
   showToast('✅ '+name+' masuk sesi!');
 }
 function renderMemberPicker(){
@@ -805,11 +822,13 @@ function addPlayer(){
   state.players.push({name,level});
   if(!state.playCount[name])state.playCount[name]=0;
   inp.value='';renderPlayerList();renderMemberPicker();populateSelects();renderCounter();inp.focus();
+  saveAppData();
   showToast('✅ '+name+' tersimpan sebagai member & masuk sesi!');
 }
 function removePlayer(name){
   state.players=state.players.filter(p=>p.name!==name);
   renderPlayerList();renderMemberPicker();populateSelects();renderCounter();
+  saveAppData();
 }
 function renderPlayerList(){
   const el=document.getElementById('playerList');
@@ -869,6 +888,7 @@ function recordMatch(){
   renderMatchHistory();renderCounter();
   document.getElementById('scoreA').value='';document.getElementById('scoreB').value='';
   document.getElementById('genPreview').innerHTML='';
+  saveAppData();
   showToast('✅ Hasil tersimpan!');
 }
 function deleteMatch(id){
@@ -877,6 +897,7 @@ function deleteMatch(id){
   if(m)[...m.teamA,...m.teamB].forEach(p=>{if(state.playCount[p]>0)state.playCount[p]--;});
   state.matches=state.matches.filter(x=>x.id!==id);
   renderMatchHistory();renderLeaderboard();renderCounter();
+  saveAppData();
 }
 function renderMatchHistory(){
   const el=document.getElementById('matchHistory');
@@ -937,6 +958,7 @@ function saveEditScore(){
   state.matches[idx].scoreA=sA;state.matches[idx].scoreB=sB;state.matches[idx].winner=sA>sB?'A':'B';
   renderMatchHistory();renderLeaderboard();
   document.getElementById('editModalOverlay').classList.remove('open');_editId=null;
+  saveAppData();
   showToast('✅ Skor berhasil diupdate!');
 }
 
@@ -1023,6 +1045,7 @@ function removeMember(name){
   if(i>-1)MEMBERS.splice(i,1);
   state.players=state.players.filter(p=>p.name!==name);
   renderMemberTab();renderMemberPicker();renderPlayerList();populateSelects();renderCounter();
+  saveAppData();
   showToast('🗑️ '+name+' dihapus dari member');
 }
 
@@ -1061,10 +1084,12 @@ function cekTambahPasangan(){
   tournament.entries.push({id:Date.now()+Math.random(), name:a+' & '+b, members:[a,b]});
   showToast('✅ Pasangan '+a+' & '+b+' ditambahkan');
   renderTPeserta(); // reset & repopulate select (member yang sudah dipakai otomatis hilang dari pilihan)
+  saveAppData();
 }
 function removeTEntry(id){
   tournament.entries = tournament.entries.filter(e=>e.id!==id);
   renderTPeserta();
+  saveAppData();
 }
 function renderTPeserta(){
   populateTPesertaSelects();
@@ -1180,6 +1205,7 @@ function simpanSkorBagan(r,i){
   }
   tournament.editing = null;
   renderBracket();
+  saveAppData();
   showToast('✅ Hasil tersimpan, pemenang maju ke babak berikutnya!');
 }
 // ── Garis penghubung bagan (SVG, mengikuti posisi kartu apa adanya — tahan variasi tinggi kartu) ──
@@ -1379,6 +1405,7 @@ function simpanSkorGrup(gi,mi){
   m.scoreA=sA; m.scoreB=sB; m.winner = sA>sB ? m.a : m.b;
   tournament.editingGrup = null;
   renderGroupStage();
+  saveAppData();
   showToast('✅ Hasil match grup tersimpan');
 }
 function renderGroupStage(){
@@ -1467,6 +1494,7 @@ function bikinBagan(){
     if(tournament.format==='knockout') buatKnockout(tournament.entries);
     else buatGroupStage(tournament.entries, tournament.numGroups);
     renderTurnamenTab();
+    saveAppData();
     showToast('🎉 Bagan turnamen dibuat!');
   });
 }
@@ -1475,6 +1503,7 @@ function resetTurnamen(){
   tournamentBySport[sport] = freshTournament();
   tournament = tournamentBySport[sport];
   renderTurnamenTab();
+  saveAppData();
   showToast('🗑️ Turnamen direset');
 }
 // ── Print / Download PDF hasil turnamen (bagan atau fase grup yang sedang tampil) ──
@@ -1561,15 +1590,74 @@ function showToast(msg){
 }
 function dummy(f){alert('Ini dummy — "'+f+'" memakai fungsi yang sudah ada di sistem live saat aktivasi.');}
 
+// ── Print / Download PDF — Riwayat Pertandingan (tab Match) & Leaderboard (tab Board) ──
+// Pola sama dengan printTurnamen(): buka window baru berisi konten yang sudah dirender,
+// lalu window.print() (host bisa "Save as PDF" dari dialog print browser).
+function __printReportWindow(title, bodyHtml){
+  const w = window.open('', '_blank');
+  if(!w){ showToast('⚠️ Pop-up diblokir browser — izinkan pop-up untuk print'); return; }
+  const logoHtml = commProfile.logoData ? `<img src="${commProfile.logoData}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;margin-bottom:10px">` : '';
+  w.document.write(`<html><head><title>${title}</title><style>
+    body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;padding:28px;color:#1E293B}
+    h1{font-size:19px;margin-bottom:2px}
+    h2{font-size:14px;margin:24px 0 8px;color:#1E293B}
+    .sub{font-size:12px;color:#64748B;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{padding:6px 8px;border-bottom:1px solid #E2E8F0;text-align:left}
+    th.right,td.right{text-align:right}
+    .stat-chip{padding:2px 7px;border-radius:6px;background:#F1F5F9;font-weight:700;font-size:11px}
+    .pts-chip{background:#FEF3C7}
+    .player-name{font-weight:700}
+    .win-rate{font-size:10.5px;color:#64748B}
+    .level-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#F1F5F9}
+    .lb-note{font-size:10.5px;color:#64748B;margin-top:8px}
+    .match-item{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #E2E8F0;padding:9px 0;gap:10px;font-size:12px}
+    .match-num{color:#64748B;font-weight:700;font-size:11px}
+    .win-label{font-weight:700;color:#0F766E}
+    .m-time{font-size:10.5px;color:#64748B}
+    .m-actions{display:none}
+    .empty{color:#64748B;font-size:13px;padding:16px 0}
+    .empty-icon{display:none}
+    @media print{ body{padding:10px} }
+  </style></head><body>
+    ${logoHtml}
+    <h1>${(commProfile.name||'HOSTMABAR')}</h1>
+    <div class="sub">${SPORT_CONFIG[sport].label} · ${state.session.name||'Sesi'} · ${state.session.date||''}</div>
+    ${bodyHtml}
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(), 400);
+}
+function printMatchReport(){
+  if(!state.matches.length){ showToast('⚠️ Belum ada pertandingan untuk dicetak'); return; }
+  const historyHtml = document.getElementById('matchHistory').innerHTML;
+  __printReportWindow('Riwayat Pertandingan — '+(commProfile.name||'HOSTMABAR'),
+    `<h2>📜 Riwayat Pertandingan</h2>${historyHtml}`);
+}
+function printBoardReport(){
+  if(!state.matches.length){ showToast('⚠️ Belum ada data untuk dicetak'); return; }
+  const lbHtml = document.getElementById('leaderboardContent').innerHTML;
+  const historyHtml = document.getElementById('matchHistory').innerHTML;
+  __printReportWindow('Leaderboard — '+(commProfile.name||'HOSTMABAR'),
+    `<h2>🏆 Leaderboard</h2>${lbHtml}<h2>📜 Riwayat Pertandingan</h2>${historyHtml}`);
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // PROFIL KOMUNITAS (logo + nama) — tampil di header, Board, share & PDF
-// Live: disimpan namespaced per user (localStorage/profiles)
+// Disimpan namespaced per akun (localStorage, lihat dataStorageKey())
 // ═══════════════════════════════════════════════════════════════════
-const commProfile = { name:'GSBSD BSD City', logoData:null, logoImg:null };
+const commProfile = { name: __appData.commProfile.name || '', logoData: __appData.commProfile.logoData || null, logoImg:null };
+if(commProfile.logoData){
+  const __restoreLogo = new Image();
+  __restoreLogo.onload = () => { commProfile.logoImg = __restoreLogo; refreshCommUI(); };
+  __restoreLogo.src = commProfile.logoData;
+}
 
 function updateComm(){
   commProfile.name = document.getElementById('commName').value.trim() || 'Komunitas';
   refreshCommUI();
+  saveAppData();
 }
 function loadLogo(ev){
   const f = ev.target.files[0]; if(!f) return;
@@ -1577,7 +1665,7 @@ function loadLogo(ev){
   rd.onload = e => {
     commProfile.logoData = e.target.result;
     const img = new Image();
-    img.onload = () => { commProfile.logoImg = img; refreshCommUI(); showToast('✅ Logo komunitas terpasang!'); };
+    img.onload = () => { commProfile.logoImg = img; refreshCommUI(); showToast('✅ Logo komunitas terpasang!'); saveAppData(); };
     img.src = commProfile.logoData;
   };
   rd.readAsDataURL(f);
@@ -1727,6 +1815,21 @@ refreshCommUI();
 // Deep-link ?turnamen=1 (dipakai tombol "Buat Turnamen" di mabarpro.html)
 // untuk langsung membuka modal Turnamen tanpa mengubah tab utama yang aktif.
 if(new URLSearchParams(location.search).get('turnamen')==='1') openTurnamenModal();
+
+// Badge paket header — ikut paket_langganan akun yang login (bukan selalu "PRO")
+(function setPaketBadge(){
+  try{
+    const raw = localStorage.getItem('hm_session');
+    const s = raw ? JSON.parse(raw) : null;
+    const paket = (s && s.paket) ? String(s.paket).toLowerCase() : '';
+    const el = document.getElementById('pakBadge');
+    if(!el) return;
+    if(paket.includes('pro')) el.textContent = '⚡ PRO';
+    else if(paket.includes('plus')) el.textContent = '⚡ PLUS';
+    else if(paket.includes('trial')) el.textContent = '⚡ TRIAL';
+    else el.textContent = '⚡ PRO';
+  }catch(e){}
+})();
 
 // ═══════════════════════════════════════════════════════════════════
 // LOGOUT — sama alur dengan sistem live (hapus sesi lokal + signOut Supabase)
