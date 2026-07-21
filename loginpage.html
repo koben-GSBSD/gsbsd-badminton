@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masuk — HOSTMABAR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#F8FAFC; --surface:#FFFFFF; --border:#E2E8F0;
+  --text:#1E293B; --muted:#64748B;
+  --orange:#F7941D; --pink:#E8174A;
+  --cyan:#0891B2; --navy:#1E3A8A;
+  --badminton:#0F766E; --padel:#9333EA; --pickleball:#E11D48; --tennis:#84754E;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+
+/* ===== Panel kiri (brand) ===== */
+.brand-panel{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:48px;background:
+  radial-gradient(500px 300px at 80% 15%,rgba(247,148,29,.10),transparent),
+  radial-gradient(500px 300px at 15% 85%,rgba(232,23,74,.08),transparent),
+  #fff;border-right:1px solid var(--border)}
+.logo{display:inline-flex;align-items:center;text-decoration:none}
+.logo img{height:36px;width:auto;display:block}
+.brand-mid h1{font-size:clamp(26px,3vw,36px);font-weight:800;letter-spacing:-.02em;line-height:1.2;max-width:400px}
+.brand-mid h1 em{font-style:normal;background:linear-gradient(90deg,var(--orange),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand-mid p{color:var(--muted);margin-top:14px;max-width:380px;font-size:15px}
+.sport-chips{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:8px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted)}
+.chip.live{border-color:var(--badminton);color:var(--badminton);background:rgba(15,118,110,.06)}
+.chip small{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
+.brand-foot{font-size:13px;color:var(--muted)}
+.brand-foot a{color:var(--muted)}
+
+/* ===== Panel kanan (form) ===== */
+.form-panel{display:flex;align-items:center;justify-content:center;padding:48px 24px}
+.card{width:100%;max-width:420px}
+.product-toggle{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:5px;margin-bottom:28px}
+.product-toggle button{border:none;background:transparent;font-family:inherit;font-weight:800;font-size:14px;padding:11px;border-radius:10px;cursor:pointer;color:var(--muted);transition:all .2s}
+.product-toggle button.active-hm{background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff;box-shadow:0 4px 12px rgba(232,23,74,.25)}
+.product-toggle button.active-cm{background:linear-gradient(90deg,var(--cyan),var(--navy));color:#fff;box-shadow:0 4px 12px rgba(8,145,178,.25)}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,41,59,.06)}
+.form-card h2{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.form-card .sub{font-size:14px;color:var(--muted);margin:6px 0 24px}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+input{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;font-family:inherit;font-size:15px;background:var(--bg);color:var(--text);margin-bottom:18px;transition:border-color .2s}
+input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
+.row-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;font-size:13px}
+.row-between label{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--muted);margin:0}
+.row-between input[type=checkbox]{width:auto;margin:0}
+.row-between a{color:var(--pink);font-weight:700;text-decoration:none}
+.btn-submit{width:100%;padding:14px;border:none;border-radius:13px;font-family:inherit;font-weight:800;font-size:15px;color:#fff;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.btn-hm{background:linear-gradient(90deg,var(--orange),var(--pink));box-shadow:0 6px 18px rgba(232,23,74,.25)}
+.btn-cm{background:linear-gradient(90deg,var(--cyan),var(--navy));box-shadow:0 6px 18px rgba(8,145,178,.25)}
+.btn-submit:hover{transform:translateY(-2px)}
+.session-note{text-align:center;font-size:12px;color:var(--muted);margin-top:16px}
+.signup{text-align:center;font-size:14px;color:var(--muted);margin-top:24px}
+.signup a{color:var(--pink);font-weight:700;text-decoration:none}
+.back-link{display:block;text-align:center;margin-top:18px;font-size:13px;color:var(--muted);text-decoration:none}
+.back-link:hover{color:var(--text)}
+
+/* Sport select di form HOSTMABAR */
+.sport-select{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px}
+.sport-opt{border:1.5px solid var(--border);border-radius:12px;padding:12px 4px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;position:relative}
+.sport-opt .ic{font-size:20px;display:block}
+.sport-opt .nm{font-size:10.5px;font-weight:700;margin-top:4px;display:block}
+.sport-opt.selected{border-color:var(--badminton);background:rgba(15,118,110,.06)}
+.sport-opt.soon{opacity:.45;cursor:not-allowed}
+.sport-opt.soon::after{content:"Segera";position:absolute;top:-8px;right:-4px;font-size:8.5px;font-weight:800;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:2px 6px;border-radius:99px}
+
+/* Error message */
+.login-error{display:none;align-items:center;gap:8px;background:#FEF2F2;color:#B91C1C;border:1.5px solid #FECACA;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:600;margin-bottom:16px;animation:shakeErr .35s ease}
+.login-error.show{display:flex}
+@keyframes shakeErr{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+
+/* Loading spinner in button */
+.btn-submit{display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-spin{display:none;width:15px;height:15px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spinLogin .6s linear infinite}
+.btn-spin.show{display:inline-block}
+@keyframes spinLogin{to{transform:rotate(360deg)}}
+.btn-submit:disabled{opacity:.75;cursor:wait;transform:none!important}
+
+/* Success overlay */
+.success-overlay{display:none;position:fixed;inset:0;z-index:200;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.success-overlay.show{display:flex}
+.success-overlay .ic{font-size:52px}
+.success-overlay .txt{font-size:18px;font-weight:800}
+.success-overlay .sub{font-size:13px;color:var(--muted)}
+.success-overlay .bar{width:200px;height:3px;background:var(--border);border-radius:99px;margin-top:6px;overflow:hidden}
+.success-overlay .bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--orange),var(--pink));border-radius:99px;transition:width 1.4s ease}
+
+@media(max-width:820px){
+  body{grid-template-columns:1fr}
+  .brand-panel{display:none}
+  .form-panel{padding:32px 20px;align-items:flex-start;padding-top:48px}
+}
+</style>
+</head>
+<body>
+
+<!-- Panel kiri: brand -->
+<div class="brand-panel">
+  <a class="logo" href="homepage.html"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></a>
+  <div class="brand-mid">
+    <h1>Selamat datang kembali, <em>Host!</em></h1>
+    <p>Masuk untuk mengelola sesi mabar komunitasmu — match tracker, leaderboard, dan kas dalam satu tempat.</p>
+    <div class="sport-chips">
+      <span class="chip live">🏸 Badminton <small>Live</small></span>
+      <span class="chip">🥒 Pickleball <small>Segera</small></span>
+      <span class="chip">🎾 Padel <small>Segera</small></span>
+      <span class="chip">🎾 Tennis <small>Segera</small></span>
+    </div>
+  </div>
+  <div class="brand-foot">© 2026 HOSTMABAR · <a href="https://instagram.com/koben.gsbsd" target="_blank">@koben.gsbsd</a></div>
+</div>
+
+<!-- Panel kanan: form -->
+<div class="form-panel">
+  <div class="card">
+
+    <div class="product-toggle">
+      <button id="tabHM" class="active-hm" onclick="switchProduct('hm')">HOSTMABAR</button>
+      <button id="tabCM" onclick="switchProduct('cm')">CUANMABAR</button>
+    </div>
+
+    <!-- Form HOSTMABAR -->
+    <div class="form-card" id="formHM" style="--accent:var(--pink)">
+      <h2>Masuk ke HOSTMABAR</h2>
+      <div class="sub">Pilih olahraga, lalu masuk dengan akunmu.</div>
+      <div class="sport-select">
+        <div class="sport-opt selected"><span class="ic">🏸</span><span class="nm">Badminton</span></div>
+        <div class="sport-opt soon"><span class="ic">🥒</span><span class="nm">Pickleball</span></div>
+        <div class="sport-opt soon"><span class="ic">🎾</span><span class="nm">Padel</span></div>
+        <div class="sport-opt soon"><span class="ic">🎾</span><span class="nm">Tennis</span></div>
+      </div>
+      <div class="login-error" id="errorHM"><span>⚠️</span><span id="errorTextHM">Email atau password salah.</span></div>
+      <label>Email</label>
+      <input type="email" id="hmEmail" placeholder="nama@email.com" autocomplete="username">
+      <label>Password</label>
+      <input type="password" id="hmPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin('hm')">
+      <div class="row-between">
+        <label><input type="checkbox" checked> Ingat saya</label>
+        <a href="#">Lupa password?</a>
+      </div>
+      <button class="btn-submit btn-hm" id="btnHM" onclick="doLogin('hm')"><span class="btn-spin" id="spinHM"></span><span id="btnTextHM">Masuk</span></button>
+      <div class="session-note">Sesi login berlaku 8 jam</div>
+    </div>
+
+    <!-- Form CUANMABAR -->
+    <div class="form-card" id="formCM" style="display:none;--accent:var(--cyan)">
+      <h2 style="background:linear-gradient(90deg,var(--cyan),var(--navy));-webkit-background-clip:text;background-clip:text;color:transparent">Masuk ke CUANMABAR</h2>
+      <div class="sub">Kelola kas komunitasmu: iuran, pengeluaran, dan split bill.</div>
+      <div class="login-error" id="errorCM"><span>⚠️</span><span id="errorTextCM">Email atau password salah.</span></div>
+      <label>Email</label>
+      <input type="email" id="cmEmail" placeholder="bendahara@email.com" autocomplete="username">
+      <label>Password</label>
+      <input type="password" id="cmPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin('cm')">
+      <div class="row-between">
+        <label><input type="checkbox" checked> Ingat saya</label>
+        <a href="#" style="color:var(--cyan)">Lupa password?</a>
+      </div>
+      <button class="btn-submit btn-cm" id="btnCM" onclick="doLogin('cm')"><span class="btn-spin" id="spinCM"></span><span id="btnTextCM">Masuk</span></button>
+      <div class="session-note">Sesi login berlaku 4 jam · khusus paket CUANMABAR</div>
+    </div>
+
+    <div class="signup">Belum punya akun? <a href="homepage.html#harga">Coba gratis 14 hari</a></div>
+    <a class="back-link" href="homepage.html">← Kembali ke beranda</a>
+  </div>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="successOverlay">
+  <div class="ic">🏸</div>
+  <div class="txt">HOSTMABAR</div>
+  <div class="sub" id="successSub">Login berhasil! Memuat aplikasi...</div>
+  <div class="bar"><div class="bar-fill" id="successBarFill"></div></div>
+</div>
+
+<script>
+function switchProduct(p){
+  const hm = p === 'hm';
+  document.getElementById('formHM').style.display = hm ? '' : 'none';
+  document.getElementById('formCM').style.display = hm ? 'none' : '';
+  document.getElementById('tabHM').className = hm ? 'active-hm' : '';
+  document.getElementById('tabCM').className = hm ? '' : 'active-cm';
+}
+// Buka langsung tab CUANMABAR bila dipanggil dengan #cuanmabar (mis. dari dashboard)
+if (location.hash === '#cuanmabar') switchProduct('cm');
+
+// ════════════════════════════════════════════════════════════════════
+// CONFIG — Supabase (sama persis dengan login.html produksi)
+// ════════════════════════════════════════════════════════════════════
+const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
+const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
+const { createClient } = window.supabase;
+const db = createClient(SUPA_URL, SUPA_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+});
+
+// ════════════════════════════════════════════════════════════════════
+// HELPER UI — per-tab (hm/cm)
+// ════════════════════════════════════════════════════════════════════
+function ids(which){
+  const W = which.toUpperCase();
+  return {
+    email : document.getElementById(which+'Email'),
+    pass  : document.getElementById(which+'Password'),
+    err   : document.getElementById('error'+W),
+    errTxt: document.getElementById('errorText'+W),
+    btn   : document.getElementById('btn'+W),
+    spin  : document.getElementById('spin'+W),
+    btnTxt: document.getElementById('btnText'+W)
+  };
+}
+function showError(which, msg){
+  const el = ids(which);
+  el.errTxt.textContent = msg;
+  el.err.classList.remove('show');
+  void el.err.offsetWidth; // reset animasi shake
+  el.err.classList.add('show');
+}
+function hideError(which){
+  ids(which).err.classList.remove('show');
+}
+function setLoadingState(which, active){
+  const el = ids(which);
+  el.btn.disabled = active;
+  el.spin.classList.toggle('show', active);
+  el.btnTxt.textContent = active ? 'Memeriksa...' : 'Masuk';
+}
+['hm','cm'].forEach(which=>{
+  const el = ids(which);
+  el.email.addEventListener('input', ()=>hideError(which));
+  el.pass.addEventListener('input', ()=>hideError(which));
+});
+
+// ════════════════════════════════════════════════════════════════════
+// SUKSES → redirect (validasi redirect_url, hanya izinkan file .html)
+// ════════════════════════════════════════════════════════════════════
+function showSuccess(redirectUrl, subtext){
+  const cleanUrl = (redirectUrl || '').replace(/['"]/g, '').trim();
+  const safeUrl = /^[\w\-]+\.html$/.test(cleanUrl) ? cleanUrl : null;
+
+  if (!safeUrl) {
+    console.error('redirect_url tidak valid:', redirectUrl);
+    showError('hm', 'Halaman tujuan tidak ditemukan. Hubungi HOSTMABAR.');
+    setLoadingState('hm', false);
+    setLoadingState('cm', false);
+    return;
+  }
+
+  if (subtext) document.getElementById('successSub').textContent = subtext;
+  const overlay = document.getElementById('successOverlay');
+  overlay.classList.add('show');
+  setTimeout(()=>{ document.getElementById('successBarFill').style.width = '100%'; }, 80);
+  setTimeout(()=>{ window.location.href = safeUrl; }, 1600);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// LOGIN UTAMA — Supabase Auth (sama alur dengan login.html produksi)
+// which = 'hm' | 'cm' — keduanya login ke tabel `profiles` yang sama,
+// redirect_url di profil menentukan tujuan akhir per akun.
+// ════════════════════════════════════════════════════════════════════
+async function doLogin(which){
+  const el = ids(which);
+  const email = el.email.value.trim().toLowerCase();
+  const password = el.pass.value;
+
+  if (!email || !password) {
+    showError(which, 'Email dan password harus diisi.');
+    return;
+  }
+
+  setLoadingState(which, true);
+  hideError(which);
+
+  try {
+    // STEP 1: Login via Supabase Auth
+    const { data: authData, error: authError } = await db.auth.signInWithPassword({ email, password });
+
+    if (authError) {
+      if (authError.message.includes('Invalid login credentials')) {
+        throw new Error('Email atau password salah. Coba lagi.');
+      } else if (authError.message.includes('Email not confirmed')) {
+        throw new Error('Email belum dikonfirmasi. Hubungi HOSTMABAR.');
+      } else {
+        throw new Error('Login gagal: ' + authError.message);
+      }
+    }
+
+    const userId = authData.user.id;
+
+    // STEP 2: Ambil profil komunitas dari tabel profiles
+    const { data: profile, error: profileError } = await db
+      .from('profiles')
+      .select('username_komunitas, paket_langganan, redirect_url, tanggal_kedaluarsa')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      await db.auth.signOut();
+      throw new Error('Profil komunitas tidak ditemukan. Hubungi HOSTMABAR.');
+    }
+
+    // STEP 3: Cek masa kedaluwarsa
+    if (profile.tanggal_kedaluarsa) {
+      const expiry = new Date(profile.tanggal_kedaluarsa);
+      expiry.setHours(23, 59, 59);
+      if (new Date() > expiry) {
+        await db.auth.signOut();
+        throw new Error('Masa berlangganan habis per ' +
+          expiry.toLocaleDateString('id-ID') +
+          '. Hubungi HOSTMABAR untuk perpanjangan.');
+      }
+    }
+
+    // STEP 4: Simpan sesi ke localStorage — key 'hm_session' dibaca oleh
+    // session guard di semua halaman app (sama seperti produksi)
+    const sessionPayload = {
+      username : profile.username_komunitas,
+      paket    : profile.paket_langganan,
+      redirect : profile.redirect_url,
+      loginAt  : Date.now(),
+      expiresAt: Date.now() + (8 * 60 * 60 * 1000) // 8 jam
+    };
+    localStorage.setItem('hm_session', JSON.stringify(sessionPayload));
+    localStorage.setItem('hm_komunitas', JSON.stringify(sessionPayload));
+
+    // STEP 5: Sukses → redirect
+    showSuccess(profile.redirect_url);
+
+  } catch (err) {
+    setLoadingState(which, false);
+    showError(which, err.message);
+    el.pass.value = '';
+    el.pass.focus();
+    console.error('Login error:', err.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CEK SESI AKTIF — auto-redirect jika sudah login (sama seperti produksi)
+// ════════════════════════════════════════════════════════════════════
+async function checkActiveSession(){
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) return; // belum login, tampilkan form
+
+    const userId = session.user.id;
+    const { data: profile } = await db
+      .from('profiles')
+      .select('redirect_url, tanggal_kedaluarsa')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!profile || !profile.redirect_url) return;
+
+    if (profile.tanggal_kedaluarsa) {
+      const expiry = new Date(profile.tanggal_kedaluarsa);
+      expiry.setHours(23, 59, 59);
+      if (new Date() > expiry) {
+        await db.auth.signOut();
+        return;
+      }
+    }
+
+    const sp = {
+      redirect : profile.redirect_url,
+      loginAt  : Date.now(),
+      expiresAt: Date.now() + (8 * 60 * 60 * 1000)
+    };
+    localStorage.setItem('hm_session', JSON.stringify(sp));
+    localStorage.setItem('hm_komunitas', JSON.stringify(sp));
+
+    showSuccess(profile.redirect_url, 'Sesi ditemukan! Memuat aplikasi...');
+
+  } catch(e) {
+    console.log('Session check skipped:', e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════
+checkActiveSession();
+</script>
+
+</body>
+</html>
