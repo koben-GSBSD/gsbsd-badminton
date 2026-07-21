@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pencatatan Skor — HOSTMABAR V3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!-- Supabase SDK (dipakai untuk logout + security guard) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#F8FAFC; --surface:#FFFFFF; --border:#E2E8F0;
+  --text:#1E293B; --muted:#64748B;
+  --orange:#F7941D; --pink:#E8174A;
+  --badminton:#0F766E; --padel:#9333EA; --pickleball:#E11D48; --tennis:#84754E;
+  --green:#16A34A; --red:#DC2626; --accent:var(--badminton);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:70px}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+
+/* ── Demo strip ── */
+.demo-strip{background:#FFFBEB;border-bottom:1px solid #FDE68A}
+.demo-inner{display:flex;align-items:center;gap:10px;padding:8px 16px;flex-wrap:wrap;max-width:860px;margin:0 auto}
+.demo-inner span{font-size:11px;font-weight:800;color:#92400E}
+.pill{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:99px;border:1.5px solid #FDE68A;background:#fff;cursor:pointer;font-family:inherit;color:var(--muted)}
+.pill.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── Header ── */
+.header{display:flex;align-items:center;gap:12px;padding:16px 0}
+.logo{display:inline-flex;align-items:center}
+.logo img{height:28px;width:auto;display:block}
+.logo span{background:linear-gradient(90deg,var(--orange),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.header-sub{font-size:11.5px;color:var(--muted);font-weight:600}
+.header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.badge-pro{font-size:10px;font-weight:800;letter-spacing:.06em;background:linear-gradient(135deg,rgba(247,148,29,.12),rgba(232,23,74,.12));border:1.5px solid rgba(247,148,29,.5);color:#B45309;padding:5px 12px;border-radius:20px;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:11px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;text-decoration:none;transition:transform .12s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text)}
+.btn-sm{padding:7px 12px;font-size:12px}
+.btn-logout{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.06)}
+
+/* ── Tabs ── */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;position:sticky;top:0;z-index:30;background:var(--bg);padding:8px 0}
+.tab{padding:11px 8px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface);font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;color:var(--muted);transition:all .15s}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.section{display:none}.section.active{display:block}
+
+/* ── Cards & forms ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px}
+.card-title{font-size:14px;font-weight:800;margin-bottom:14px}
+.alert{background:color-mix(in srgb,var(--accent) 6%,white);border:1px solid color-mix(in srgb,var(--accent) 22%,white);border-radius:11px;padding:10px 14px;font-size:12.5px;font-weight:600;margin-bottom:14px}
+.rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rule-item{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.rule-val{font-size:20px;font-weight:800;color:var(--accent)}
+.rule-desc{font-size:11.5px;color:var(--muted);font-weight:700}
+label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:5px}
+input,select{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:14px;background:var(--bg);color:var(--text)}
+input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff}
+.mt{margin-top:12px}
+.row{display:flex;gap:10px}
+
+/* ── Level badges (upgrade dari mabarprov2) ── */
+.level-badge{display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.02em;white-space:nowrap}
+.lvl-new{background:rgba(37,99,235,.1);color:#2563EB;border:1px solid rgba(37,99,235,.25)}
+.lvl-beg{background:rgba(22,163,74,.1);color:#16A34A;border:1px solid rgba(22,163,74,.25)}
+.lvl-begp{background:rgba(147,51,234,.1);color:#9333EA;border:1px solid rgba(147,51,234,.25)}
+.lvl-inter{background:rgba(217,119,6,.1);color:#D97706;border:1px solid rgba(217,119,6,.25)}
+.lvl-pro{background:rgba(220,38,38,.1);color:#DC2626;border:1px solid rgba(220,38,38,.25)}
+.legend-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.legend-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px;background:color-mix(in srgb,var(--orange) 6%,white);border-radius:10px;border:1px solid color-mix(in srgb,var(--orange) 20%,white);align-items:center}
+.legend-bar .lbl{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+
+/* Player table (upgrade dari mabarprov2) */
+.player-table{width:100%;border-collapse:collapse;font-size:13px}
+.player-table th{text-align:left;padding:7px 8px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border)}
+.player-table td{padding:8px;border-bottom:1px solid var(--border)}
+.player-table .remove{width:22px;height:22px;background:rgba(220,38,38,.1);color:var(--red);border:none;border-radius:50%;cursor:pointer;font-size:12px;font-weight:800}
+.session-id{margin-top:10px;font-size:12px;color:var(--muted);font-weight:600}
+
+/* Member picker & status */
+.member-picker{display:flex;flex-wrap:wrap;gap:8px;min-height:24px}
+.m-chip{display:inline-flex;align-items:center;gap:7px;background:var(--bg);border:1.5px solid var(--border);border-radius:99px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}
+.m-chip:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,white)}
+.st-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.st-rutin{background:#16A34A}.st-aktif{background:#0891B2}.st-baru{background:#2563EB}.st-jarang{background:#CBD5E1}
+.st-badge{font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px}
+.st-badge.st-rutin{background:rgba(22,163,74,.1);color:#16A34A}
+.st-badge.st-aktif{background:rgba(8,145,178,.1);color:#0891B2}
+.st-badge.st-baru{background:rgba(37,99,235,.1);color:#2563EB}
+.st-badge.st-jarang{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.insight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.insight-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.insight-card b{display:block;font-size:24px;font-weight:800;color:var(--accent)}
+.insight-card span{font-size:11px;color:var(--muted);font-weight:700}
+@media(max-width:640px){.insight-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* Format & mode pills */
+.fmt-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.fmt-opt{font-size:12px;font-weight:700;padding:7px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-family:inherit;color:var(--muted)}
+.fmt-opt.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,white);color:var(--accent)}
+
+/* Generator box (Americano/Mexicano) */
+.gen-box{background:color-mix(in srgb,var(--accent) 5%,white);border:1.5px dashed color-mix(in srgb,var(--accent) 35%,white);border-radius:13px;padding:14px;margin-bottom:14px}
+.gen-box p{font-size:12px;color:var(--muted);margin-bottom:10px}
+.gen-preview{margin-top:10px;font-size:13px;font-weight:700;text-align:center;min-height:18px}
+.gen-preview b{color:var(--accent)}
+
+/* Match input */
+.team-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch}
+.team-box{background:var(--bg);border:1px solid var(--border);border-radius:13px;padding:14px}
+.team-box h3{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin-bottom:10px}
+.vs-div{display:flex;align-items:center;font-size:14px;font-weight:800;color:var(--muted)}
+.score-inputs{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end}
+.score-field input{text-align:center;font-size:26px;font-weight:800;padding:8px}
+.score-dash{padding-bottom:14px;color:var(--muted);font-size:20px;font-weight:800;text-align:center}
+.valid-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:10px}
+.valid-hint b{color:var(--accent)}
+
+/* PDF banner */
+.pdf-banner{display:flex;align-items:center;gap:14px;background:linear-gradient(120deg,rgba(247,148,29,.08),rgba(232,23,74,.08));border:1px solid rgba(232,23,74,.2);border-radius:14px;padding:14px 18px;margin-bottom:14px;flex-wrap:wrap}
+.pdf-banner h3{font-size:13.5px;font-weight:800}
+.pdf-banner p{font-size:11.5px;color:var(--muted)}
+.btn-pdf{margin-left:auto;background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff}
+
+/* Riwayat */
+.match-item{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:8px}
+.match-num{font-size:12px;font-weight:800;color:var(--muted);flex-shrink:0}
+.match-teams{flex:1;min-width:0}
+.teams-line{font-size:12.5px;font-weight:700}
+.score-line{font-size:16px;font-weight:800;color:var(--accent)}
+.win-label{font-size:10px;font-weight:800;background:color-mix(in srgb,var(--accent) 10%,white);color:var(--accent);padding:3px 9px;border-radius:99px;white-space:nowrap}
+.m-time{font-size:10.5px;color:var(--muted);text-align:right;margin-top:3px}
+.m-actions{display:flex;flex-direction:column;gap:5px}
+.m-actions button{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px}
+.m-actions .del{color:var(--red)}
+.empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px}
+.empty-icon{font-size:30px;margin-bottom:6px}
+
+/* Leaderboard */
+.lb-table{width:100%;border-collapse:collapse;font-size:13px}
+.lb-table th{text-align:left;padding:8px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border)}
+.lb-table td{padding:9px 8px;border-bottom:1px solid var(--border)}
+.lb-table .right{text-align:right}
+.player-name{font-weight:800;font-size:13.5px}
+.win-rate{font-size:10.5px;color:var(--muted)}
+.stat-chip{display:inline-block;font-size:12px;font-weight:800;padding:3px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--border)}
+.pts-chip{background:color-mix(in srgb,var(--accent) 10%,white);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,white)}
+.lb-note{margin-top:12px;font-size:11px;color:var(--muted);text-align:center}
+
+/* Counter */
+.counter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.counter-card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center}
+.counter-name{font-size:13px;font-weight:800;margin-bottom:4px}
+.counter-count{font-size:30px;font-weight:800;color:var(--accent)}
+.counter-label{font-size:10.5px;color:var(--muted);margin-bottom:10px}
+.counter-btns{display:flex;gap:8px;justify-content:center}
+.c-btn{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);font-size:17px;font-weight:800;cursor:pointer;font-family:inherit;color:var(--text)}
+.c-btn:active{transform:scale(.94)}
+.c-plus{border-color:color-mix(in srgb,var(--accent) 40%,white);color:var(--accent)}
+
+/* Turnamen */
+.tform-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.t-entry-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;font-size:13px;font-weight:700}
+.bracket-outer{overflow-x:auto;overflow-y:hidden;padding:6px 2px 16px;visibility:hidden}
+.bracket-outer.ready{visibility:visible}
+.bracket-wrap{position:relative}
+.bracket-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
+.bracket-svg .bl{stroke:#334155;stroke-width:2px}
+.round-label{position:absolute;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center}
+.match-card{position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-sizing:border-box;z-index:1}
+.match-card.bye-card{background:rgba(22,163,74,.05);border-style:dashed;border-color:rgba(22,163,74,.35)}
+@media(max-width:480px){
+  .match-card{padding:8px 10px}
+  .match-slot{font-size:11.5px}
+  .match-score-row input{width:42px;font-size:13px;padding:5px}
+  .round-label{font-size:9px}
+}
+.match-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:12.5px;font-weight:700;gap:6px}
+.match-slot.winner{color:var(--accent)}
+.match-score-row{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.match-score-row input{width:50px;padding:6px;text-align:center;font-weight:800;font-size:14px}
+.group-block{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.group-block .card-title{font-size:13px;margin-bottom:10px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(30,41,59,.45);display:none;align-items:center;justify-content:center;z-index:90;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:18px;padding:24px;width:100%;max-width:420px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-header h2{font-size:16px;font-weight:800}
+.modal-close{border:none;background:var(--bg);width:30px;height:30px;border-radius:9px;cursor:pointer;font-weight:800;color:var(--muted)}
+.modal-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;margin-bottom:14px;align-items:center}
+.modal-team{background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:10px;text-align:center}
+.modal-team-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.modal-team-name{font-size:12.5px;font-weight:800;margin-top:3px}
+.modal-vs{font-size:12px;font-weight:800;color:var(--muted)}
+.score-edit-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end;margin-bottom:12px}
+.score-edit-input{text-align:center;font-size:24px;font-weight:800}
+.score-edit-sep{padding-bottom:12px;font-weight:800;color:var(--muted)}
+.modal-winner-preview{text-align:center;font-size:13.5px;font-weight:800;min-height:22px;margin-bottom:14px}
+.modal-actions{display:flex;gap:10px}
+.modal-actions .btn{flex:1}
+
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--text);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;transition:transform .25s;z-index:110;max-width:92vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.dummy-note{position:fixed;bottom:14px;right:14px;font-size:11px;font-weight:700;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;padding:6px 12px;border-radius:99px;z-index:80}
+
+@media(max-width:640px){
+  .team-grid{grid-template-columns:1fr}
+  .vs-div{justify-content:center;padding:2px 0}
+  .tabs{gap:6px}
+  .tab{font-size:11.5px;padding:10px 4px}
+  .header{flex-wrap:wrap}
+  .btn-pdf{margin-left:0;width:100%}
+  .dummy-note{left:14px;right:14px;text-align:center;bottom:8px}
+  .toast{bottom:46px}
+  .modal-overlay{padding:10px}
+  .modal{padding:18px}
+  .tform-row{flex-direction:column}
+  .tform-row .fmt-opt{width:100%;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- Strip demo: ganti cabang -->
+<div class="demo-strip">
+  <div class="demo-inner">
+    <span>DEMO — ganti cabang:</span>
+    <div id="pills"></div>
+    <a href="mabarpro.html" style="margin-left:auto;font-size:11px;font-weight:800;color:#92400E">← Dashboard</a>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <img id="hdrLogo" alt="" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:none">
+    <div>
+      <div class="logo"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
+      <div class="header-sub" id="headerSub">Sports Community · Badminton</div>
+    </div>
+    <div class="header-right">
+      <div class="badge-pro">⚡ PRO</div>
+      <button class="btn btn-secondary btn-sm btn-logout" onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('setup',this)">⚙️ Setup</button>
+    <button class="tab" onclick="switchTab('match',this)"><span id="matchTabIcon">🏸</span> Match</button>
+    <button class="tab" onclick="switchTab('leaderboard',this)">🏆 Board</button>
+    <button class="tab" onclick="switchTab('member',this)">📇 Member</button>
+  </div>
+
+  <!-- ══ SETUP ══ -->
+  <div id="tab-setup" class="section active">
+    <div class="card">
+      <div class="card-title">🏷️ Profil Komunitas</div>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <div style="position:relative;flex-shrink:0">
+          <img id="commLogoPrev" alt="" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:none">
+          <div id="commLogoPh" style="width:58px;height:58px;border-radius:50%;border:2px dashed var(--border);display:grid;place-items:center;font-size:22px;background:var(--bg)">🏷️</div>
+        </div>
+        <div style="flex:1;min-width:170px">
+          <label>Nama Komunitas</label>
+          <input type="text" id="commName" placeholder="GSBSD BSD City" oninput="updateComm()">
+        </div>
+        <div style="flex:1;min-width:170px">
+          <label>Logo Komunitas</label>
+          <input type="file" id="commLogoFile" accept="image/*" onchange="loadLogo(event)" style="padding:8px;font-size:12px">
+        </div>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin-top:10px">Logo & nama komunitas tampil di header, menu Board, gambar share Instagram, dan laporan PDF/print.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Aturan Permainan</div>
+      <div class="alert" id="ruleAlert">Double match · Pemain dipilih oleh Host · Catat skor setelah bertanding</div>
+      <div class="rules-grid">
+        <div class="rule-item"><div class="rule-val">+3</div><div class="rule-desc">Menang</div></div>
+        <div class="rule-item"><div class="rule-val">+1</div><div class="rule-desc">Kalah</div></div>
+        <div class="rule-item"><div class="rule-val">2vs2</div><div class="rule-desc">Double</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👥 Pemain Hadir Sesi Ini <span id="hadirCount" style="color:var(--accent)"></span></div>
+      <div id="playerList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📇 Pilih dari Member <span style="font-size:11px;color:var(--muted);font-weight:600">— tap untuk masukkan ke sesi, tanpa ketik ulang</span></div>
+      <input type="text" id="memberSearch" placeholder="🔍 Cari member..." oninput="renderMemberPicker()" style="margin-bottom:10px">
+      <div class="member-picker" id="memberPicker"></div>
+      <div style="border-top:1px dashed var(--border);margin:14px 0 12px"></div>
+      <div style="font-size:12px;font-weight:800;margin-bottom:8px">➕ Member baru (tersimpan permanen & langsung ikut sesi)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="text" id="playerInput" placeholder="Nama pemain baru..." style="flex:2;min-width:120px" onkeydown="if(event.key==='Enter')addPlayer()">
+        <select id="levelInput" style="flex:1;min-width:110px">
+          <option value="New">🔵 Newbie</option>
+          <option value="Beg">🟢 Beginner</option>
+          <option value="Beg+" selected>🟣 Beginner+</option>
+          <option value="Inter">🟡 Intermediate</option>
+          <option value="Pro">🔴 Pro</option>
+        </select>
+        <button class="btn btn-primary" onclick="addPlayer()" style="flex-shrink:0">+ Tambah</button>
+      </div>
+      <div class="legend-row" style="margin-top:10px">
+        <span class="level-badge lvl-new">New · Newbie</span>
+        <span class="level-badge lvl-beg">Beg · Beginner</span>
+        <span class="level-badge lvl-begp">Beg+ · Beginner+</span>
+        <span class="level-badge lvl-inter">Inter · Intermediate</span>
+        <span class="level-badge lvl-pro">Pro · Profesional</span>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin-top:10px">Sekali terdata sebagai member, sesi berikutnya cukup tap namanya. Kelola database & insight di tab <b>📇 Member</b>.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗓️ Sesi Mabar</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label>Tanggal</label><input type="date" id="sessionDate"></div>
+        <div><label>Nama Sesi</label><input type="text" id="sessionName" placeholder="Mabar Sabtu Pagi"></div>
+      </div>
+      <div class="mt">
+        <button class="btn btn-sm btn-secondary" style="color:var(--red);border-color:rgba(220,38,38,.3)" onclick="resetAll()">🗑️ Reset Semua Data</button>
+      </div>
+      <div class="session-id" id="sessionInfo"></div>
+      <div style="border-top:1px dashed var(--border);margin:16px 0 12px"></div>
+      <button class="btn btn-sm btn-secondary" style="color:var(--muted);width:100%" onclick="openTurnamenModal()">🥇 Mode Turnamen (khusus Ganda) — opsional, jarang dipakai</button>
+    </div>
+  </div>
+
+  <!-- ══ MATCH ══ -->
+  <div id="tab-match" class="section">
+    <div class="card">
+      <div class="card-title" id="matchTitle">🏸 Input Pertandingan</div>
+
+      <div class="legend-bar">
+        <span class="lbl">LEVEL:</span>
+        <span class="level-badge lvl-new">New</span>
+        <span class="level-badge lvl-beg">Beg</span>
+        <span class="level-badge lvl-begp">Beg+</span>
+        <span class="level-badge lvl-inter">Inter</span>
+        <span class="level-badge lvl-pro">Pro</span>
+        <span class="lbl" style="font-weight:600">— panduan saja, host bebas memilih</span>
+      </div>
+
+      <!-- Mode pemilihan pemain: Manual / Americano / Mexicano -->
+      <div class="fmt-row" id="modeRow"></div>
+      <div class="gen-box" id="genBox" style="display:none">
+        <p id="genInfo"></p>
+        <button class="btn btn-primary" onclick="generateNext()">🎲 Buat Match Berikut</button>
+        <div class="gen-preview" id="genPreview"></div>
+      </div>
+
+      <div class="team-grid">
+        <div class="team-box">
+          <h3>Tim A</h3>
+          <div style="margin-bottom:8px"><label>Pemain 1</label><select id="a1"><option value="">— Pilih Pemain —</option></select></div>
+          <div><label>Pemain 2</label><select id="a2"><option value="">— Pilih Pemain —</option></select></div>
+        </div>
+        <div class="vs-div">VS</div>
+        <div class="team-box">
+          <h3>Tim B</h3>
+          <div style="margin-bottom:8px"><label>Pemain 1</label><select id="b1"><option value="">— Pilih Pemain —</option></select></div>
+          <div><label>Pemain 2</label><select id="b2"><option value="">— Pilih Pemain —</option></select></div>
+        </div>
+      </div>
+      <div class="score-inputs mt">
+        <div class="score-field"><label>Skor Tim A</label><input type="number" id="scoreA" inputmode="numeric" placeholder="21" min="0"></div>
+        <div class="score-dash">—</div>
+        <div class="score-field"><label>Skor Tim B</label><input type="number" id="scoreB" inputmode="numeric" placeholder="15" min="0"></div>
+      </div>
+      <div class="valid-hint" id="validHint"></div>
+      <div class="mt row"><button class="btn btn-primary" style="flex:1" onclick="recordMatch()">✅ Simpan Hasil</button></div>
+    </div>
+
+    <div class="pdf-banner">
+      <div><h3>📄 Download Laporan PDF</h3><p>Leaderboard + Riwayat · Siap posting Instagram</p></div>
+      <button class="btn btn-pdf" onclick="dummy('Print / Save PDF')">🖨️ Print / Save PDF</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📜 Riwayat Pertandingan</div>
+      <div id="matchHistory"></div>
+    </div>
+  </div>
+
+  <!-- ══ BOARD ══ -->
+  <div id="tab-leaderboard" class="section">
+    <div class="card" style="display:flex;align-items:center;gap:14px">
+      <img id="boardLogo" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:none">
+      <div id="boardLogoPh" style="width:52px;height:52px;border-radius:50%;border:2px dashed var(--border);display:grid;place-items:center;font-size:20px;background:var(--bg);flex-shrink:0">🏷️</div>
+      <div>
+        <div style="font-size:16px;font-weight:800" id="boardCommName">Komunitas</div>
+        <div class="header-sub" id="boardSessInfo">—</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏆 Leaderboard</div>
+      <div id="leaderboardContent"></div>
+    </div>
+    <div class="pdf-banner">
+      <div><h3>📸 Share / Post Leaderboard</h3><p>Peringkat 1-7 dengan logo & nama komunitas · siap post ke Instagram story/feed</p></div>
+      <button class="btn btn-pdf" onclick="shareBoard()">📸 Buat Gambar</button>
+    </div>
+    <div class="pdf-banner">
+      <div><h3>📄 Download Laporan PDF</h3><p>Leaderboard + Riwayat · logo & nama komunitas ikut tercetak</p></div>
+      <button class="btn btn-pdf" onclick="dummy('Print / Save PDF')">🖨️ Print / Save PDF</button>
+    </div>
+  </div>
+
+  <!-- ══ MEMBER ══ -->
+  <div id="tab-member" class="section">
+    <div class="card">
+      <div class="card-title">📊 Insight Member</div>
+      <div class="insight-grid" id="insightGrid"></div>
+      <p style="font-size:11.5px;color:var(--muted)">Definisi: <b>Rutin</b> = 4 kehadiran dalam 30 hari · <b>Aktif</b> = hadir dalam 60 hari terakhir · <b>Baru</b> = bergabung &lt;30 hari · <b>Coba-Coba</b> = sudah tidak main dalam 60 hari</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📇 Database Member</div>
+      <input type="text" id="memberTableSearch" placeholder="🔍 Cari member..." oninput="renderMemberTab()" style="margin-bottom:10px;max-width:280px">
+      <div style="overflow-x:auto" id="memberTable"></div>
+      <p style="font-size:11.5px;color:var(--muted);margin-top:10px">Database member berlaku lintas cabang olahraga. Di versi live: tersimpan di cloud per komunitas — aman walau ganti HP.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- EDIT SCORE MODAL -->
+<div class="modal-overlay" id="editModalOverlay" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>✏️ Edit Skor</h2>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-teams">
+      <div class="modal-team"><div class="modal-team-label">Tim A</div><div class="modal-team-name" id="editTeamA">—</div></div>
+      <div class="modal-vs">VS</div>
+      <div class="modal-team"><div class="modal-team-label">Tim B</div><div class="modal-team-name" id="editTeamB">—</div></div>
+    </div>
+    <div class="score-edit-row">
+      <div><label>Skor A</label><input class="score-edit-input" type="number" id="editScoreA" min="0" oninput="updateWinnerPreview()"></div>
+      <div class="score-edit-sep">—</div>
+      <div><label>Skor B</label><input class="score-edit-input" type="number" id="editScoreB" min="0" oninput="updateWinnerPreview()"></div>
+    </div>
+    <div class="modal-winner-preview" id="winnerPreview"><span style="color:var(--muted)">Masukkan skor untuk melihat pemenang</span></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveEditScore()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE LEADERBOARD MODAL -->
+<div class="modal-overlay" id="shareModalOverlay" onclick="closeShare(event)">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h2>📸 Share Leaderboard</h2>
+      <button class="modal-close" onclick="closeShare()">✕</button>
+    </div>
+    <canvas id="shareCanvas" style="width:100%;border-radius:14px;border:1px solid var(--border);display:block"></canvas>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-secondary" onclick="closeShare()">Tutup</button>
+      <button class="btn btn-primary" onclick="downloadShare()">⬇️ Download PNG</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">1080×1350 (4:5) — pas untuk feed & story Instagram</p>
+  </div>
+</div>
+
+<!-- TURNAMEN MODAL (opsional, jarang dipakai — khusus Ganda, tidak mengganggu 4 tab utama) -->
+<div class="modal-overlay" id="turnamenModalOverlay" onclick="closeTurnamenModal(event)">
+  <div class="modal" style="max-width:640px;max-height:86vh;overflow-y:auto">
+    <div class="modal-header">
+      <h2>🥇 Mode Turnamen <span style="font-size:9px;font-weight:800;background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff;padding:2px 9px;border-radius:99px;margin-left:6px;letter-spacing:.03em">PRO · GANDA</span></h2>
+      <button class="modal-close" onclick="closeTurnamenModal()">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Khusus permainan <b>ganda (2v2)</b> — pilih Pemain 1 & Pemain 2 dari Member, langsung masuk ke Peserta Terdaftar (sama seperti mengisi Tim di tab Match).</p>
+
+    <div class="tform-row" id="tformRow"></div>
+    <div id="tformInfo"></div>
+
+    <div id="tPesertaCard" style="display:none;margin-top:16px">
+      <div style="font-size:13px;font-weight:800;margin-bottom:8px">📇 Peserta Turnamen (pasangan)</div>
+      <div style="margin-bottom:8px"><label>Pemain 1</label><select id="tP1" onchange="cekTambahPasangan()"><option value="">— Pilih Pemain —</option></select></div>
+      <div><label>Pemain 2</label><select id="tP2" onchange="cekTambahPasangan()"><option value="">— Pilih Pemain —</option></select></div>
+      <div id="tEntriesList" style="margin-top:14px"></div>
+    </div>
+
+    <div id="tSetupCard" style="display:none;margin-top:16px;padding-top:14px;border-top:1px dashed var(--border)">
+      <div style="font-size:13px;font-weight:800;margin-bottom:8px">⚙️ Pengaturan Bagan</div>
+      <div id="tGroupConfig" style="display:none">
+        <div class="row">
+          <div style="flex:1"><label>Jumlah Grup</label><input type="number" id="tNumGroups" min="2" max="8" value="2" oninput="tournament.numGroups=parseInt(this.value)||2"></div>
+          <div style="flex:1"><label>Lolos per Grup ke Babak Gugur</label><input type="number" id="tQualify" min="1" max="4" value="2" oninput="tournament.qualifyPerGroup=parseInt(this.value)||2"></div>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);margin-top:8px">Peserta dibagi rata ke tiap grup. Peringkat teratas tiap grup lolos ke babak gugur.</p>
+      </div>
+      <button class="btn btn-primary mt" style="width:100%" onclick="bikinBagan()">🎲 Buat Bagan Turnamen</button>
+      <p style="font-size:11.5px;color:var(--muted);margin-top:10px" id="tMinNote"></p>
+    </div>
+
+    <div id="tBracketCard" style="display:none;margin-top:16px;padding-top:14px;border-top:1px dashed var(--border)">
+      <div style="font-size:13px;font-weight:800;margin-bottom:8px" id="tBracketTitle">🏆 Bagan Turnamen</div>
+      <div id="tBracketContent"></div>
+      <div class="mt" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-pdf btn-sm" style="flex:1;min-width:160px" onclick="printTurnamen()">🖨️ Print / Download PDF</button>
+        <button class="btn btn-secondary btn-sm" style="color:var(--red);border-color:rgba(220,38,38,.3)" onclick="resetTurnamen()">🗑️ Reset Turnamen & Buat Baru</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="dummy-note">⚠️ DUMMY V3 — fungsi = sistem live + upgrade level & Americano/Mexicano</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// LEVEL CONFIG (upgrade dari mabarprov2 — sama persis)
+// ═══════════════════════════════════════════════════════════════════
+const LEVELS = [
+  { code:'New',   label:'Newbie',       order:1, cls:'lvl-new'   },
+  { code:'Beg',   label:'Beginner',     order:2, cls:'lvl-beg'   },
+  { code:'Beg+',  label:'Beginner+',    order:3, cls:'lvl-begp'  },
+  { code:'Inter', label:'Intermediate', order:4, cls:'lvl-inter' },
+  { code:'Pro',   label:'Profesional',  order:5, cls:'lvl-pro'   }
+];
+const levelCls   = c => (LEVELS.find(x=>x.code===c)||LEVELS[0]).cls;
+const levelOrder = c => (LEVELS.find(x=>x.code===c)||{order:0}).order;
+const levelLabel = c => (LEVELS.find(x=>x.code===c)||{label:c}).label;
+
+// ═══════════════════════════════════════════════════════════════════
+// DATABASE MEMBER — permanen, lintas cabang. Live: cloud per komunitas.
+// members = [{name, level, joined, hadir:[tanggal sesi yang dihadiri]}]
+// ═══════════════════════════════════════════════════════════════════
+const dA = n => new Date(Date.now()-n*864e5).toISOString().split('T')[0];
+const MEMBERS = [
+  {name:'Andri',  level:'Inter', joined:dA(320), hadir:[dA(2),dA(9),dA(16),dA(23),dA(30),dA(37),dA(44),dA(51)]},
+  {name:'Bimo',   level:'Inter', joined:dA(300), hadir:[dA(2),dA(9),dA(16),dA(30),dA(44),dA(58)]},
+  {name:'Dewi',   level:'Beg+',  joined:dA(400), hadir:[dA(2),dA(9),dA(16),dA(23),dA(30),dA(37)]},
+  {name:'Rina',   level:'Beg',   joined:dA(150), hadir:[dA(2),dA(9),dA(23),dA(37),dA(51)]},
+  {name:'Sasha',  level:'Beg+',  joined:dA(200), hadir:[dA(2),dA(16),dA(30),dA(44)]},
+  {name:'Gilang', level:'Inter', joined:dA(280), hadir:[dA(2),dA(51),dA(65)]},
+  {name:'Hana',   level:'Beg',   joined:dA(90),  hadir:[dA(2),dA(23)]},
+  {name:'Fajar',  level:'New',   joined:dA(12),  hadir:[dA(2),dA(9)]},
+  {name:'Kirana', level:'New',   joined:dA(8),   hadir:[dA(4)]},
+  {name:'Indra',  level:'Beg+',  joined:dA(250), hadir:[dA(44),dA(58),dA(72)]},
+  {name:'Joko',   level:'Beg',   joined:dA(180), hadir:[dA(65),dA(79)]},
+  {name:'Lukman', level:'Inter', joined:dA(500), hadir:[dA(95),dA(110)]}
+];
+function mLast(m){ return m.hadir.length ? m.hadir.reduce((a,b)=>a>b?a:b) : m.joined; }
+// Definisi status (Koben, Juli 2026):
+// Rutin = ≥4 kehadiran dalam 30 hari · Aktif = hadir dalam 60 hari terakhir
+// Baru = bergabung <30 hari · Coba-Coba = tidak main dalam 60 hari
+function mStatus(m){
+  const now = Date.now();
+  const joinedDays = (now - new Date(m.joined))/864e5;
+  const lastDays   = (now - new Date(mLast(m)))/864e5;
+  const recent30   = m.hadir.filter(d => (now - new Date(d))/864e5 <= 30).length;
+  if(joinedDays < 30) return {t:'Baru',      cls:'st-baru'};
+  if(recent30 >= 4)   return {t:'Rutin',     cls:'st-rutin'};
+  if(lastDays <= 60)  return {t:'Aktif',     cls:'st-aktif'};
+  return {t:'Coba-Coba', cls:'st-jarang'};
+}
+const ST_ORDER = {'Rutin':0,'Aktif':1,'Baru':2,'Coba-Coba':3};
+
+// ═══════════════════════════════════════════════════════════════════
+// SPORT_CONFIG — menu & sistem poin SAMA semua cabang (+3/+1, 2vs2).
+// Keputusan Koben (Juli 2026): validasi poin DIHAPUS di semua cabang —
+// sistem poin komunitas di lapangan berbeda-beda, kita hanya catat skor
+// akhir. Satu-satunya aturan: tidak boleh seri (sama dengan live).
+// Americano/Mexicano aktif di SEMUA cabang termasuk badminton.
+// ═══════════════════════════════════════════════════════════════════
+const SPORT_CONFIG = {
+  badminton: {
+    label:'Badminton', emoji:'🏸', accentVar:'--badminton', hex:'#0F766E',
+    alert:'Double match · Pemain dipilih oleh Host · Catat skor setelah bertanding',
+    placeholder:['21','15'],
+    pairModes:['manual','americano','mexicano'],
+    validate:(a,b)=> a===b ? 'Tidak boleh seri!' : null
+  },
+  pickleball: {
+    label:'Pickleball', emoji:'🥒', accentVar:'--pickleball', hex:'#E11D48',
+    alert:'Double match · Pemain dipilih oleh Host · Catat skor akhir game',
+    placeholder:['11','8'],
+    pairModes:['manual','americano','mexicano'],
+    validate:(a,b)=> a===b ? 'Tidak boleh seri!' : null
+  },
+  padel: {
+    label:'Padel', emoji:'🎾', accentVar:'--padel', hex:'#9333EA',
+    alert:'Double match · Pemain dipilih oleh Host · Catat skor akhir set/game',
+    placeholder:['6','3'],
+    pairModes:['manual','americano','mexicano'],
+    validate:(a,b)=> a===b ? 'Tidak boleh seri!' : null
+  },
+  tennis: {
+    label:'Tennis', emoji:'🎾', accentVar:'--tennis', hex:'#84754E',
+    alert:'Double match · Pemain dipilih oleh Host · Catat skor akhir set/game',
+    placeholder:['8','5'],
+    pairModes:['manual','americano','mexicano'],
+    validate:(a,b)=> a===b ? 'Tidak boleh seri!' : null
+  }
+};
+
+const PAIR_MODES = {
+  manual:    { nama:'✍️ Manual',            info:'' },
+  americano: { nama:'🔄 Americano',
+    info:'Round robin sosial — pasangan berganti tiap match, semua main bareng semua. Sistem otomatis memilih 4 pemain dengan jumlah main paling sedikit dan pasangan yang paling jarang berduet. Host tinggal catat skor.' },
+  mexicano:  { nama:'📈 Mexicano',
+    info:'Rank-based — pasangan disusun dari peringkat sementara: peringkat 1 & 4 melawan 2 & 3, jadi match makin seimbang seiring sesi berjalan. Ronde-ronde awal ≈ acak.' }
+};
+
+// ── STATE per cabang (in-memory dummy; live: localStorage namespaced per user+sport) ──
+function freshState(){ return {players:[],matches:[],playCount:{},partnerHist:{},session:{date:new Date().toISOString().split('T')[0],name:''}}; }
+const today = new Date().toISOString().split('T')[0];
+const stateBySport = {
+  badminton: {
+    players:[
+      {name:'Andri',level:'Inter'},{name:'Bimo',level:'Inter'},{name:'Sasha',level:'Beg+'},{name:'Rina',level:'Beg'},
+      {name:'Dewi',level:'Beg+'},{name:'Fajar',level:'New'},{name:'Gilang',level:'Inter'},{name:'Hana',level:'Beg'}
+    ],
+    matches:[
+      {id:1,teamA:['Andri','Bimo'],teamB:['Sasha','Rina'],scoreA:21,scoreB:18,winner:'A',time:'19:12'},
+      {id:2,teamA:['Dewi','Fajar'],teamB:['Gilang','Hana'],scoreA:24,scoreB:22,winner:'A',time:'19:31'},
+      {id:3,teamA:['Sasha','Gilang'],teamB:['Andri','Dewi'],scoreA:17,scoreB:21,winner:'B',time:'19:50'}
+    ],
+    playCount:{Andri:2,Bimo:1,Sasha:2,Rina:1,Dewi:2,Fajar:1,Gilang:2,Hana:1},
+    partnerHist:{'Andri|Bimo':1,'Rina|Sasha':1,'Dewi|Fajar':1,'Gilang|Hana':1,'Gilang|Sasha':1,'Andri|Dewi':1},
+    session:{date:today,name:'Mabar Kamis Malam'}
+  },
+  pickleball: {
+    players:[
+      {name:'Citra',level:'Beg+'},{name:'Doni',level:'Inter'},{name:'Eka',level:'Beg'},{name:'Farhan',level:'Beg+'},
+      {name:'Gita',level:'New'},{name:'Hadi',level:'Inter'},{name:'Intan',level:'Beg'},{name:'Jaka',level:'Beg+'}
+    ],
+    matches:[], playCount:{}, partnerHist:{}, session:{date:today,name:'Open Play Sabtu'}
+  },
+  padel: freshState(), tennis: freshState()
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// TURNAMEN — Knock-out & Group Knock-out (Thomas/Uber style)
+// ═══════════════════════════════════════════════════════════════════
+const TFORMATS = {
+  knockout: {
+    nama: '🏆 Knock-out (Sistem Gugur)',
+    info: 'Sekali kalah, langsung tersingkir — pemenang tiap match maju ke babak berikutnya sampai final. Cocok untuk turnamen cepat dengan waktu terbatas. Kalau jumlah pasangan bukan kelipatan 2 (misalnya 5, 6, atau 7 pasangan), sistem otomatis membuat "Babak Kualifikasi" terlebih dahulu — jadi SEMUA pasangan tetap dapat bertanding minimal 1 kali, tidak ada yang langsung menang tanpa main.'
+  },
+  groupknockout: {
+    nama: '🥇 Group Knock-out (Fase Grup + Gugur)',
+    info: 'Format seperti Piala Thomas/Uber di badminton: peserta dibagi ke beberapa grup, semua saling bertanding round-robin (semua vs semua) dalam grup masing-masing. Peringkat teratas tiap grup lolos ke babak gugur (semifinal/final). Lebih adil karena tiap peserta pasti dapat beberapa kali main sebelum ada kemungkinan tersingkir — tapi butuh waktu & jumlah match lebih banyak.'
+  }
+};
+function freshTournament(){
+  return { format:null, entries:[], numGroups:2, qualifyPerGroup:2, groups:[], bracket:[], hasPrelim:false,
+    qualPrelimCount:0, qualDirectEntries:[], editing:null, editingGrup:null, stage:'setup' };
+}
+const tournamentBySport = { badminton:freshTournament(), pickleball:freshTournament(), padel:freshTournament(), tennis:freshTournament() };
+
+let sport = new URLSearchParams(location.search).get('sport') || 'badminton';
+if(!SPORT_CONFIG[sport]) sport = 'badminton';
+let state = stateBySport[sport];
+let tournament = tournamentBySport[sport];
+let fmt = null;
+let pairMode = 'manual';
+function esc(s){return String(s).replace(/'/g,"\\'");}
+function pairKey(a,b){return [a,b].sort().join('|');}
+
+// ── GANTI CABANG ──
+function applySport(){
+  const c = SPORT_CONFIG[sport];
+  state = stateBySport[sport];
+  tournament = tournamentBySport[sport];
+  fmt = null;
+  pairMode = 'manual';
+  document.documentElement.style.setProperty('--accent', `var(${c.accentVar})`);
+  document.getElementById('headerSub').textContent = 'Sports Community · ' + c.label;
+  document.getElementById('matchTabIcon').textContent = c.emoji;
+  document.getElementById('matchTitle').textContent = c.emoji + ' Input Pertandingan';
+  document.getElementById('ruleAlert').textContent = c.alert;
+  document.getElementById('scoreA').placeholder = c.placeholder[0];
+  document.getElementById('scoreB').placeholder = c.placeholder[1];
+  document.getElementById('validHint').innerHTML = 'Aturan: <b>tidak boleh seri</b> · sistem poin bebas mengikuti aturan komunitas masing-masing';
+  document.getElementById('pills').innerHTML = Object.keys(SPORT_CONFIG).map(k=>
+    `<button class="pill ${k===sport?'on':''}" onclick="gantiSport('${k}')">${SPORT_CONFIG[k].emoji} ${SPORT_CONFIG[k].label}</button>`).join(' ');
+  document.getElementById('sessionDate').value = state.session.date;
+  document.getElementById('sessionName').value = state.session.name;
+  renderModeRow();
+  uSI(); renderAll(); refreshCommUI(); renderTurnamenTab();
+}
+function gantiSport(k){ sport=k; history.replaceState(null,'','?sport='+k); applySport(); }
+
+// ── MODE PEMILIHAN PEMAIN (Manual / Americano / Mexicano) ──
+function renderModeRow(){
+  const modes = SPORT_CONFIG[sport].pairModes;
+  const row = document.getElementById('modeRow');
+  if(modes.length <= 1){ row.innerHTML=''; document.getElementById('genBox').style.display='none'; return; }
+  row.innerHTML = modes.map(m=>
+    `<button class="fmt-opt ${m===pairMode?'on':''}" onclick="pilihMode('${m}',this)">${PAIR_MODES[m].nama}</button>`).join('');
+  applyMode();
+}
+function pilihMode(m,btn){
+  pairMode = m;
+  btn.parentElement.querySelectorAll('.fmt-opt').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  applyMode();
+}
+function applyMode(){
+  const box = document.getElementById('genBox');
+  if(pairMode==='manual'){ box.style.display='none'; return; }
+  box.style.display='block';
+  document.getElementById('genInfo').textContent = PAIR_MODES[pairMode].info;
+  document.getElementById('genPreview').innerHTML='';
+}
+
+// Generator: pilih 4 pemain paling sedikit main, susun pasangan sesuai mode
+function generateNext(){
+  if(state.players.length < 4){ showToast('⚠️ Minimal 4 pemain di Daftar Pemain'); return; }
+  const pool = [...state.players]
+    .sort((a,b)=>(state.playCount[a.name]||0)-(state.playCount[b.name]||0) || Math.random()-0.5)
+    .slice(0,4);
+  let tA, tB;
+  if(pairMode==='americano'){
+    // pilih split pasangan yang paling jarang berduet (round robin sosial)
+    const sp=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
+    let best=sp[0], bestScore=Infinity;
+    sp.forEach(s=>{
+      const sc=(state.partnerHist[pairKey(pool[s[0][0]].name,pool[s[0][1]].name)]||0)
+             +(state.partnerHist[pairKey(pool[s[1][0]].name,pool[s[1][1]].name)]||0);
+      if(sc<bestScore){bestScore=sc;best=s;}
+    });
+    tA=[pool[best[0][0]],pool[best[0][1]]]; tB=[pool[best[1][0]],pool[best[1][1]]];
+  } else {
+    // mexicano: urutkan 4 pemain terpilih berdasar poin → 1&4 vs 2&3
+    const pts={}; calcStats().forEach(s=>pts[s.name]=s.points);
+    const ranked=[...pool].sort((a,b)=>(pts[b.name]||0)-(pts[a.name]||0));
+    tA=[ranked[0],ranked[3]]; tB=[ranked[1],ranked[2]];
+  }
+  populateSelects();
+  document.getElementById('a1').value=tA[0].name;
+  document.getElementById('a2').value=tA[1].name;
+  document.getElementById('b1').value=tB[0].name;
+  document.getElementById('b2').value=tB[1].name;
+  document.getElementById('genPreview').innerHTML =
+    `<b>${tA[0].name} & ${tA[1].name}</b> vs <b>${tB[0].name} & ${tB[1].name}</b> — form terisi, tinggal main & catat skor`;
+  showToast('🎲 Match '+PAIR_MODES[pairMode].nama.replace(/^\S+ /,'')+' dibuat!');
+}
+
+// ── SESI ──
+document.getElementById('sessionDate').addEventListener('change',e=>{state.session.date=e.target.value;uSI();});
+document.getElementById('sessionName').addEventListener('input',e=>{state.session.name=e.target.value;uSI();});
+function uSI(){
+  const txt=(state.session.name||'Sesi')+' · '+(state.session.date||'—');
+  document.getElementById('sessionInfo').textContent=txt;
+  const b=document.getElementById('boardSessInfo'); if(b)b.textContent=txt;
+}
+function resetAll(){ if(!confirm('Reset semua data '+SPORT_CONFIG[sport].label+'? (dummy — hanya data contoh)'))return; stateBySport[sport]=freshState(); applySport(); showToast('🗑️ Data '+SPORT_CONFIG[sport].label+' direset'); }
+
+// ── PEMAIN SESI vs MEMBER ──────────────────────────────────────────
+// Member = database permanen. Pemain sesi = dipilih dari member (tap).
+function toggleHadir(name){
+  const m = MEMBERS.find(x=>x.name===name);
+  if(!m || state.players.find(p=>p.name===name)) return;
+  state.players.push({name:m.name, level:m.level});
+  if(!state.playCount[name]) state.playCount[name]=0;
+  const t = new Date().toISOString().split('T')[0];
+  if(!m.hadir.includes(t)) m.hadir.push(t);
+  renderPlayerList(); renderMemberPicker(); populateSelects(); renderCounter();
+  showToast('✅ '+name+' masuk sesi!');
+}
+function renderMemberPicker(){
+  const el = document.getElementById('memberPicker');
+  const q = (document.getElementById('memberSearch').value||'').trim().toLowerCase();
+  const inSession = new Set(state.players.map(p=>p.name));
+  // Cari akurat: filter di SELURUH database member, baru dibatasi 6 tampilan
+  const all = MEMBERS
+    .filter(m=>!inSession.has(m.name) && (!q || m.name.toLowerCase().includes(q)))
+    .sort((a,b)=> ST_ORDER[mStatus(a).t]-ST_ORDER[mStatus(b).t] || a.name.localeCompare(b.name,'id'));
+  const list = all.slice(0,6);   // tampil 6 — begitu satu dipilih, nama berikutnya naik otomatis
+  const sisa = all.length - list.length;
+  if(!list.length){ el.innerHTML='<span style="color:var(--muted);font-size:12.5px">'+(q?'Tidak ketemu — tambah sebagai member baru di bawah':'Semua member sudah masuk sesi 👍')+'</span>'; return; }
+  el.innerHTML = list.map(m=>{
+    const st=mStatus(m);
+    return `<button class="m-chip" onclick="toggleHadir('${esc(m.name)}')" title="${st.t} · terakhir ${mLast(m)}">
+      <span class="st-dot ${st.cls}"></span>${m.name}
+      <span class="level-badge ${levelCls(m.level)}">${m.level}</span>+</button>`;
+  }).join('') + (sisa>0 ? `<span style="align-self:center;font-size:11.5px;color:var(--muted);font-weight:700">+${sisa} member lagi — ketik di kolom cari</span>` : '');
+}
+function addPlayer(){
+  const inp=document.getElementById('playerInput');
+  const name=inp.value.trim();
+  const level=document.getElementById('levelInput').value;
+  if(!name){inp.focus();return;}
+  if(state.players.find(p=>p.name===name)){showToast('⚠️ Sudah masuk sesi ini!');inp.value='';return;}
+  const existing = MEMBERS.find(m=>m.name===name);
+  if(existing){ inp.value=''; toggleHadir(name); showToast('📇 '+name+' sudah member — langsung dimasukkan ke sesi'); return; }
+  const t = new Date().toISOString().split('T')[0];
+  MEMBERS.push({name, level, joined:t, hadir:[t]});
+  state.players.push({name,level});
+  if(!state.playCount[name])state.playCount[name]=0;
+  inp.value='';renderPlayerList();renderMemberPicker();populateSelects();renderCounter();inp.focus();
+  showToast('✅ '+name+' tersimpan sebagai member & masuk sesi!');
+}
+function removePlayer(name){
+  state.players=state.players.filter(p=>p.name!==name);
+  renderPlayerList();renderMemberPicker();populateSelects();renderCounter();
+}
+function renderPlayerList(){
+  const el=document.getElementById('playerList');
+  const hc=document.getElementById('hadirCount'); if(hc)hc.textContent='('+state.players.length+')';
+  if(!state.players.length){el.innerHTML='<span style="color:var(--muted);font-size:13px">Belum ada pemain hadir — tap member di bawah untuk memasukkan</span>';return;}
+  // Sort: level order lalu A-Z (sama dengan mabarprov2)
+  const sorted=[...state.players].sort((a,b)=>{
+    const lo=levelOrder(a.level)-levelOrder(b.level);
+    return lo!==0?lo:a.name.localeCompare(b.name,'id');
+  });
+  el.innerHTML=`<table class="player-table">
+    <thead><tr><th>#</th><th>Nama Pemain</th><th>Level</th><th></th></tr></thead>
+    <tbody>${sorted.map((p,i)=>`
+      <tr>
+        <td style="color:var(--muted);font-weight:700">${i+1}</td>
+        <td style="font-weight:700">${p.name}</td>
+        <td><span class="level-badge ${levelCls(p.level)}">${p.level}</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:4px">${levelLabel(p.level)}</span></td>
+        <td style="text-align:right"><button class="remove" onclick="removePlayer('${esc(p.name)}')">×</button></td>
+      </tr>`).join('')}</tbody></table>`;
+}
+// Dropdown pemain: optgroup per level, A-Z dalam level (sama dengan mabarprov2)
+function populateSelects(){
+  ['a1','a2','b1','b2'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value;
+    const grouped={};
+    LEVELS.forEach(l=>grouped[l.code]=[]);
+    state.players.forEach(p=>{(grouped[p.level]||grouped['New']).push(p.name);});
+    LEVELS.forEach(l=>grouped[l.code].sort((a,b)=>a.localeCompare(b,'id')));
+    let html='<option value="">— Pilih Pemain —</option>';
+    LEVELS.forEach(l=>{
+      if(!grouped[l.code].length)return;
+      html+=`<optgroup label="── ${l.code} · ${l.label} ──">`;
+      grouped[l.code].forEach(n=>{html+=`<option value="${esc(n)}" ${cur===n?'selected':''}>${n} · ${l.code}</option>`;});
+      html+='</optgroup>';
+    });
+    sel.innerHTML=html;
+  });
+}
+
+// ── MATCH (fungsi = sistem live + validasi per cabang + partnerHist) ──
+function recordMatch(){
+  const a1=document.getElementById('a1').value,a2=document.getElementById('a2').value;
+  const b1=document.getElementById('b1').value,b2=document.getElementById('b2').value;
+  const sA=parseInt(document.getElementById('scoreA').value),sB=parseInt(document.getElementById('scoreB').value);
+  if(!a1||!a2||!b1||!b2){showToast('⚠️ Pilih semua 4 pemain!');return;}
+  if(new Set([a1,a2,b1,b2]).size<4){showToast('⚠️ Pemain tidak boleh sama!');return;}
+  if(isNaN(sA)||isNaN(sB)){showToast('⚠️ Masukkan skor!');return;}
+  const err = SPORT_CONFIG[sport].validate(sA,sB,fmt);
+  if(err){showToast('❌ '+err);return;}
+  const winner=sA>sB?'A':'B';
+  state.matches.push({id:Date.now(),teamA:[a1,a2],teamB:[b1,b2],scoreA:sA,scoreB:sB,winner,time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})});
+  [a1,a2,b1,b2].forEach(p=>{state.playCount[p]=(state.playCount[p]||0)+1;});
+  state.partnerHist[pairKey(a1,a2)]=(state.partnerHist[pairKey(a1,a2)]||0)+1;
+  state.partnerHist[pairKey(b1,b2)]=(state.partnerHist[pairKey(b1,b2)]||0)+1;
+  renderMatchHistory();renderCounter();
+  document.getElementById('scoreA').value='';document.getElementById('scoreB').value='';
+  document.getElementById('genPreview').innerHTML='';
+  showToast('✅ Hasil tersimpan!');
+}
+function deleteMatch(id){
+  if(!confirm('Hapus?'))return;
+  const m=state.matches.find(x=>x.id===id);
+  if(m)[...m.teamA,...m.teamB].forEach(p=>{if(state.playCount[p]>0)state.playCount[p]--;});
+  state.matches=state.matches.filter(x=>x.id!==id);
+  renderMatchHistory();renderLeaderboard();renderCounter();
+}
+function renderMatchHistory(){
+  const el=document.getElementById('matchHistory');
+  if(!state.matches.length){el.innerHTML='<div class="empty"><div class="empty-icon">'+SPORT_CONFIG[sport].emoji+'</div>Belum ada pertandingan</div>';return;}
+  el.innerHTML=[...state.matches].reverse().map((m,i)=>{
+    const num=state.matches.length-i;
+    return `<div class="match-item">
+      <div class="match-num">#${num}</div>
+      <div class="match-teams">
+        <div class="teams-line">${m.teamA.join(' & ')} <span style="color:var(--muted)">vs</span> ${m.teamB.join(' & ')}</div>
+        <div class="score-line">${m.scoreA} — ${m.scoreB}</div>
+      </div>
+      <div><span class="win-label">Tim ${m.winner} Menang</span><div class="m-time">${m.time}</div></div>
+      <div class="m-actions">
+        <button onclick="openEditModal(${m.id})" title="Edit skor">✏️</button>
+        <button class="del" onclick="deleteMatch(${m.id})" title="Hapus">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── EDIT MODAL ──
+let _editId=null;
+function openEditModal(id){
+  const m=state.matches.find(x=>x.id===id); if(!m)return;
+  _editId=id;
+  document.getElementById('editTeamA').textContent=m.teamA.join(' & ');
+  document.getElementById('editTeamB').textContent=m.teamB.join(' & ');
+  document.getElementById('editScoreA').value=m.scoreA;
+  document.getElementById('editScoreB').value=m.scoreB;
+  updateWinnerPreview();
+  document.getElementById('editModalOverlay').classList.add('open');
+}
+function closeEditModal(e){
+  if(e && e.target!==document.getElementById('editModalOverlay'))return;
+  document.getElementById('editModalOverlay').classList.remove('open');_editId=null;
+}
+function updateWinnerPreview(){
+  const sA=parseInt(document.getElementById('editScoreA').value);
+  const sB=parseInt(document.getElementById('editScoreB').value);
+  const el=document.getElementById('winnerPreview');
+  if(isNaN(sA)||isNaN(sB)||sA<0||sB<0){el.innerHTML='<span style="color:var(--muted)">Masukkan skor yang valid</span>';return;}
+  if(sA===sB){el.innerHTML='<span style="color:var(--red)">⚠️ Skor tidak boleh seri!</span>';return;}
+  const winTeam=sA>sB?'A':'B';
+  const m=_editId?state.matches.find(x=>x.id===_editId):null;
+  const winName=m?(winTeam==='A'?m.teamA:m.teamB).join(' & '):'Tim '+winTeam;
+  el.innerHTML=`<span style="background:linear-gradient(135deg,#F7941D,#E8174A);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🏆 ${winName} Menang</span>`;
+}
+function saveEditScore(){
+  const sA=parseInt(document.getElementById('editScoreA').value);
+  const sB=parseInt(document.getElementById('editScoreB').value);
+  if(isNaN(sA)||isNaN(sB)||sA<0||sB<0){showToast('⚠️ Masukkan skor yang valid!');return;}
+  if(sA===sB){showToast('⚠️ Skor tidak boleh seri!');return;}
+  const err=SPORT_CONFIG[sport].validate(sA,sB,fmt);
+  if(err){showToast('❌ '+err);return;}
+  const idx=state.matches.findIndex(x=>x.id===_editId);
+  if(idx===-1){showToast('❌ Match tidak ditemukan');return;}
+  state.matches[idx].scoreA=sA;state.matches[idx].scoreB=sB;state.matches[idx].winner=sA>sB?'A':'B';
+  renderMatchHistory();renderLeaderboard();
+  document.getElementById('editModalOverlay').classList.remove('open');_editId=null;
+  showToast('✅ Skor berhasil diupdate!');
+}
+
+// ── BOARD: sistem poin = live (+3/+1, tie-break Score Diff → Wins) ──
+function calcStats(){
+  const stats={};
+  state.players.forEach(p=>{stats[p.name]={name:p.name,level:p.level,played:0,wins:0,losses:0,points:0,scoreDiff:0,scoreFor:0,scoreAgainst:0};});
+  state.matches.forEach(m=>{
+    const winners=m.winner==='A'?m.teamA:m.teamB,losers=m.winner==='A'?m.teamB:m.teamA;
+    const ws=m.winner==='A'?m.scoreA:m.scoreB,ls=m.winner==='A'?m.scoreB:m.scoreA,diff=ws-ls;
+    winners.forEach(p=>{if(!stats[p])stats[p]={name:p,played:0,wins:0,losses:0,points:0,scoreDiff:0,scoreFor:0,scoreAgainst:0};
+      const s=stats[p];s.played++;s.wins++;s.points+=3;s.scoreDiff+=diff;s.scoreFor+=ws;s.scoreAgainst+=ls;});
+    losers.forEach(p=>{if(!stats[p])stats[p]={name:p,played:0,wins:0,losses:0,points:0,scoreDiff:0,scoreFor:0,scoreAgainst:0};
+      const s=stats[p];s.played++;s.losses++;s.points+=1;s.scoreDiff-=diff;s.scoreFor+=ls;s.scoreAgainst+=ws;});
+  });
+  return Object.values(stats).sort((a,b)=>b.points-a.points||b.scoreDiff-a.scoreDiff||b.wins-a.wins);
+}
+function renderLeaderboard(){
+  const el=document.getElementById('leaderboardContent');
+  const stats=calcStats();
+  if(!stats.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏆</div>Tambah pemain dulu</div>';return;}
+  const ri=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="font-size:15px;font-weight:800;color:var(--muted)">${i+1}</span>`;
+  const tieSet=new Set();
+  for(let i=0;i<stats.length-1;i++)if(stats[i].points===stats[i+1].points){tieSet.add(i);tieSet.add(i+1);}
+  el.innerHTML=`<div style="overflow-x:auto"><table class="lb-table"><thead><tr>
+    <th>#</th><th>Member</th><th class="right">MP</th><th class="right">W</th><th class="right">L</th><th class="right">Pts</th><th class="right">+/−</th>
+  </tr></thead><tbody>
+  ${stats.map((s,i)=>{
+    const dc=s.scoreDiff>0?'var(--green)':s.scoreDiff<0?'var(--red)':'var(--muted)';
+    const ds=s.scoreDiff>0?'+'+s.scoreDiff:''+s.scoreDiff;
+    const tie=tieSet.has(i);
+    return `<tr style="${tie?'background:rgba(247,148,29,.05)':''}">
+      <td style="font-size:17px">${ri(i)}</td>
+      <td><div class="player-name">${s.name} ${s.level?`<span class="level-badge ${levelCls(s.level)}" style="margin-left:4px">${s.level}</span>`:''}</div>
+        <div class="win-rate">${s.played>0?Math.round(s.wins/s.played*100):0}% win${tie?' · <span style="color:var(--orange);font-size:10px;font-weight:800">TIE</span>':''}</div></td>
+      <td class="right"><span class="stat-chip">${s.played}</span></td>
+      <td class="right"><span class="stat-chip" style="color:var(--green)">${s.wins}</span></td>
+      <td class="right"><span class="stat-chip" style="color:var(--red)">${s.losses}</span></td>
+      <td class="right"><span class="stat-chip pts-chip">${s.points}</span></td>
+      <td class="right"><span class="stat-chip" style="color:${dc}">${s.played>0?ds:'—'}</span>
+        ${s.played>0?`<div style="font-size:10px;color:var(--muted);text-align:right">${s.scoreFor}:${s.scoreAgainst}</div>`:''}</td>
+    </tr>`;
+  }).join('')}</tbody></table></div>
+  <div class="lb-note">MP = Match Play (jumlah bermain) · W = Win +3 · L = Lose +1 · Tie-breaker: Score Diff · ${state.matches.length} game selesai</div>`;
+}
+
+// ── COUNTER: menu dihapus (keputusan Koben) — playCount tetap jalan
+// di belakang layar untuk rotasi adil Americano/Mexicano & statistik.
+function renderCounter(){}
+
+// ── TAB MEMBER: insight + database ──
+function renderMemberTab(){
+  const now = Date.now();
+  const stats = MEMBERS.map(m=>({m, st:mStatus(m)}));
+  const total  = MEMBERS.length;
+  const rutin  = stats.filter(x=>x.st.t==='Rutin').length;
+  const aktif  = stats.filter(x=>x.st.t==='Aktif').length;
+  const baru   = stats.filter(x=>x.st.t==='Baru').length;
+  const coba   = stats.filter(x=>x.st.t==='Coba-Coba').length;
+  document.getElementById('insightGrid').innerHTML = `
+    <div class="insight-card"><b>${total}</b><span>Total Member</span></div>
+    <div class="insight-card"><b>${rutin}</b><span>Rutin</span></div>
+    <div class="insight-card"><b>${aktif}</b><span>Aktif</span></div>
+    <div class="insight-card"><b>${baru}</b><span>Baru</span></div>`;
+  const q=(document.getElementById('memberTableSearch').value||'').toLowerCase();
+  const rows = stats
+    .filter(x=>!q || x.m.name.toLowerCase().includes(q))
+    .sort((a,b)=> b.m.hadir.length - a.m.hadir.length || a.m.name.localeCompare(b.m.name,'id'));
+  document.getElementById('memberTable').innerHTML = `<table class="player-table">
+    <thead><tr><th>#</th><th>Nama</th><th>Status</th><th>Hadir</th><th>Terakhir</th><th></th></tr></thead>
+    <tbody>${rows.map((x,i)=>`
+      <tr>
+        <td style="color:var(--muted);font-weight:700">${i+1}</td>
+        <td style="font-weight:700;white-space:nowrap">${x.m.name} <span style="font-weight:600;color:var(--muted);font-size:12px">- ${levelLabel(x.m.level)}</span></td>
+        <td><span class="st-badge ${x.st.cls}">${x.st.t}</span></td>
+        <td style="font-weight:800">${x.m.hadir.length}<span style="font-size:10.5px;color:var(--muted);font-weight:600"> sesi</span></td>
+        <td style="font-size:12px;color:var(--muted)">${new Date(mLast(x.m)).toLocaleDateString('id-ID')}</td>
+        <td style="text-align:right"><button class="remove" onclick="removeMember('${esc(x.m.name)}')" title="Hapus member permanen">×</button></td>
+      </tr>`).join('')}</tbody></table>`;
+}
+function removeMember(name){
+  if(!confirm('Hapus '+name+' dari database member secara permanen? Riwayat kehadirannya ikut hilang.'))return;
+  const i=MEMBERS.findIndex(m=>m.name===name);
+  if(i>-1)MEMBERS.splice(i,1);
+  state.players=state.players.filter(p=>p.name!==name);
+  renderMemberTab();renderMemberPicker();renderPlayerList();populateSelects();renderCounter();
+  showToast('🗑️ '+name+' dihapus dari member');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TURNAMEN — peserta terkoneksi database Member, 2 format bagan
+// ═══════════════════════════════════════════════════════════════════
+function pilihFormatTurnamen(f){
+  tournament.format = f;
+  renderTurnamenTab();
+}
+// ── Peserta: dropdown Pemain 1/2 (sama pola dengan populateSelects di tab Match) ──
+function populateTPesertaSelects(){
+  const used = new Set();
+  tournament.entries.forEach(e=>e.members.forEach(m=>used.add(m)));
+  ['tP1','tP2'].forEach(id=>{
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    const grouped={};
+    LEVELS.forEach(l=>grouped[l.code]=[]);
+    MEMBERS.forEach(m=>{ if(!used.has(m.name)) (grouped[m.level]||grouped['New']).push(m.name); });
+    LEVELS.forEach(l=>grouped[l.code].sort((a,b)=>a.localeCompare(b,'id')));
+    let html='<option value="">— Pilih Pemain —</option>';
+    LEVELS.forEach(l=>{
+      if(!grouped[l.code].length) return;
+      html+=`<optgroup label="── ${l.code} · ${l.label} ──">`;
+      grouped[l.code].forEach(n=>{ html+=`<option value="${esc(n)}" ${cur===n?'selected':''}>${n} · ${l.code}</option>`; });
+      html+='</optgroup>';
+    });
+    sel.innerHTML=html;
+  });
+}
+function cekTambahPasangan(){
+  const a=document.getElementById('tP1').value, b=document.getElementById('tP2').value;
+  if(!a||!b) return;
+  if(a===b){ showToast('⚠️ Pemain tidak boleh sama'); document.getElementById('tP2').value=''; return; }
+  tournament.entries.push({id:Date.now()+Math.random(), name:a+' & '+b, members:[a,b]});
+  showToast('✅ Pasangan '+a+' & '+b+' ditambahkan');
+  renderTPeserta(); // reset & repopulate select (member yang sudah dipakai otomatis hilang dari pilihan)
+}
+function removeTEntry(id){
+  tournament.entries = tournament.entries.filter(e=>e.id!==id);
+  renderTPeserta();
+}
+function renderTPeserta(){
+  populateTPesertaSelects();
+  renderTEntriesList();
+}
+function renderTEntriesList(){
+  const el = document.getElementById('tEntriesList');
+  if(!tournament.entries.length){
+    el.innerHTML = '<span style="color:var(--muted);font-size:12.5px">Belum ada peserta — pilih Pemain 1 & 2 di atas</span>';
+    return;
+  }
+  el.innerHTML = `<div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-bottom:8px">PESERTA TERDAFTAR (${tournament.entries.length})</div>` +
+    tournament.entries.map((e,i)=>`<div class="t-entry-row"><span>${i+1}. ${e.name}</span><button class="remove" onclick="removeTEntry(${e.id})">×</button></div>`).join('');
+}
+
+// ── Animasi random 5 detik sebelum bagan/grup ditampilkan ──
+function jalankanAnimasiAcak(onDone){
+  document.getElementById('tSetupCard').style.display='none';
+  document.getElementById('tBracketCard').style.display='block';
+  document.getElementById('tBracketTitle').textContent='🎲 Mengacak Peserta...';
+  document.getElementById('tBracketContent').innerHTML = `
+    <div style="text-align:center;padding:22px 10px">
+      <div style="font-size:42px;margin-bottom:10px">🎲</div>
+      <div style="font-weight:800;font-size:14px">Random by System...</div>
+      <div style="font-size:11.5px;color:var(--muted);margin:4px 0 16px">Menyusun peserta secara acak & adil, mohon tunggu sebentar</div>
+      <div style="height:8px;background:var(--border);border-radius:99px;overflow:hidden;max-width:320px;margin:0 auto">
+        <div id="tRandomBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--orange),var(--pink));transition:width 4.7s linear"></div>
+      </div>
+    </div>`;
+  requestAnimationFrame(()=>{ const bar=document.getElementById('tRandomBar'); if(bar) bar.style.width='100%'; });
+  setTimeout(onDone, 5000);
+}
+
+// ── Generator bagan Knock-out — Babak Kualifikasi otomatis (BUKAN bye massal) ──
+// Semua peserta dijamin main minimal 1x. Kalau jumlah pasangan bukan kelipatan 2,
+// selisihnya main di "Babak Kualifikasi" dulu; sisanya langsung masuk babak utama
+// (yang tetap berupa pertandingan sungguhan, bukan menang tanpa tanding).
+function shuffleArr(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function buatKnockout(entries){
+  const real = shuffleArr(entries);
+  const n = real.length;
+  let P = 1; while(P*2 <= n) P *= 2; // pangkat dua terbesar ≤ n
+  const extra = n - P; // jumlah pasangan yang harus main Babak Kualifikasi dulu
+
+  const rounds = [];
+  let mainSlots;
+  let directEntries = [];
+  if(extra > 0){
+    const prelimEntries = real.slice(0, extra*2);
+    directEntries = real.slice(extra*2); // langsung ke babak utama (tetap main match sungguhan di sana)
+    const preRound = [];
+    for(let i=0;i<prelimEntries.length;i+=2) preRound.push({a:prelimEntries[i], b:prelimEntries[i+1], scoreA:null, scoreB:null, winner:null});
+    rounds.push(preRound);
+    mainSlots = new Array(P).fill(null);
+    directEntries.forEach((e,j)=>{ mainSlots[extra+j] = e; }); // slot 0..extra-1 diisi otomatis begitu Babak Kualifikasi selesai
+  } else {
+    mainSlots = real;
+  }
+  const mainRound = [];
+  for(let i=0;i<mainSlots.length;i+=2) mainRound.push({a:mainSlots[i]||null, b:mainSlots[i+1]||null, scoreA:null, scoreB:null, winner:null});
+  rounds.push(mainRound);
+  let sz = mainRound.length;
+  while(sz>1){ sz/=2; rounds.push(Array.from({length:sz},()=>({a:null,b:null,scoreA:null,scoreB:null,winner:null}))); }
+
+  tournament.bracket = rounds;
+  tournament.hasPrelim = extra > 0;
+  tournament.qualPrelimCount = extra;
+  tournament.qualDirectEntries = directEntries;
+  tournament.editing = null;
+  tournament.stage = 'knockout';
+}
+function roundName(total, idx, hasPrelim){
+  if(hasPrelim && idx===0) return 'BABAK KUALIFIKASI';
+  const effIdx = hasPrelim ? idx-1 : idx;
+  const effTotal = hasPrelim ? total-1 : total;
+  const remain = effTotal - effIdx;
+  if(remain===1) return 'FINAL';
+  if(remain===2) return 'SEMI FINAL';
+  if(remain===3) return 'PEREMPAT FINAL';
+  return 'BABAK '+(effIdx+1);
+}
+// Kalau skor diedit dan pemenangnya berubah, hasil di babak-babak berikutnya yang
+// sudah memakai pemenang lama otomatis dibatalkan (cascade) supaya bagan tetap valid.
+function invalidateForward(r,i){
+  if(!tournament.bracket[r] || !tournament.bracket[r][i]) return;
+  const m = tournament.bracket[r][i];
+  const hadWinner = !!m.winner;
+  m.scoreA=null; m.scoreB=null; m.winner=null;
+  if(hadWinner && tournament.bracket[r+1]){
+    const nextIdx=Math.floor(i/2), pos = i%2===0?'a':'b';
+    const slot=tournament.bracket[r+1][nextIdx];
+    slot[pos]=null;
+    invalidateForward(r+1,nextIdx);
+  }
+}
+function editSkorBagan(r,i){ tournament.editing={r,i}; renderBracket(); }
+function batalEditBagan(){ tournament.editing=null; renderBracket(); }
+function simpanSkorBagan(r,i){
+  const sA = parseInt(document.getElementById(`bs-r${r}-m${i}-A`).value);
+  const sB = parseInt(document.getElementById(`bs-r${r}-m${i}-B`).value);
+  if(isNaN(sA)||isNaN(sB)){ showToast('⚠️ Masukkan skor kedua peserta'); return; }
+  const err = SPORT_CONFIG[sport].validate(sA,sB);
+  if(err){ showToast('❌ '+err); return; }
+  const m = tournament.bracket[r][i];
+  const oldWinnerName = m.winner ? m.winner.name : null;
+  m.scoreA=sA; m.scoreB=sB; m.winner = sA>sB ? m.a : m.b;
+  if(tournament.bracket[r+1]){
+    const nextIdx=Math.floor(i/2), pos=i%2===0?'a':'b';
+    const slot = tournament.bracket[r+1][nextIdx];
+    const winnerChanged = oldWinnerName !== m.winner.name;
+    slot[pos]=m.winner;
+    if(winnerChanged) invalidateForward(r+1,nextIdx);
+  }
+  tournament.editing = null;
+  renderBracket();
+  showToast('✅ Hasil tersimpan, pemenang maju ke babak berikutnya!');
+}
+// ── Garis penghubung bagan (SVG, mengikuti posisi kartu apa adanya — tahan variasi tinggi kartu) ──
+// ── Layout bagan: posisi kartu dihitung manual (bukan flexbox) supaya garis ──
+// penghubung dijamin siku sempurna — posisi Y babak berikutnya SELALU persis titik
+// tengah dari 2 kartu sumbernya, jadi tidak ada lagi garis miring/diagonal.
+function bracketColWidth(){ const w=window.innerWidth; return w<420 ? 148 : w<640 ? 168 : w<1024 ? 190 : 208; }
+function bracketColGap(){ return window.innerWidth<640 ? 34 : 56; }
+function layoutBracket(){
+  const outer = document.getElementById('bracketOuter');
+  const wrap = document.getElementById('bracketWrapEl');
+  if(!outer || !wrap) return;
+  outer.classList.remove('ready');
+  const totalRounds = tournament.bracket.length;
+  const colW = bracketColWidth(), colGap = bracketColGap(), rowGap = 14, topPad = 26;
+
+  const roundEls = [];
+  for(let r=0;r<totalRounds;r++){
+    const roundLen = (r===0 && tournament.hasPrelim) ? (tournament.qualPrelimCount + tournament.qualDirectEntries.length) : tournament.bracket[r].length;
+    const cards = [];
+    for(let i=0;i<roundLen;i++){
+      const cardEl = wrap.querySelector(`.match-card[data-round="${r}"][data-pos="${i}"]`);
+      if(cardEl){ cardEl.style.left=(r*(colW+colGap))+'px'; cardEl.style.width=colW+'px'; cardEl.style.top='0px'; }
+      cards.push(cardEl);
+    }
+    roundEls.push(cards);
+    const label = wrap.querySelector(`.round-label[data-round-label="${r}"]`);
+    if(label){ label.style.left=(r*(colW+colGap))+'px'; label.style.width=colW+'px'; label.style.top='0px'; }
+  }
+
+  const tops = [];
+  for(let r=0;r<totalRounds;r++){
+    tops.push([]);
+    if(r===0){
+      let y = topPad;
+      roundEls[0].forEach(el=>{
+        const h = el ? el.offsetHeight : 0;
+        tops[0].push({top:y, height:h, centerY:y+h/2});
+        y += h + rowGap;
+      });
+    } else {
+      roundEls[r].forEach((el,k)=>{
+        const h = el ? el.offsetHeight : 0;
+        const feed1 = tops[r-1][k*2], feed2 = tops[r-1][k*2+1];
+        const centerY = (feed1 && feed2) ? (feed1.centerY+feed2.centerY)/2 : (feed1 ? feed1.centerY : topPad+h/2);
+        tops[r].push({top:centerY-h/2, height:h, centerY});
+      });
+    }
+  }
+
+  let maxBottom = 0;
+  for(let r=0;r<totalRounds;r++){
+    roundEls[r].forEach((el,i)=>{ if(el){ el.style.top = tops[r][i].top+'px'; maxBottom=Math.max(maxBottom, tops[r][i].top+tops[r][i].height); } });
+  }
+  const wrapW = totalRounds*(colW+colGap) - colGap;
+  const wrapH = maxBottom + 16;
+  wrap.style.width = wrapW+'px';
+  wrap.style.height = wrapH+'px';
+
+  const svg = document.getElementById('bracketSvg');
+  svg.setAttribute('width', wrapW); svg.setAttribute('height', wrapH);
+  svg.style.width = wrapW+'px'; svg.style.height = wrapH+'px';
+  let svgHtml='';
+  for(let r=0;r<totalRounds-1;r++){
+    const roundLen = tops[r].length;
+    const x1 = r*(colW+colGap)+colW, midX = x1 + colGap/2, xN = (r+1)*(colW+colGap);
+    for(let k=0;k*2<roundLen;k++){
+      const t1 = tops[r][k*2], t2 = tops[r][k*2+1], tN = tops[r+1][k];
+      if(!t1 || !tN) continue;
+      if(t2){
+        svgHtml += `<line x1="${x1}" y1="${t1.centerY}" x2="${midX}" y2="${t1.centerY}" class="bl"/>`;
+        svgHtml += `<line x1="${x1}" y1="${t2.centerY}" x2="${midX}" y2="${t2.centerY}" class="bl"/>`;
+        svgHtml += `<line x1="${midX}" y1="${t1.centerY}" x2="${midX}" y2="${t2.centerY}" class="bl"/>`;
+        svgHtml += `<line x1="${midX}" y1="${tN.centerY}" x2="${xN}" y2="${tN.centerY}" class="bl"/>`;
+      } else {
+        svgHtml += `<line x1="${x1}" y1="${t1.centerY}" x2="${xN}" y2="${tN.centerY}" class="bl"/>`;
+      }
+    }
+  }
+  svg.innerHTML = svgHtml;
+  outer.classList.add('ready');
+}
+let _bracketResizeTimer=null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(_bracketResizeTimer);
+  _bracketResizeTimer = setTimeout(()=>{
+    const overlay = document.getElementById('turnamenModalOverlay');
+    if(overlay && overlay.classList.contains('open') && (tournament.stage==='knockout'||tournament.stage==='done')) layoutBracket();
+  }, 200);
+});
+function renderBracket(){
+  const totalRounds = tournament.bracket.length;
+  document.getElementById('tBracketTitle').textContent =
+    (tournament.format==='groupknockout' ? '🏆 Babak Gugur (Qualifier)' : '🏆 Bagan Knock-out') + ' — ' + SPORT_CONFIG[sport].label;
+  const el = document.getElementById('tBracketContent');
+
+  function matchCardHtml(r,i,m){
+    const aLbl = m.a ? m.a.name : 'Menunggu';
+    const bLbl = m.b ? m.b.name : 'Menunggu';
+    const aWin = m.winner && m.a && m.winner.name===m.a.name;
+    const bWin = m.winner && m.b && m.winner.name===m.b.name;
+    const isEditing = tournament.editing && tournament.editing.r===r && tournament.editing.i===i;
+    let body;
+    if(m.winner && !isEditing){
+      body = `<div class="match-slot ${aWin?'winner':''}">${aLbl}${aWin?' 🏆':''} <b>${m.scoreA}</b></div>
+              <div class="match-slot ${bWin?'winner':''}">${bLbl}${bWin?' 🏆':''} <b>${m.scoreB}</b></div>
+              <div style="text-align:right;margin-top:6px"><button class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:10.5px" onclick="editSkorBagan(${r},${i})">✏️ Edit Skor</button></div>`;
+    } else if(m.winner && isEditing){
+      body = `<div class="match-slot">${aLbl}</div><div class="match-slot">${bLbl}</div>
+        <div class="match-score-row">
+          <input type="number" id="bs-r${r}-m${i}-A" value="${m.scoreA}" min="0">
+          <span style="color:var(--muted)">—</span>
+          <input type="number" id="bs-r${r}-m${i}-B" value="${m.scoreB}" min="0">
+          <button class="btn btn-primary btn-sm" onclick="simpanSkorBagan(${r},${i})">💾</button>
+          <button class="btn btn-secondary btn-sm" onclick="batalEditBagan()">✕</button>
+        </div>`;
+    } else if(m.a && m.b){
+      body = `<div class="match-slot">${aLbl}</div><div class="match-slot">${bLbl}</div>
+        <div class="match-score-row">
+          <input type="number" id="bs-r${r}-m${i}-A" placeholder="0" min="0">
+          <span style="color:var(--muted)">—</span>
+          <input type="number" id="bs-r${r}-m${i}-B" placeholder="0" min="0">
+          <button class="btn btn-primary btn-sm" onclick="simpanSkorBagan(${r},${i})">✅</button>
+        </div>`;
+    } else {
+      body = `<div class="match-slot" style="color:var(--muted)">${aLbl}</div><div class="match-slot" style="color:var(--muted)">${bLbl}</div>`;
+    }
+    return `<div class="match-card" data-round="${r}" data-pos="${i}">${body}</div>`;
+  }
+  function byeCardHtml(pos, entry){
+    return `<div class="match-card bye-card" data-round="0" data-pos="${pos}">
+      <div class="match-slot" style="color:var(--text)">🎫 ${entry.name}</div>
+      <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-top:2px">Bye — langsung lolos ke babak berikutnya</div>
+    </div>`;
+  }
+
+  const roundsHtml = tournament.bracket.map((round,r)=>{
+    let cardsHtml;
+    if(r===0 && tournament.hasPrelim){
+      const extra = tournament.qualPrelimCount;
+      cardsHtml = round.map((m,i)=>matchCardHtml(r,i,m)).join('') +
+        tournament.qualDirectEntries.map((entry,j)=>byeCardHtml(extra+j, entry)).join('');
+    } else {
+      cardsHtml = round.map((m,i)=>matchCardHtml(r,i,m)).join('');
+    }
+    return `<div class="round-label" data-round-label="${r}">${roundName(totalRounds,r,tournament.hasPrelim)}</div>${cardsHtml}`;
+  }).join('');
+
+  el.innerHTML = `<div class="bracket-outer" id="bracketOuter"><div class="bracket-wrap" id="bracketWrapEl"><svg class="bracket-svg" id="bracketSvg"></svg>${roundsHtml}</div></div>`;
+
+  const finalMatch = tournament.bracket[totalRounds-1] ? tournament.bracket[totalRounds-1][0] : null;
+  if(finalMatch && finalMatch.winner){
+    tournament.stage='done';
+    el.innerHTML += `<div class="alert" style="margin-top:14px;text-align:center;font-size:15px">🏆 <b>${finalMatch.winner.name}</b> Juara ${SPORT_CONFIG[sport].label}!</div>`;
+  }
+  requestAnimationFrame(layoutBracket);
+}
+
+// ── Generator fase Grup (round-robin) → lolos ke Knock-out ──
+function buatGroupStage(entries, numGroups){
+  const list = shuffleArr(entries);
+  numGroups = Math.max(2, Math.min(numGroups, Math.floor(list.length/2)));
+  const groups = Array.from({length:numGroups}, (_,i)=>({name:'Grup '+String.fromCharCode(65+i), entries:[], matches:[]}));
+  list.forEach((e,i)=> groups[i%numGroups].entries.push(e));
+  groups.forEach(g=>{
+    for(let i=0;i<g.entries.length;i++)
+      for(let j=i+1;j<g.entries.length;j++)
+        g.matches.push({a:g.entries[i], b:g.entries[j], scoreA:null, scoreB:null, winner:null});
+  });
+  tournament.groups = groups;
+  tournament.editingGrup = null;
+  tournament.stage = 'groups';
+}
+// Sistem poin & tie-break SAMA PERSIS dengan Board: +3 menang/+1 kalah, tie-break Score Diff → Wins
+function groupStandings(g){
+  const stats = {};
+  g.entries.forEach(e=> stats[e.name]={name:e.name, played:0,wins:0,losses:0,points:0,diff:0,scoreFor:0,scoreAgainst:0});
+  g.matches.forEach(m=>{
+    if(m.winner==null) return;
+    const w=m.winner, l = (w.name===m.a.name) ? m.b : m.a;
+    const ws = (w.name===m.a.name) ? m.scoreA : m.scoreB, ls = (w.name===m.a.name) ? m.scoreB : m.scoreA;
+    stats[w.name].played++; stats[w.name].wins++; stats[w.name].points+=3; stats[w.name].diff += (ws-ls); stats[w.name].scoreFor+=ws; stats[w.name].scoreAgainst+=ls;
+    stats[l.name].played++; stats[l.name].losses++; stats[l.name].points+=1; stats[l.name].diff -= (ws-ls); stats[l.name].scoreFor+=ls; stats[l.name].scoreAgainst+=ws;
+  });
+  return Object.values(stats).sort((a,b)=>b.points-a.points||b.diff-a.diff||b.wins-a.wins);
+}
+function semuaMatchGrupSelesai(){ return tournament.groups.every(g=>g.matches.every(m=>m.winner!=null)); }
+function editSkorGrup(gi,mi){ tournament.editingGrup={gi,mi}; renderGroupStage(); }
+function batalEditGrup(){ tournament.editingGrup=null; renderGroupStage(); }
+function simpanSkorGrup(gi,mi){
+  const sA = parseInt(document.getElementById(`gs-g${gi}-m${mi}-A`).value);
+  const sB = parseInt(document.getElementById(`gs-g${gi}-m${mi}-B`).value);
+  if(isNaN(sA)||isNaN(sB)){ showToast('⚠️ Masukkan skor kedua peserta'); return; }
+  const err = SPORT_CONFIG[sport].validate(sA,sB);
+  if(err){ showToast('❌ '+err); return; }
+  const m = tournament.groups[gi].matches[mi];
+  m.scoreA=sA; m.scoreB=sB; m.winner = sA>sB ? m.a : m.b;
+  tournament.editingGrup = null;
+  renderGroupStage();
+  showToast('✅ Hasil match grup tersimpan');
+}
+function renderGroupStage(){
+  document.getElementById('tBracketTitle').textContent = '🥇 Fase Grup — ' + SPORT_CONFIG[sport].label;
+  const allDone = semuaMatchGrupSelesai();
+  const el = document.getElementById('tBracketContent');
+  const ri=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="font-size:13px;font-weight:800;color:var(--muted)">${i+1}</span>`;
+  el.innerHTML = tournament.groups.map((g,gi)=>{
+    const st = groupStandings(g);
+    const tieSet = new Set();
+    for(let i=0;i<st.length-1;i++) if(st[i].points===st[i+1].points){ tieSet.add(i); tieSet.add(i+1); }
+    return `<div class="group-block">
+      <div class="card-title">${g.name}</div>
+      <div style="overflow-x:auto"><table class="lb-table"><thead><tr>
+        <th>#</th><th>Peserta</th><th class="right">MP</th><th class="right">W</th><th class="right">L</th><th class="right">Pts</th><th class="right">+/−</th>
+      </tr></thead><tbody>${st.map((s,i)=>{
+        const dc = s.diff>0?'var(--green)':s.diff<0?'var(--red)':'var(--muted)';
+        const ds = s.diff>0?'+'+s.diff:''+s.diff;
+        const tie = tieSet.has(i);
+        const lolos = i < tournament.qualifyPerGroup;
+        return `<tr style="${tie?'background:rgba(247,148,29,.06)':''}">
+          <td style="font-size:15px">${ri(i)}</td>
+          <td><div style="font-weight:800">${s.name}${lolos?' <span style="font-size:9.5px;font-weight:800;color:var(--green)">● LOLOS</span>':''}</div>
+            ${tie?'<div style="font-size:10px;color:var(--orange);font-weight:800">TIE — cek +/−</div>':''}</td>
+          <td class="right"><span class="stat-chip">${s.played}</span></td>
+          <td class="right"><span class="stat-chip" style="color:var(--green)">${s.wins}</span></td>
+          <td class="right"><span class="stat-chip" style="color:var(--red)">${s.losses}</span></td>
+          <td class="right"><span class="stat-chip pts-chip">${s.points}</span></td>
+          <td class="right"><span class="stat-chip" style="color:${dc}">${s.played>0?ds:'—'}</span>
+            ${s.played>0?`<div style="font-size:9.5px;color:var(--muted);text-align:right">${s.scoreFor}:${s.scoreAgainst}</div>`:''}</td>
+        </tr>`;
+      }).join('')}</tbody></table></div>
+      <div class="lb-note" style="text-align:left;margin-top:6px">MP = Match Play · W = Win +3 · L = Lose +1 · Tie-breaker: Score Diff → Wins · <span style="color:var(--green)">● LOLOS</span> = lolos ke babak gugur</div>
+      <div style="margin:12px 0 6px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.04em">MATCH GRUP</div>
+      ${g.matches.map((m,mi)=>{
+        const isEditing = tournament.editingGrup && tournament.editingGrup.gi===gi && tournament.editingGrup.mi===mi;
+        if(m.winner && !isEditing){
+          return `<div class="match-slot"><span>${m.a.name} <span style="color:var(--muted)">vs</span> ${m.b.name}</span>
+            <span style="display:flex;align-items:center;gap:8px">
+              <b style="color:var(--accent)">${m.scoreA}—${m.scoreB}</b>
+              <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:10px" onclick="editSkorGrup(${gi},${mi})">✏️</button>
+            </span>
+          </div>`;
+        }
+        return `<div class="match-score-row" style="justify-content:space-between">
+          <span style="font-size:12.5px;font-weight:700">${m.a.name} <span style="color:var(--muted)">vs</span> ${m.b.name}</span>
+          <span style="display:flex;gap:6px;align-items:center">
+            <input type="number" id="gs-g${gi}-m${mi}-A" placeholder="0" min="0" value="${isEditing?m.scoreA:''}">
+            <span style="color:var(--muted)">—</span>
+            <input type="number" id="gs-g${gi}-m${mi}-B" placeholder="0" min="0" value="${isEditing?m.scoreB:''}">
+            <button class="btn btn-primary btn-sm" onclick="simpanSkorGrup(${gi},${mi})">${isEditing?'💾':'✅'}</button>
+            ${isEditing?`<button class="btn btn-secondary btn-sm" onclick="batalEditGrup()">✕</button>`:''}
+          </span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('') + `<button class="btn btn-primary" style="width:100%" onclick="mulaiBabakGugur()">${allDone?'🏆 Mulai Babak Gugur':'⚠️ Mulai Babak Gugur (belum semua match grup selesai)'}</button>`;
+}
+function mulaiBabakGugur(){
+  if(!semuaMatchGrupSelesai() && !confirm('Belum semua match fase grup selesai. Lanjut ke babak gugur dengan data saat ini?')) return;
+  const qualifiers = [];
+  tournament.groups.forEach(g=>{
+    groupStandings(g).slice(0, tournament.qualifyPerGroup).forEach(s=>{
+      qualifiers.push(g.entries.find(e=>e.name===s.name));
+    });
+  });
+  if(qualifiers.length<2){ showToast('⚠️ Peserta lolos tidak cukup untuk babak gugur'); return; }
+  jalankanAnimasiAcak(()=>{
+    buatKnockout(qualifiers);
+    renderTurnamenTab();
+    showToast('🎉 Babak gugur dimulai — peserta lolos sudah masuk bagan!');
+  });
+}
+
+// ── Dispatcher & reset ──
+function bikinBagan(){
+  if(!tournament.format){ showToast('⚠️ Pilih format turnamen dulu'); return; }
+  if(tournament.entries.length < 2){ showToast('⚠️ Tambah minimal 2 peserta'); return; }
+  if(tournament.format==='groupknockout'){
+    const ng = parseInt(document.getElementById('tNumGroups').value)||2;
+    const qp = parseInt(document.getElementById('tQualify').value)||2;
+    if(tournament.entries.length < ng*2){ showToast('⚠️ Peserta terlalu sedikit untuk '+ng+' grup'); return; }
+    tournament.numGroups=ng; tournament.qualifyPerGroup=qp;
+  }
+  jalankanAnimasiAcak(()=>{
+    if(tournament.format==='knockout') buatKnockout(tournament.entries);
+    else buatGroupStage(tournament.entries, tournament.numGroups);
+    renderTurnamenTab();
+    showToast('🎉 Bagan turnamen dibuat!');
+  });
+}
+function resetTurnamen(){
+  if(!confirm('Reset turnamen ini dan buat baru dari awal?'))return;
+  tournamentBySport[sport] = freshTournament();
+  tournament = tournamentBySport[sport];
+  renderTurnamenTab();
+  showToast('🗑️ Turnamen direset');
+}
+// ── Print / Download PDF hasil turnamen (bagan atau fase grup yang sedang tampil) ──
+function printTurnamen(){
+  const content = document.getElementById('tBracketContent').innerHTML;
+  const title = document.getElementById('tBracketTitle').textContent;
+  const w = window.open('', '_blank');
+  if(!w){ showToast('⚠️ Pop-up diblokir browser — izinkan pop-up untuk print'); return; }
+  w.document.write(`<html><head><title>${title}</title><style>
+    body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;padding:28px;color:#1E293B}
+    h1{font-size:19px;margin-bottom:2px}
+    .sub{font-size:12px;color:#64748B;margin-bottom:22px}
+    table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px}
+    th,td{padding:6px 8px;border-bottom:1px solid #E2E8F0;text-align:left}
+    .bracket-wrap{display:flex;flex-wrap:wrap;gap:14px}
+    .bracket-round{min-width:200px}
+    .round-label{font-size:11px;font-weight:800;text-transform:uppercase;color:#64748B;margin-bottom:6px}
+    .match-card{border:1px solid #E2E8F0;border-radius:10px;padding:8px 10px;margin-bottom:10px}
+    .match-slot{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+    .group-block{border:1px solid #E2E8F0;border-radius:10px;padding:14px;margin-bottom:16px;break-inside:avoid}
+    .stat-chip{padding:2px 7px;border-radius:6px;background:#F1F5F9;font-weight:700}
+    .lb-note{font-size:10.5px;color:#64748B;margin-top:6px}
+    .match-score-row input, .match-score-row button{display:none}
+    @media print{ body{padding:10px} }
+  </style></head><body>
+    <h1>${commProfile.name} — ${title}</h1>
+    <div class="sub">${state.session.name||'Sesi Turnamen'} · ${state.session.date||''}</div>
+    ${content}
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(), 400);
+}
+function renderTurnamenTab(){
+  const formatLocked = tournament.format && tournament.entries.length > 0;
+  document.getElementById('tformRow').innerHTML = formatLocked
+    ? `<button class="fmt-opt on" style="cursor:default;opacity:.9" disabled>${TFORMATS[tournament.format].nama}</button>`
+    : Object.keys(TFORMATS).map(k=>
+        `<button class="fmt-opt ${tournament.format===k?'on':''}" onclick="pilihFormatTurnamen('${k}')">${TFORMATS[k].nama}</button>`).join('');
+  const lockedNote = formatLocked ? `<p style="font-size:11px;color:var(--muted);margin-top:6px">🔒 Mode terkunci — klik "Reset Turnamen & Buat Baru" untuk ganti format.</p>` : '';
+  document.getElementById('tformInfo').innerHTML = tournament.format
+    ? `<div class="gen-box" style="margin-top:10px"><p style="margin-bottom:0">${TFORMATS[tournament.format].info}</p></div>${lockedNote}`
+    : `<p style="font-size:12px;color:var(--muted);margin-top:8px">Pilih salah satu format di atas untuk melihat penjelasan & mulai menambah peserta.</p>`;
+
+  document.getElementById('tPesertaCard').style.display = (tournament.format && tournament.stage==='setup') ? 'block' : 'none';
+  document.getElementById('tSetupCard').style.display = (tournament.format && tournament.stage==='setup') ? 'block' : 'none';
+  document.getElementById('tGroupConfig').style.display = tournament.format==='groupknockout' ? 'block' : 'none';
+  document.getElementById('tBracketCard').style.display = (tournament.stage==='groups'||tournament.stage==='knockout'||tournament.stage==='done') ? 'block' : 'none';
+
+  const minNote = document.getElementById('tMinNote');
+  if(tournament.format==='knockout') minNote.textContent = 'Minimal 2 pasangan. Kalau jumlah pasangan bukan kelipatan 2, ada Babak Kualifikasi otomatis supaya semua tetap main.';
+  else if(tournament.format==='groupknockout') minNote.textContent = 'Minimal 2 grup, disarankan ≥3 peserta per grup agar fase grup bermakna.';
+  else minNote.textContent = '';
+
+  if(tournament.format && tournament.stage==='setup') renderTPeserta();
+  if(tournament.stage==='groups') renderGroupStage();
+  if(tournament.stage==='knockout'||tournament.stage==='done') renderBracket();
+}
+
+// ── TABS & UI ──
+function switchTab(name,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='match')populateSelects();
+  if(name==='leaderboard')renderLeaderboard();
+  if(name==='member')renderMemberTab();
+}
+// Turnamen: modal terpisah (bukan tab utama) — opsional, khusus Ganda, jarang dipakai
+function openTurnamenModal(){
+  renderTurnamenTab();
+  document.getElementById('turnamenModalOverlay').classList.add('open');
+}
+function closeTurnamenModal(e){
+  if(e && e.target!==document.getElementById('turnamenModalOverlay')) return;
+  document.getElementById('turnamenModalOverlay').classList.remove('open');
+}
+function renderAll(){renderPlayerList();renderMemberPicker();populateSelects();renderMatchHistory();renderLeaderboard();renderCounter();}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+function dummy(f){alert('Ini dummy — "'+f+'" memakai fungsi yang sudah ada di sistem live saat aktivasi.');}
+
+// ═══════════════════════════════════════════════════════════════════
+// PROFIL KOMUNITAS (logo + nama) — tampil di header, Board, share & PDF
+// Live: disimpan namespaced per user (localStorage/profiles)
+// ═══════════════════════════════════════════════════════════════════
+const commProfile = { name:'GSBSD BSD City', logoData:null, logoImg:null };
+
+function updateComm(){
+  commProfile.name = document.getElementById('commName').value.trim() || 'Komunitas';
+  refreshCommUI();
+}
+function loadLogo(ev){
+  const f = ev.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = e => {
+    commProfile.logoData = e.target.result;
+    const img = new Image();
+    img.onload = () => { commProfile.logoImg = img; refreshCommUI(); showToast('✅ Logo komunitas terpasang!'); };
+    img.src = commProfile.logoData;
+  };
+  rd.readAsDataURL(f);
+}
+function refreshCommUI(){
+  const has = !!commProfile.logoData;
+  [['hdrLogo',null],['commLogoPrev','commLogoPh'],['boardLogo','boardLogoPh']].forEach(([imgId,phId])=>{
+    const img = document.getElementById(imgId);
+    if(img){ img.src = has ? commProfile.logoData : ''; img.style.display = has ? 'block' : 'none'; }
+    if(phId){ const ph = document.getElementById(phId); if(ph) ph.style.display = has ? 'none' : 'grid'; }
+  });
+  document.getElementById('boardCommName').textContent = commProfile.name;
+  document.getElementById('headerSub').textContent = commProfile.name + ' · ' + SPORT_CONFIG[sport].label;
+  document.getElementById('boardSessInfo').textContent = (state.session.name||'Sesi') + ' · ' + (state.session.date||'—');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SHARE / POST LEADERBOARD — gambar 1080×1350 siap post IG (peringkat 1-7)
+// ═══════════════════════════════════════════════════════════════════
+function rr(x,y,w,h,r,ctx){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
+function shareBoard(){
+  const stats = calcStats().filter(s=>s.played>0).slice(0,7);
+  if(!stats.length){ showToast('⚠️ Belum ada match yang tercatat untuk dibagikan'); return; }
+  const c = SPORT_CONFIG[sport];
+  const cv = document.getElementById('shareCanvas');
+  cv.width = 1080; cv.height = 1350;
+  const x = cv.getContext('2d');
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const grad = x.createLinearGradient(0,0,1080,0);
+  grad.addColorStop(0,'#F7941D'); grad.addColorStop(1,'#E8174A');
+
+  // Latar + pita brand tipis atas/bawah
+  x.fillStyle = '#F8FAFC'; x.fillRect(0,0,1080,1350);
+  x.fillStyle = grad; x.fillRect(0,0,1080,14); x.fillRect(0,1336,1080,14);
+
+  // ── HEADER: logo & nama komunitas jadi bintang utama ──
+  let y = 70;
+  x.textAlign = 'center';
+  if(commProfile.logoImg){
+    x.save(); x.beginPath(); x.arc(540, y+92, 92, 0, Math.PI*2); x.clip();
+    x.drawImage(commProfile.logoImg, 448, y, 184, 184); x.restore();
+    x.beginPath(); x.arc(540, y+92, 92, 0, Math.PI*2);
+    x.lineWidth = 7; x.strokeStyle = c.hex; x.stroke();
+    y += 226;
+  } else { y += 26; }
+  x.font = '800 58px '+F; x.fillStyle = '#1E293B';
+  x.fillText(commProfile.name, 540, y);
+  y += 46;
+  x.font = '600 28px '+F; x.fillStyle = '#64748B';
+  x.fillText((state.session.name||'Sesi Mabar')+' · '+(state.session.date||''), 540, y);
+  y += 34;
+  // chip cabang
+  const chipTxt = (c.emoji+'  '+c.label).toUpperCase();
+  x.font = '800 24px '+F;
+  const cw = x.measureText(chipTxt).width + 56;
+  rr(540-cw/2, y, cw, 46, 23, x); x.fillStyle = c.hex; x.fill();
+  x.fillStyle = '#FFFFFF'; x.fillText(chipTxt, 540, y+32);
+  y += 84;
+
+  // ── PERINGKAT 1-3: kartu besar beraksen ──
+  const medals = ['🥇','🥈','🥉'];
+  const topN = Math.min(3, stats.length);
+  const bigH = 122, bigGap = 14, bigL = 70, bigW = 940;
+  for(let i=0;i<topN;i++){
+    const s = stats[i], ry = y + i*(bigH+bigGap);
+    rr(bigL, ry, bigW, bigH, 22, x);
+    x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = 3.5; x.strokeStyle = c.hex; x.stroke();
+    x.textAlign = 'center';
+    x.font = '58px serif'; x.fillText(medals[i], bigL+66, ry+80);
+    x.textAlign = 'left';
+    x.font = '800 40px '+F; x.fillStyle = '#1E293B';
+    x.fillText(s.name, bigL+124, ry+76);
+    x.textAlign = 'right';
+    const ds = s.scoreDiff>0 ? '+'+s.scoreDiff : ''+s.scoreDiff;
+    x.font = '800 32px '+F;
+    x.fillStyle = s.scoreDiff>0 ? '#16A34A' : s.scoreDiff<0 ? '#DC2626' : '#64748B';
+    x.fillText(ds, bigL+bigW-170, ry+74);
+    x.font = '800 50px '+F; x.fillStyle = c.hex;
+    x.fillText(s.points, bigL+bigW-48, ry+70);
+    x.font = '700 18px '+F; x.fillStyle = '#94A3B8';
+    x.fillText('PTS', bigL+bigW-48, ry+98);
+  }
+  y += topN*(bigH+bigGap) + 14;
+
+  // ── PERINGKAT 4-7: baris ramping ──
+  const smH = 80, smGap = 8, smL = 120, smW = 840;
+  for(let i=3;i<stats.length;i++){
+    const s = stats[i], ry = y + (i-3)*(smH+smGap);
+    rr(smL, ry, smW, smH, 16, x);
+    x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = 1.5; x.strokeStyle = '#E2E8F0'; x.stroke();
+    x.textAlign = 'center';
+    x.beginPath(); x.arc(smL+46, ry+42, 21, 0, Math.PI*2);
+    x.fillStyle = '#F1F5F9'; x.fill();
+    x.font = '800 23px '+F; x.fillStyle = '#64748B';
+    x.fillText(i+1, smL+46, ry+50);
+    x.textAlign = 'left';
+    x.font = '800 29px '+F; x.fillStyle = '#1E293B';
+    x.fillText(s.name, smL+90, ry+52);
+    x.textAlign = 'right';
+    const ds = s.scoreDiff>0 ? '+'+s.scoreDiff : ''+s.scoreDiff;
+    x.font = '800 25px '+F;
+    x.fillStyle = s.scoreDiff>0 ? '#16A34A' : s.scoreDiff<0 ? '#DC2626' : '#64748B';
+    x.fillText(ds, smL+smW-130, ry+52);
+    x.font = '800 34px '+F; x.fillStyle = c.hex;
+    x.fillText(s.points, smL+smW-40, ry+48);
+    x.font = '700 14px '+F; x.fillStyle = '#94A3B8';
+    x.fillText('PTS', smL+smW-40, ry+68);
+  }
+  if(stats.length>3) y += (stats.length-3)*(smH+smGap);
+
+  // ── FOOTER: logo + tulisan HOSTMABAR ──
+  const fy = 1272;
+  x.font = '800 32px '+F;
+  const brand = 'HOSTMABAR';
+  const bw = x.measureText(brand).width;
+  const badge = 44, gapB = 14;
+  const startX = 540 - (badge+gapB+bw)/2;
+  rr(startX, fy-32, badge, badge, 12, x); x.fillStyle = grad; x.fill();
+  x.textAlign = 'center'; x.fillStyle = '#FFFFFF';
+  x.font = '800 22px '+F; x.fillText('HM', startX+badge/2, fy-2);
+  x.textAlign = 'left'; x.fillStyle = '#1E293B';
+  x.font = '800 32px '+F; x.fillText(brand, startX+badge+gapB, fy+2);
+  x.textAlign = 'center'; x.font = '600 20px '+F; x.fillStyle = '#94A3B8';
+  x.fillText('hostmabar.com', 540, fy+34);
+
+  document.getElementById('shareModalOverlay').classList.add('open');
+}
+function downloadShare(){
+  const cv = document.getElementById('shareCanvas');
+  const a = document.createElement('a');
+  a.download = 'leaderboard-'+sport+'-'+(state.session.date||'sesi')+'.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+  showToast('⬇️ Gambar tersimpan — siap post ke Instagram!');
+}
+function closeShare(e){
+  if(e && e.target!==document.getElementById('shareModalOverlay')) return;
+  document.getElementById('shareModalOverlay').classList.remove('open');
+}
+
+document.getElementById('commName').value = commProfile.name;
+applySport();
+refreshCommUI();
+
+// Deep-link ?turnamen=1 (dipakai tombol "Buat Turnamen" di mabarpro.html)
+// untuk langsung membuka modal Turnamen tanpa mengubah tab utama yang aktif.
+if(new URLSearchParams(location.search).get('turnamen')==='1') openTurnamenModal();
+
+// ═══════════════════════════════════════════════════════════════════
+// LOGOUT — sama alur dengan sistem live (hapus sesi lokal + signOut Supabase)
+// ═══════════════════════════════════════════════════════════════════
+function logout(){
+  if(!confirm('Keluar dari HOSTMABAR? Sesi kamu akan diakhiri dan kembali ke halaman login.')) return;
+  localStorage.removeItem('hm_session');
+  localStorage.removeItem('hm_komunitas');
+  try{
+    const { createClient } = window.supabase;
+    const dbAuth = createClient('https://pxfpskzwkfpxslsvqbpz.supabase.co','sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp');
+    dbAuth.auth.signOut().finally(()=>{ window.location.href = 'loginpage.html'; });
+  }catch(e){ window.location.href = 'loginpage.html'; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SECURITY GUARD — proteksi halaman, sama pola dengan sistem live
+// (mabarprov2.html). Cek sesi lokal 'hm_session' sebelum halaman
+// dipakai; belum login / sesi kedaluwarsa → redirect ke loginpage.html.
+// ═══════════════════════════════════════════════════════════════════
+(function proteksiHalaman(){
+  try{
+    const raw = localStorage.getItem('hm_session');
+    if(!raw){ window.location.replace('loginpage.html'); return; }
+    const s = JSON.parse(raw);
+    if(!s || !s.loginAt){ window.location.replace('loginpage.html'); return; }
+    if(s.expiresAt && Date.now() > s.expiresAt){
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html'); return;
+    }
+  }catch(e){ window.location.replace('loginpage.html'); }
+})();
+</script>
+</body>
+</html>
