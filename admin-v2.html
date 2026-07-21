@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>HOSTMABAR — Admin Panel v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#F8FAFC; --surface:#FFFFFF; --border:#E2E8F0;
+  --text:#1E293B; --muted:#64748B;
+  --orange:#F7941D; --pink:#E8174A;
+  --teal:#0F766E; --red:#DC2626; --amber:#D97706; --cyan:#0891B2;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
+
+/* ── LOGIN ── */
+.login-gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(30,41,59,.08);text-align:center}
+.login-box .logo{display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px}
+.login-box .logo img{height:38px;width:auto;display:block}
+.login-box h2{font-size:17px;font-weight:800;margin:14px 0 2px}
+.login-box p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.login-err{display:none;background:#FEF2F2;color:var(--red);border:1px solid #FECACA;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600;margin-bottom:14px}
+.login-err.show{display:block}
+.field-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:14px;background:var(--bg);color:var(--text)}
+.field-input:focus{outline:none;border-color:var(--pink);background:#fff}
+.login-box .field-input{margin-bottom:12px;text-align:left}
+.btn-enter{width:100%;padding:13px;border:none;border-radius:12px;font-family:inherit;font-weight:800;font-size:14px;color:#fff;cursor:pointer;background:linear-gradient(90deg,var(--orange),var(--pink));box-shadow:0 4px 14px rgba(232,23,74,.25)}
+.btn-enter:disabled{opacity:.6;cursor:wait}
+.login-note{font-size:11.5px;color:var(--muted);margin-top:14px}
+
+/* ── APP ── */
+.app{max-width:1120px;margin:0 auto;padding:24px}
+.header{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.header .logo{display:inline-flex;align-items:center}
+.header .logo img{height:32px;width:auto;display:block}
+.header-text h1{font-size:17px;font-weight:800}
+.header-text p{font-size:12px;color:var(--muted)}
+.header-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.admin-badge{font-size:11px;font-weight:800;background:rgba(15,118,110,.1);color:var(--teal);padding:6px 12px;border-radius:99px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-logout{padding:8px 16px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--text)}
+
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center}
+.stat-val{font-size:24px;font-weight:800}
+.stat-label{font-size:11.5px;color:var(--muted);font-weight:600}
+
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:10px 18px;border:1.5px solid var(--border);border-radius:11px;background:var(--surface);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--muted)}
+.tab.active{background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff;border-color:transparent}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:800;margin-bottom:14px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:10px 12px;background:var(--bg);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;display:inline-block}
+.badge-aktif{background:rgba(15,118,110,.1);color:var(--teal)}
+.badge-expired{background:#FEF2F2;color:var(--red)}
+.badge-warning{background:#FFFBEB;color:var(--amber)}
+.badge-cuanmabar{background:rgba(8,145,178,.1);color:var(--cyan)}
+.badge-trial{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.field-label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}
+.form-actions{display:flex;gap:10px}
+.btn{padding:11px 20px;border:none;border-radius:11px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
+.btn-primary{background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff}
+.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+.section{display:none}.section.active{display:block}
+.search-box{margin-bottom:12px;max-width:320px}
+
+.modal{position:fixed;inset:0;background:rgba(30,41,59,.4);display:none;align-items:center;justify-content:center;z-index:90;padding:20px}
+.modal.open{display:flex}
+.modal-box{background:var(--surface);border-radius:18px;padding:28px;width:100%;max-width:460px}
+.modal-box h3{font-size:16px;font-weight:800;margin-bottom:16px}
+.modal-box .field-input{margin-bottom:12px}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:#fff;padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;transition:transform .25s;z-index:110;max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@media(max-width:700px){.stats-bar{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN (Supabase Auth — tanpa password hardcoded) ── -->
+<div class="login-gate" id="loginGate">
+  <div class="login-box">
+    <div class="logo"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
+    <h2>🔐 ADMIN PANEL v2</h2>
+    <p>Login dengan akun admin Supabase</p>
+    <div class="login-err" id="loginErr"></div>
+    <input type="email" class="field-input" id="adminEmail" placeholder="Email admin" autocomplete="username">
+    <input type="password" class="field-input" id="adminPass" placeholder="Password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-enter" id="btnLogin" onclick="doLogin()">Masuk</button>
+    <div class="login-note">Akses data dijaga RLS di server — bukan gate di browser.</div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div class="app" id="mainApp" style="display:none;">
+  <div class="header">
+    <div class="logo"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
+    <div class="header-text">
+      <h1>ADMIN PANEL v2</h1>
+      <p>HOSTMABAR Management System</p>
+    </div>
+    <div class="header-right">
+      <div class="admin-badge" id="adminWho">🔑 ADMIN</div>
+      <button class="btn-logout" onclick="doLogout()">Keluar</button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-val" id="s-total">—</div><div class="stat-label">Total User</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-aktif">—</div><div class="stat-label">Aktif</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-expired">—</div><div class="stat-label">Expired</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-expiring">—</div><div class="stat-label">Exp &lt; 30 hari</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-cuanmabar">—</div><div class="stat-label">CUANMABAR</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('users',this)">👥 Kelola User</button>
+    <button class="tab" onclick="switchTab('add',this)">➕ Tambah User</button>
+    <button class="tab" onclick="switchTab('cuandata',this)">💰 Data CUANMABAR</button>
+  </div>
+
+  <!-- TAB: USERS -->
+  <div id="tab-users" class="section active">
+    <div class="card">
+      <div class="card-title">👥 Semua User Komunitas</div>
+      <input class="field-input search-box" id="searchUser" placeholder="🔍 Cari komunitas..." oninput="renderUserTable()">
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th>Komunitas</th><th>Paket</th><th>Redirect</th>
+            <th>Aktif Sejak</th><th>Kadaluarsa</th><th>Status</th><th>Aksi</th>
+          </tr></thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: TAMBAH USER -->
+  <div id="tab-add" class="section">
+    <div class="card">
+      <div class="card-title">➕ Tambah / Update User</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        Buat akun baru di Supabase Auth (Studio → Authentication → Add user), lalu isi form ini untuk set profil komunitas.
+      </p>
+      <div class="form-grid">
+        <div>
+          <label class="field-label">User ID (dari Supabase Auth)</label>
+          <input class="field-input" id="f-uid" placeholder="uuid dari Auth → Users">
+        </div>
+        <div>
+          <label class="field-label">Nama Komunitas</label>
+          <input class="field-input" id="f-nama" placeholder="GSBSD BSD City">
+        </div>
+        <div>
+          <label class="field-label">Paket Langganan</label>
+          <select class="field-input" id="f-paket">
+            <option value="trial">Trial</option>
+            <option value="planbasic">Mabar Basic/Plus</option>
+            <option value="mabarpro">Mabar Pro</option>
+            <option value="cuanmabar">CUANMABAR</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Redirect URL</label>
+          <select class="field-input" id="f-redirect">
+            <option value="trialversion.html">trialversion.html</option>
+            <option value="planbasic.html">planbasic.html</option>
+            <option value="mabarpro.html">mabarpro.html</option>
+            <option value="cuanmabar.html">cuanmabar.html</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Tanggal Aktif</label>
+          <input class="field-input" id="f-aktif" type="date">
+        </div>
+        <div>
+          <label class="field-label">Tanggal Kadaluarsa</label>
+          <input class="field-input" id="f-exp" type="date">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="upsertUser()">💾 Simpan Profil</button>
+        <button class="btn btn-secondary" onclick="clearForm()">🗑 Kosongkan</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚡ Perpanjang Cepat</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div style="flex:1;min-width:200px;">
+          <label class="field-label">Pilih User</label>
+          <select class="field-input" id="ext-uid"></select>
+        </div>
+        <div>
+          <label class="field-label">Perpanjang</label>
+          <select class="field-input" id="ext-dur">
+            <option value="1">+ 1 bulan</option>
+            <option value="3">+ 3 bulan</option>
+            <option value="6">+ 6 bulan</option>
+            <option value="12">+ 12 bulan</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="extendUser()">⚡ Perpanjang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: CUANMABAR -->
+  <div id="tab-cuandata" class="section">
+    <div class="card">
+      <div class="card-title">💰 Monitoring Data CUANMABAR</div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th>Komunitas</th><th>Transaksi Kas</th><th>Member</th><th>Inventori</th><th>Update Terakhir</th>
+          </tr></thead>
+          <tbody id="cuanTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal" id="editModal">
+  <div class="modal-box">
+    <h3>✏️ Edit Profil</h3>
+    <input type="hidden" id="edit-uid">
+    <label class="field-label">Nama Komunitas</label>
+    <input class="field-input" id="edit-nama">
+    <label class="field-label">Paket</label>
+    <select class="field-input" id="edit-paket">
+      <option value="trial">Trial</option>
+      <option value="planbasic">Mabar Basic/Plus</option>
+      <option value="mabarpro">Mabar Pro</option>
+      <option value="cuanmabar">CUANMABAR</option>
+    </select>
+    <label class="field-label">Redirect URL</label>
+    <select class="field-input" id="edit-redirect">
+      <option value="trialversion.html">trialversion.html</option>
+      <option value="planbasic.html">planbasic.html</option>
+      <option value="mabarpro.html">mabarpro.html</option>
+      <option value="cuanmabar.html">cuanmabar.html</option>
+    </select>
+    <label class="field-label">Tanggal Kadaluarsa</label>
+    <input class="field-input" id="edit-exp" type="date">
+    <div class="form-actions" style="margin-top:8px;">
+      <button class="btn btn-primary" onclick="saveEdit()">💾 Simpan</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// CONFIG — publishable key AMAN diletakkan di sini.
+// Keamanan sesungguhnya = RLS policy di server (lihat admin-v2-policies.sql).
+// TIDAK ADA password hardcoded di file ini.
+// ═══════════════════════════════════════════════════════════════════
+const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
+const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
+
+const { createClient } = window.supabase;
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTH (Supabase Auth — session dikelola supabase-js)
+// ═══════════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass  = document.getElementById('adminPass').value;
+  if (!email || !pass) { showLoginErr('Email dan password wajib diisi.'); return; }
+
+  const btn = document.getElementById('btnLogin');
+  btn.disabled = true; btn.textContent = 'Memeriksa...';
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Masuk';
+
+  if (error) { showLoginErr('Login gagal: ' + error.message); return; }
+  await enterApp(data.user);
+}
+
+async function enterApp(user) {
+  // Uji akses admin: kalau RLS menolak / hasil kosong padahal bukan admin,
+  // tampilkan pesan yang jelas alih-alih dashboard kosong.
+  const { data, error } = await db.from('profiles').select('id').limit(1);
+  if (error) {
+    await db.auth.signOut();
+    showLoginErr('Akun ini tidak punya akses admin (RLS menolak). Pastikan policy admin sudah dipasang untuk UID akun ini.');
+    return;
+  }
+  document.getElementById('adminWho').textContent = '🔑 ' + (user.email || 'ADMIN');
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  loadAll();
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+function showLoginErr(msg) {
+  const el = document.getElementById('loginErr');
+  el.textContent = msg; el.classList.add('show');
+}
+
+// Auto-login kalau session masih hidup
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) await enterApp(session.user);
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+// DATA LOAD
+// ═══════════════════════════════════════════════════════════════════
+let allProfiles = [];
+let allCuanData = [];
+
+async function loadAll() { await Promise.all([loadProfiles(), loadCuanData()]); }
+
+async function loadProfiles() {
+  const { data, error } = await db.from('profiles')
+    .select('id,username_komunitas,paket_langganan,redirect_url,tanggal_aktif,tanggal_kedaluarsa')
+    .order('paket_langganan');
+  if (error) { showToast('❌ Gagal load profiles: ' + error.message); return; }
+  allProfiles = data || [];
+  renderStats(); renderUserTable(); renderExtSelect();
+}
+
+async function loadCuanData() {
+  const { data, error } = await db.from('cuanmabar_data')
+    .select('user_id,data_type,payload,updated_at');
+  if (error) { showToast('❌ Gagal load cuanmabar_data: ' + error.message); return; }
+  allCuanData = data || [];
+  renderCuanTable();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function getStatus(exp) {
+  if (!exp) return { label: 'No Expiry', cls: 'badge-aktif' };
+  const d = new Date(exp); d.setHours(23,59,59);
+  const diff = Math.ceil((d - Date.now()) / 86400000);
+  if (diff < 0)   return { label: 'Expired', cls: 'badge-expired' };
+  if (diff <= 30) return { label: diff + ' hari lagi', cls: 'badge-warning' };
+  return { label: 'Aktif', cls: 'badge-aktif' };
+}
+
+function renderStats() {
+  const today = new Date();
+  const total    = allProfiles.length;
+  const expired  = allProfiles.filter(p => p.tanggal_kedaluarsa && new Date(p.tanggal_kedaluarsa) < today).length;
+  const expiring = allProfiles.filter(p => {
+    if (!p.tanggal_kedaluarsa) return false;
+    const diff = (new Date(p.tanggal_kedaluarsa) - today) / 86400000;
+    return diff >= 0 && diff <= 30;
+  }).length;
+  const cuanCount = allProfiles.filter(p => p.paket_langganan === 'cuanmabar').length;
+  document.getElementById('s-total').textContent     = total;
+  document.getElementById('s-aktif').textContent     = total - expired;
+  document.getElementById('s-expired').textContent   = expired;
+  document.getElementById('s-expiring').textContent  = expiring;
+  document.getElementById('s-cuanmabar').textContent = cuanCount;
+}
+
+function renderUserTable() {
+  const q = (document.getElementById('searchUser').value || '').toLowerCase();
+  const rows = allProfiles.filter(p => !q || (p.username_komunitas || '').toLowerCase().includes(q));
+  const tbody = document.getElementById('userTableBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Tidak ada data</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(p => {
+    const st = getStatus(p.tanggal_kedaluarsa);
+    const paketCls = p.paket_langganan === 'cuanmabar' ? 'badge-cuanmabar' : 'badge-trial';
+    const aktifStr = p.tanggal_aktif ? new Date(p.tanggal_aktif).toLocaleDateString('id-ID') : '—';
+    const expStr   = p.tanggal_kedaluarsa ? new Date(p.tanggal_kedaluarsa).toLocaleDateString('id-ID') : '—';
+    return `<tr>
+      <td style="font-weight:700;">${esc(p.username_komunitas) || '—'}</td>
+      <td><span class="badge ${paketCls}">${esc(p.paket_langganan)}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${esc(p.redirect_url) || '—'}</td>
+      <td style="font-size:12px;">${aktifStr}</td>
+      <td style="font-size:12px;">${expStr}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td><button class="btn btn-sm btn-secondary" onclick="openEdit('${esc(p.id)}')">✏️ Edit</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderExtSelect() {
+  document.getElementById('ext-uid').innerHTML = allProfiles.map(p =>
+    `<option value="${esc(p.id)}">${esc(p.username_komunitas)} (${esc(p.paket_langganan)})</option>`
+  ).join('');
+}
+
+function renderCuanTable() {
+  const tbody = document.getElementById('cuanTableBody');
+  const cuanProfiles = allProfiles.filter(p => p.paket_langganan === 'cuanmabar');
+  if (!cuanProfiles.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Belum ada user CUANMABAR</td></tr>';
+    return;
+  }
+  tbody.innerHTML = cuanProfiles.map(p => {
+    const rows = allCuanData.filter(d => d.user_id === p.id);
+    const kas = rows.find(r => r.data_type === 'kas');
+    const mem = rows.find(r => r.data_type === 'members');
+    const inv = rows.find(r => r.data_type === 'inv');
+    const lastUp = rows.length ? new Date(Math.max(...rows.map(r => new Date(r.updated_at)))).toLocaleString('id-ID') : '—';
+    return `<tr>
+      <td style="font-weight:700;">${esc(p.username_komunitas)}</td>
+      <td style="text-align:center;">${kas ? kas.payload.length : 0} transaksi</td>
+      <td style="text-align:center;">${mem ? mem.payload.length : 0} member</td>
+      <td style="text-align:center;">${inv ? inv.payload.length : 0} item</td>
+      <td style="font-size:12px;color:var(--muted)">${lastUp}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CRUD
+// ═══════════════════════════════════════════════════════════════════
+async function upsertUser() {
+  const uid   = document.getElementById('f-uid').value.trim();
+  const nama  = document.getElementById('f-nama').value.trim();
+  const paket = document.getElementById('f-paket').value;
+  const redir = document.getElementById('f-redirect').value;
+  const aktif = document.getElementById('f-aktif').value;
+  const exp   = document.getElementById('f-exp').value;
+
+  if (!uid || !nama) { showToast('⚠️ User ID dan Nama wajib diisi'); return; }
+
+  const { error } = await db.from('profiles').upsert({
+    id: uid,
+    username_komunitas: nama,
+    paket_langganan: paket,
+    redirect_url: redir,
+    tanggal_aktif: aktif || null,
+    tanggal_kedaluarsa: exp || null
+  }, { onConflict: 'id' });
+
+  if (error) { showToast('❌ Gagal: ' + error.message); return; }
+  showToast('✅ Profil berhasil disimpan!');
+  clearForm();
+  await loadProfiles();
+}
+
+async function extendUser() {
+  const uid    = document.getElementById('ext-uid').value;
+  const months = parseInt(document.getElementById('ext-dur').value);
+  const prof   = allProfiles.find(p => p.id === uid);
+  if (!prof) { showToast('⚠️ User tidak ditemukan'); return; }
+
+  const base = prof.tanggal_kedaluarsa && new Date(prof.tanggal_kedaluarsa) > new Date()
+    ? new Date(prof.tanggal_kedaluarsa) : new Date();
+  base.setMonth(base.getMonth() + months);
+  const newExp = base.toISOString().split('T')[0];
+
+  const { error } = await db.from('profiles')
+    .update({ tanggal_kedaluarsa: newExp }).eq('id', uid);
+
+  if (error) { showToast('❌ Gagal perpanjang: ' + error.message); return; }
+  showToast(`✅ ${prof.username_komunitas} diperpanjang ${months} bulan → ${newExp}`);
+  await loadProfiles();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EDIT MODAL
+// ═══════════════════════════════════════════════════════════════════
+function openEdit(uid) {
+  const p = allProfiles.find(x => x.id === uid);
+  if (!p) return;
+  document.getElementById('edit-uid').value      = p.id;
+  document.getElementById('edit-nama').value     = p.username_komunitas || '';
+  document.getElementById('edit-paket').value    = p.paket_langganan || 'trial';
+  document.getElementById('edit-redirect').value = p.redirect_url || 'trialversion.html';
+  document.getElementById('edit-exp').value      = p.tanggal_kedaluarsa || '';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); }
+
+async function saveEdit() {
+  const uid = document.getElementById('edit-uid').value;
+  const { error } = await db.from('profiles').update({
+    username_komunitas: document.getElementById('edit-nama').value.trim(),
+    paket_langganan:    document.getElementById('edit-paket').value,
+    redirect_url:       document.getElementById('edit-redirect').value,
+    tanggal_kedaluarsa: document.getElementById('edit-exp').value || null
+  }).eq('id', uid);
+
+  if (error) { showToast('❌ Gagal update: ' + error.message); return; }
+  showToast('✅ Profil diupdate!');
+  closeModal();
+  await loadProfiles();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'add') loadAll();
+}
+function clearForm() {
+  ['f-uid','f-nama','f-aktif','f-exp'].forEach(id => document.getElementById(id).value = '');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// Init date fields
+document.getElementById('f-aktif').value = new Date().toISOString().split('T')[0];
+const exp1yr = new Date(); exp1yr.setFullYear(exp1yr.getFullYear() + 1);
+document.getElementById('f-exp').value = exp1yr.toISOString().split('T')[0];
+</script>
+</body>
+</html>
