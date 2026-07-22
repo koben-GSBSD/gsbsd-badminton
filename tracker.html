@@ -22,11 +22,16 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 /* ── Strip navigasi cabang ── */
 .demo-strip{background:var(--surface);border-bottom:1px solid var(--border)}
-.demo-inner{display:flex;align-items:center;gap:10px;padding:8px 16px;flex-wrap:wrap;max-width:860px;margin:0 auto}
-.demo-inner span{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.pill{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.demo-inner{max-width:860px;margin:0 auto;padding:8px 16px}
+.demo-title{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.demo-pills-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#pills{display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:0}
+.demo-pills-row a{flex-shrink:0;margin-left:auto}
+.pill{font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--muted);white-space:nowrap}
 .pill.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.pill-icon{width:15px;height:15px;object-fit:contain;display:inline-block;vertical-align:-2px}
+@media(max-width:400px){
+  .pill{font-size:10px;padding:4px 8px}
+}
 .tab-icon-img{width:15px;height:15px;object-fit:contain;display:inline-block;vertical-align:-2px}
 
 /* ── Header ── */
@@ -35,7 +40,9 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .logo img{height:28px;width:auto;display:block}
 .logo span{background:linear-gradient(90deg,var(--orange),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
 .header-sub{font-size:11.5px;color:var(--muted);font-weight:600}
-.header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.header-right{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.header-right-stack{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.sync-badge{font-size:10px;font-weight:700;white-space:nowrap}
 .badge-pro{font-size:10px;font-weight:800;letter-spacing:.06em;background:linear-gradient(135deg,rgba(247,148,29,.12),rgba(232,23,74,.12));border:1.5px solid rgba(247,148,29,.5);color:#B45309;padding:5px 12px;border-radius:20px;text-transform:uppercase}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:11px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;text-decoration:none;transition:transform .12s}
 .btn:hover{transform:translateY(-1px)}
@@ -209,7 +216,6 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--text);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;transition:transform .25s;z-index:110;max-width:92vw;text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.dummy-note{position:fixed;bottom:14px;right:14px;font-size:11px;font-weight:700;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;padding:6px 12px;border-radius:99px;z-index:80}
 
 @media(max-width:640px){
   .team-grid{grid-template-columns:1fr}
@@ -218,7 +224,6 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   .tab{font-size:11.5px;padding:10px 4px}
   .header{flex-wrap:wrap}
   .btn-pdf{margin-left:0;width:100%}
-  .dummy-note{left:14px;right:14px;text-align:center;bottom:8px}
   .toast{bottom:46px}
   .modal-overlay{padding:10px}
   .modal{padding:18px}
@@ -232,9 +237,11 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 <!-- Strip navigasi cabang -->
 <div class="demo-strip">
   <div class="demo-inner">
-    <span>Cabang:</span>
-    <div id="pills"></div>
-    <a href="mabarpro.html" style="margin-left:auto;font-size:11px;font-weight:800;color:var(--accent)">← Dashboard</a>
+    <div class="demo-title">Pilih Cabang Olahraga</div>
+    <div class="demo-pills-row">
+      <div id="pills"></div>
+      <a href="mabarpro.html" style="font-size:11px;font-weight:800;color:var(--accent);text-decoration:none">← Dashboard</a>
+    </div>
   </div>
 </div>
 
@@ -249,8 +256,10 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
     </div>
     <div class="header-right">
       <div class="badge-pro" id="pakBadge">⚡ PRO</div>
-      <span id="cloudSyncBadge" style="font-size:10.5px;font-weight:700;color:var(--muted);margin-right:4px;white-space:nowrap"></span>
-      <button class="btn btn-secondary btn-sm btn-logout" onclick="logout()">🚪 Logout</button>
+      <div class="header-right-stack">
+        <span id="cloudSyncBadge" class="sync-badge"></span>
+        <button class="btn btn-secondary btn-sm btn-logout" onclick="logout()">🚪 Logout</button>
+      </div>
     </div>
   </div>
 
@@ -410,6 +419,10 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <div class="card-title">🏆 Leaderboard</div>
       <div id="leaderboardContent"></div>
     </div>
+    <div class="pdf-banner" style="background:linear-gradient(120deg,rgba(247,148,29,.08),rgba(232,23,74,.06));border:1px solid rgba(247,148,29,.25)">
+      <div><h3>🏁 Tutup Sesi & Catat Medali</h3><p>Peringkat 1-3 saat ini masuk ke Hostmabar Medalist (tab Member). Match & daftar hadir sesi ini direset untuk sesi berikutnya — member & medali tetap aman.</p></div>
+      <button class="btn btn-pdf" onclick="tutupSesi()">🏁 Tutup Sesi</button>
+    </div>
     <div class="pdf-banner">
       <div><h3>📸 Share / Post Leaderboard</h3><p>Peringkat 1-7 dengan logo & nama komunitas · siap post ke Instagram story/feed</p></div>
       <button class="btn btn-pdf" onclick="shareBoard()">📸 Buat Gambar</button>
@@ -426,6 +439,14 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <div class="card-title">📊 Insight Member</div>
       <div class="insight-grid" id="insightGrid"></div>
       <p style="font-size:11.5px;color:var(--muted)">Definisi: <b>Rutin</b> = 4 kehadiran dalam 30 hari · <b>Aktif</b> = hadir dalam 60 hari terakhir · <b>Baru</b> = bergabung &lt;30 hari · <b>Coba-Coba</b> = sudah tidak main dalam 60 hari</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏅 Hostmabar Medalist — <span id="medalistSportLabel">Badminton</span></div>
+      <div id="medalistContent"></div>
+    </div>
+    <div class="pdf-banner">
+      <div><h3>📸 Share / Post Medalist</h3><p>Peringkat 1-7 Medalist dengan logo & nama komunitas · siap post ke Instagram</p></div>
+      <button class="btn btn-pdf" onclick="shareMedalist()">📸 Buat Gambar</button>
     </div>
     <div class="card">
       <div class="card-title">📇 Database Member</div>
@@ -466,7 +487,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 <div class="modal-overlay" id="shareModalOverlay" onclick="closeShare(event)">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
-      <h2>📸 Share Leaderboard</h2>
+      <h2 id="shareModalTitle">📸 Share Leaderboard</h2>
       <button class="modal-close" onclick="closeShare()">✕</button>
     </div>
     <canvas id="shareCanvas" style="width:100%;border-radius:14px;border:1px solid var(--border);display:block"></canvas>
@@ -522,7 +543,6 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="dummy-note">⚠️ DUMMY V3 — fungsi = sistem live + upgrade level & Americano/Mexicano</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
@@ -610,7 +630,7 @@ const PAIR_MODES = {
 // ── STATE per cabang — disimpan di localStorage, namespaced per akun (username dari hm_session) ──
 // Sebelumnya data ini hanya in-memory (hilang tiap refresh) dan diisi contoh dummy (Andri, Bimo, dst).
 // Sekarang: disimpan persisten per akun di browser ini, mulai kosong untuk akun baru.
-function freshState(){ return {players:[],matches:[],playCount:{},partnerHist:{},session:{date:new Date().toISOString().split('T')[0],name:''}}; }
+function freshState(){ return {players:[],matches:[],playCount:{},partnerHist:{},medals:{},session:{date:new Date().toISOString().split('T')[0],name:''}}; }
 const today = new Date().toISOString().split('T')[0];
 
 function dataStorageKey(){
@@ -733,6 +753,7 @@ async function initCloudSync(){
     if(data && data.payload){
       const p = data.payload;
       Object.keys(stateBySport).forEach(k=>{ if(p.stateBySport && p.stateBySport[k]) stateBySport[k] = p.stateBySport[k]; });
+      Object.values(stateBySport).forEach(st=>{ if(!st.medals) st.medals = {}; });
       Object.keys(tournamentBySport).forEach(k=>{ if(p.tournamentBySport && p.tournamentBySport[k]) tournamentBySport[k] = p.tournamentBySport[k]; });
       if(Array.isArray(p.members)){ MEMBERS.length = 0; p.members.forEach(m=>MEMBERS.push(m)); }
       if(p.commProfile){
@@ -763,6 +784,8 @@ async function initCloudSync(){
 
 const __appData = loadAppData();
 const stateBySport = __appData.stateBySport;
+// Normalisasi: data lama (sebelum fitur Medalist) belum punya field `medals` — pastikan selalu ada.
+Object.values(stateBySport).forEach(st=>{ if(!st.medals) st.medals = {}; });
 __appData.members.forEach(m=>MEMBERS.push(m)); // restore database member permanen dari localStorage
 
 // ═══════════════════════════════════════════════════════════════════
@@ -809,7 +832,7 @@ function applySport(){
   document.getElementById('scoreB').placeholder = c.placeholder[1];
   document.getElementById('validHint').innerHTML = 'Aturan: <b>tidak boleh seri</b> · sistem poin bebas mengikuti aturan komunitas masing-masing';
   document.getElementById('pills').innerHTML = Object.keys(SPORT_CONFIG).map(k=>
-    `<button class="pill ${k===sport?'on':''}" onclick="gantiSport('${k}')"><img src="${SPORT_CONFIG[k].icon}" class="pill-icon" alt=""> ${SPORT_CONFIG[k].label}</button>`).join(' ');
+    `<button class="pill ${k===sport?'on':''}" onclick="gantiSport('${k}')">${SPORT_CONFIG[k].label}</button>`).join(' ');
   document.getElementById('sessionDate').value = state.session.date;
   document.getElementById('sessionName').value = state.session.name;
   renderModeRow();
@@ -1687,7 +1710,69 @@ function closeTurnamenModal(e){
   if(e && e.target!==document.getElementById('turnamenModalOverlay')) return;
   document.getElementById('turnamenModalOverlay').classList.remove('open');
 }
-function renderAll(){renderPlayerList();renderMemberPicker();populateSelects();renderMatchHistory();renderLeaderboard();renderCounter();}
+function renderAll(){renderPlayerList();renderMemberPicker();populateSelects();renderMatchHistory();renderLeaderboard();renderCounter();renderMedalist();}
+
+// ═══════════════════════════════════════════════════════════════════
+// HOSTMABAR MEDALIST — hall of fame per cabang: akumulasi 🥇🥈🥉 dari sesi
+// yang sudah "ditutup" (lihat tutupSesi()). Disimpan di state.medals (per cabang),
+// ikut tersinkron cloud lewat saveAppData() seperti data lain.
+// ═══════════════════════════════════════════════════════════════════
+function medalistRows(){
+  const medals = state.medals || {};
+  return Object.keys(medals).map(name=>{
+    const m = medals[name] || {};
+    const gold=m.gold||0, silver=m.silver||0, bronze=m.bronze||0;
+    return {name, gold, silver, bronze, total:gold+silver+bronze};
+  }).filter(r=>r.total>0).sort((a,b)=> b.gold-a.gold || b.silver-a.silver || b.bronze-a.bronze);
+}
+function tutupSesi(){
+  const stats = calcStats().filter(s=>s.played>0);
+  if(!stats.length){ showToast('⚠️ Belum ada match untuk ditutup'); return; }
+  const top3 = stats.slice(0,3);
+  const preview = top3.map((s,i)=>(i===0?'🥇':i===1?'🥈':'🥉')+' '+s.name).join('  ·  ');
+  if(!confirm('Tutup sesi '+SPORT_CONFIG[sport].label+' sekarang?\n\nPeringkat masuk Medalist:\n'+preview+'\n\nData match & daftar hadir sesi ini akan direset untuk sesi berikutnya. Member, medali, dan database tidak hilang.')) return;
+  if(!state.medals) state.medals = {};
+  top3.forEach((s,i)=>{
+    if(!state.medals[s.name]) state.medals[s.name] = {gold:0,silver:0,bronze:0};
+    if(i===0) state.medals[s.name].gold++;
+    else if(i===1) state.medals[s.name].silver++;
+    else state.medals[s.name].bronze++;
+  });
+  state.matches = [];
+  state.playCount = {};
+  state.partnerHist = {};
+  state.players = [];
+  state.session = { date:new Date().toISOString().split('T')[0], name:'' };
+  document.getElementById('sessionDate') && (document.getElementById('sessionDate').value = state.session.date);
+  document.getElementById('sessionName') && (document.getElementById('sessionName').value = '');
+  renderAll(); refreshCommUI();
+  saveAppData();
+  showToast('🏁 Sesi ditutup — Medalist tercatat! Siap untuk sesi berikutnya.');
+}
+function renderMedalist(){
+  const lbl = document.getElementById('medalistSportLabel');
+  if(lbl) lbl.textContent = SPORT_CONFIG[sport].label;
+  const el = document.getElementById('medalistContent');
+  if(!el) return;
+  const rows = medalistRows();
+  if(!rows.length){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🏅</div>Belum ada sesi '+SPORT_CONFIG[sport].label+' yang ditutup — tekan "Tutup Sesi" di tab Board setelah match selesai untuk mulai mencatat Medalist.</div>';
+    return;
+  }
+  el.innerHTML = `<div style="overflow-x:auto"><table class="lb-table"><thead><tr>
+    <th>#</th><th>Nama</th><th class="right">🥇</th><th class="right">🥈</th><th class="right">🥉</th><th class="right">Jumlah</th>
+  </tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr>
+    <td style="font-size:15px;font-weight:800;color:var(--muted)">${i+1}</td>
+    <td class="player-name">${r.name}</td>
+    <td class="right"><span class="stat-chip" style="background:#FEF3C7;color:#B45309">${r.gold}</span></td>
+    <td class="right"><span class="stat-chip" style="background:#F1F5F9;color:#475569">${r.silver}</span></td>
+    <td class="right"><span class="stat-chip" style="background:#FFEDD5;color:#9A3412">${r.bronze}</span></td>
+    <td class="right"><span class="stat-chip pts-chip">${r.total}</span></td>
+  </tr>`).join('')}
+  </tbody></table></div>
+  <div class="lb-note">Kumulatif dari semua sesi ${SPORT_CONFIG[sport].label} yang sudah ditutup · diurutkan seperti tabel medali Olimpiade (🥇 lebih dulu, baru 🥈 lalu 🥉)</div>`;
+}
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
@@ -1845,14 +1930,36 @@ function updateComm(){
   refreshCommUI();
   saveAppData();
 }
+// Logo komunitas di-resize & dikompres otomatis di sisi browser sebelum disimpan —
+// supaya ukuran data konsisten kecil (puluhan-ratusan KB) berapa pun ukuran foto asli
+// yang diunggah, baik untuk kuota localStorage maupun payload sync ke Supabase.
+const LOGO_MAX_DIM = 512;      // sisi terpanjang, cukup untuk tampilan terbesar (kanvas Share 184px)
+const LOGO_MAX_BYTES = 800000; // ~800KB base64, batas aman
 function loadLogo(ev){
   const f = ev.target.files[0]; if(!f) return;
+  if(!f.type.startsWith('image/')){ showToast('⚠️ File harus berupa gambar'); ev.target.value=''; return; }
   const rd = new FileReader();
   rd.onload = e => {
-    commProfile.logoData = e.target.result;
-    const img = new Image();
-    img.onload = () => { commProfile.logoImg = img; refreshCommUI(); showToast('✅ Logo komunitas terpasang!'); saveAppData(); };
-    img.src = commProfile.logoData;
+    const srcImg = new Image();
+    srcImg.onload = () => {
+      let { width:w, height:h } = srcImg;
+      if(w > LOGO_MAX_DIM || h > LOGO_MAX_DIM){
+        const scale = LOGO_MAX_DIM / Math.max(w,h);
+        w = Math.round(w*scale); h = Math.round(h*scale);
+      }
+      const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(srcImg, 0, 0, w, h);
+      let out = cv.toDataURL('image/png');
+      if(out.length > LOGO_MAX_BYTES) out = cv.toDataURL('image/jpeg', 0.85);
+      if(out.length > LOGO_MAX_BYTES) out = cv.toDataURL('image/jpeg', 0.6);
+      if(out.length > LOGO_MAX_BYTES){ showToast('⚠️ Logo masih terlalu besar setelah dikompres — coba gambar yang lebih sederhana'); ev.target.value=''; return; }
+      commProfile.logoData = out;
+      const img = new Image();
+      img.onload = () => { commProfile.logoImg = img; refreshCommUI(); showToast('✅ Logo komunitas terpasang!'); saveAppData(); };
+      img.src = out;
+    };
+    srcImg.onerror = () => { showToast('⚠️ Gagal membaca gambar'); };
+    srcImg.src = e.target.result;
   };
   rd.readAsDataURL(f);
 }
@@ -2019,12 +2126,15 @@ function shareBoard(){
   x.textAlign = 'center'; x.font = '600 20px '+F; x.fillStyle = '#94A3B8';
   x.fillText('hostmabar.com', 540, fy+34);
 
+  _shareKind = 'leaderboard';
+  document.getElementById('shareModalTitle').textContent = '📸 Share Leaderboard';
   document.getElementById('shareModalOverlay').classList.add('open');
 }
+let _shareKind = 'leaderboard';
 function downloadShare(){
   const cv = document.getElementById('shareCanvas');
   const a = document.createElement('a');
-  a.download = 'leaderboard-'+sport+'-'+(state.session.date||'sesi')+'.png';
+  a.download = _shareKind+'-'+sport+'-'+(state.session.date||'sesi')+'.png';
   a.href = cv.toDataURL('image/png');
   a.click();
   showToast('⬇️ Gambar tersimpan — siap post ke Instagram!');
@@ -2032,6 +2142,112 @@ function downloadShare(){
 function closeShare(e){
   if(e && e.target!==document.getElementById('shareModalOverlay')) return;
   document.getElementById('shareModalOverlay').classList.remove('open');
+}
+
+// ── SHARE / POST MEDALIST — sama gaya dengan shareBoard(), peringkat 1-7, kolom medali ──
+function shareMedalist(){
+  const rows = medalistRows().slice(0,7);
+  if(!rows.length){ showToast('⚠️ Belum ada Medalist '+SPORT_CONFIG[sport].label+' — tutup sesi dulu di tab Board'); return; }
+  const c = SPORT_CONFIG[sport];
+  const cv = document.getElementById('shareCanvas');
+  cv.width = 1080; cv.height = 1350;
+  const x = cv.getContext('2d');
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const grad = x.createLinearGradient(0,0,1080,0);
+  grad.addColorStop(0,'#F7941D'); grad.addColorStop(1,'#E8174A');
+
+  x.fillStyle = '#F8FAFC'; x.fillRect(0,0,1080,1350);
+  x.fillStyle = grad; x.fillRect(0,0,1080,14); x.fillRect(0,1336,1080,14);
+
+  let y = 70;
+  x.textAlign = 'center';
+  if(commProfile.logoImg){
+    x.save(); x.beginPath(); x.arc(540, y+92, 92, 0, Math.PI*2); x.clip();
+    drawImageCover(x, commProfile.logoImg, 448, y, 184, 184); x.restore();
+    x.beginPath(); x.arc(540, y+92, 92, 0, Math.PI*2);
+    x.lineWidth = 7; x.strokeStyle = c.hex; x.stroke();
+    y += 258;
+  } else { y += 26; }
+  const nameSize = fitFont(x, (commProfile.name||'Komunitas')+' Medalist', F, '800', 900, 50, 30);
+  x.font = '800 '+nameSize+'px '+F; x.fillStyle = '#1E293B';
+  x.fillText((commProfile.name||'Komunitas')+' Medalist', 540, y);
+  y += 40;
+  x.font = '600 26px '+F; x.fillStyle = '#64748B';
+  x.fillText('Hostmabar Medalist · Kumulatif Sesi', 540, y);
+  y += 34;
+  const chipTxt = c.label.toUpperCase();
+  x.font = '800 24px '+F;
+  const chipIcon = __sportIcons[sport];
+  const hasIcon = chipIcon && chipIcon.complete && chipIcon.naturalWidth>0;
+  const iconSz = 26, iconGap = hasIcon ? 10 : 0;
+  const cw = x.measureText(chipTxt).width + (hasIcon?iconSz+iconGap:0) + 56;
+  rr(540-cw/2, y, cw, 46, 23, x); x.fillStyle = c.hex; x.fill();
+  x.fillStyle = '#FFFFFF';
+  if(hasIcon){
+    const iconX = 540 - cw/2 + 20;
+    drawImageCover(x, chipIcon, iconX, y+10, iconSz, iconSz);
+    x.textAlign = 'left'; x.fillText(chipTxt, iconX+iconSz+iconGap, y+32); x.textAlign = 'center';
+  } else { x.fillText(chipTxt, 540, y+32); }
+  y += 84;
+
+  const medalTxt = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
+  const topN = Math.min(3, rows.length);
+  const bigH = 130, bigGap = 14, bigL = 70, bigW = 940;
+  for(let i=0;i<topN;i++){
+    const r = rows[i], ry = y + i*(bigH+bigGap);
+    rr(bigL, ry, bigW, bigH, 22, x);
+    x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = 3.5; x.strokeStyle = c.hex; x.stroke();
+    x.textAlign = 'center';
+    x.font = '54px serif'; x.fillText(medalTxt(i), bigL+66, ry+68);
+    x.textAlign = 'left';
+    x.font = '800 36px '+F; x.fillStyle = '#1E293B';
+    x.fillText(r.name, bigL+124, ry+56);
+    x.font = '700 21px '+F; x.fillStyle = '#64748B';
+    x.fillText('🥇'+r.gold+'   🥈'+r.silver+'   🥉'+r.bronze, bigL+124, ry+94);
+    x.textAlign = 'right';
+    x.font = '800 46px '+F; x.fillStyle = c.hex;
+    x.fillText(r.total, bigL+bigW-48, ry+64);
+    x.font = '700 16px '+F; x.fillStyle = '#94A3B8';
+    x.fillText('MEDALI', bigL+bigW-48, ry+90);
+  }
+  y += topN*(bigH+bigGap) + 14;
+
+  const smH = 84, smGap = 8, smL = 120, smW = 840;
+  for(let i=3;i<rows.length;i++){
+    const r = rows[i], ry = y + (i-3)*(smH+smGap);
+    rr(smL, ry, smW, smH, 16, x);
+    x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = 1.5; x.strokeStyle = '#E2E8F0'; x.stroke();
+    x.textAlign = 'center';
+    x.beginPath(); x.arc(smL+46, ry+42, 21, 0, Math.PI*2);
+    x.fillStyle = '#F1F5F9'; x.fill();
+    x.font = '800 23px '+F; x.fillStyle = '#64748B';
+    x.fillText(i+1, smL+46, ry+50);
+    x.textAlign = 'left';
+    x.font = '800 26px '+F; x.fillStyle = '#1E293B';
+    x.fillText(r.name, smL+90, ry+38);
+    x.font = '700 16px '+F; x.fillStyle = '#64748B';
+    x.fillText('🥇'+r.gold+'  🥈'+r.silver+'  🥉'+r.bronze, smL+90, ry+64);
+    x.textAlign = 'right';
+    x.font = '800 32px '+F; x.fillStyle = c.hex;
+    x.fillText(r.total, smL+smW-40, ry+48);
+    x.font = '700 13px '+F; x.fillStyle = '#94A3B8';
+    x.fillText('MEDALI', smL+smW-40, ry+66);
+  }
+  if(rows.length>3) y += (rows.length-3)*(smH+smGap);
+
+  const fy = 1272;
+  if(__hmBrandLogo.complete && __hmBrandLogo.naturalWidth>0){
+    const lh = 48, lw = lh * (__hmBrandLogo.naturalWidth/__hmBrandLogo.naturalHeight);
+    x.drawImage(__hmBrandLogo, 540-lw/2, fy-40, lw, lh);
+  }
+  x.textAlign = 'center'; x.font = '600 20px '+F; x.fillStyle = '#94A3B8';
+  x.fillText('hostmabar.com', 540, fy+34);
+
+  _shareKind = 'medalist';
+  document.getElementById('shareModalTitle').textContent = '🏅 Share Medalist';
+  document.getElementById('shareModalOverlay').classList.add('open');
 }
 
 document.getElementById('commName').value = commProfile.name;
