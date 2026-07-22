@@ -1591,56 +1591,127 @@ function showToast(msg){
 function dummy(f){alert('Ini dummy — "'+f+'" memakai fungsi yang sudah ada di sistem live saat aktivasi.');}
 
 // ── Print / Download PDF — Riwayat Pertandingan (tab Match) & Leaderboard (tab Board) ──
-// Pola sama dengan printTurnamen(): buka window baru berisi konten yang sudah dirender,
-// lalu window.print() (host bisa "Save as PDF" dari dialog print browser).
-function __printReportWindow(title, bodyHtml){
+// Laporan dibangun ulang dari data (calcStats/state.matches) — bukan copy innerHTML tampilan layar —
+// supaya header logo+nama sejajar proporsional, ada logo HOSTMABAR resmi di tengah, dan tabel
+// berwarna (medali, aksen per cabang, tag menang/kalah) senada dengan mabarpro.html.
+function __commHeaderHtml(){
+  const logoHtml = commProfile.logoData
+    ? `<img class="clogo" src="${commProfile.logoData}">`
+    : `<div class="clogo-ph">${(commProfile.name||'H').charAt(0).toUpperCase()}</div>`;
+  return `<div class="headrow">
+    ${logoHtml}
+    <div>
+      <h1>${commProfile.name||'HOSTMABAR'}</h1>
+      <div class="meta">${state.session.name||'Sesi Mabar'} · ${state.session.date||''}</div>
+      <span class="chip">${SPORT_CONFIG[sport].emoji} ${SPORT_CONFIG[sport].label}</span>
+    </div>
+  </div>`;
+}
+function __lbTableHtml(){
+  const stats = calcStats();
+  if(!stats.length) return '<p style="color:#64748B;font-size:13px">Belum ada data pemain.</p>';
+  const medalCls = i => i===0?'medal-1':i===1?'medal-2':i===2?'medal-3':'';
+  const rankBadge = i => i===0?'<span class="rank-badge g">1</span>':i===1?'<span class="rank-badge s">2</span>':i===2?'<span class="rank-badge b">3</span>':`<span class="rank-badge">${i+1}</span>`;
+  const rows = stats.map((s,i)=>{
+    const diffCls = s.scoreDiff>0?'diff-pos':s.scoreDiff<0?'diff-neg':'diff-zero';
+    const diffTxt = s.scoreDiff>0?'+'+s.scoreDiff:s.scoreDiff;
+    const winPct = s.played ? Math.round(s.wins/s.played*100) : 0;
+    return `<tr class="${medalCls(i)}">
+      <td>${rankBadge(i)}</td>
+      <td class="pname">${s.name}</td>
+      <td class="right">${s.played}</td>
+      <td class="right">${s.wins}</td>
+      <td class="right">${s.losses}</td>
+      <td class="right">${winPct}%</td>
+      <td class="right ${diffCls}">${diffTxt}</td>
+      <td class="right pts">${s.points}</td>
+    </tr>`;
+  }).join('');
+  return `<table><thead><tr><th></th><th>Pemain</th><th class="right">Main</th><th class="right">M</th><th class="right">K</th><th class="right">Win%</th><th class="right">+/-</th><th class="right">Pts</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function __historyTableHtml(){
+  if(!state.matches.length) return '<p style="color:#64748B;font-size:13px">Belum ada pertandingan.</p>';
+  const rows = [...state.matches].reverse().map((m,i)=>{
+    const num = state.matches.length-i;
+    const winName = (m.winner==='A'?m.teamA:m.teamB).join(' & ');
+    return `<tr>
+      <td style="color:#94A3B8;font-weight:700;font-size:11px;white-space:nowrap">#${num}</td>
+      <td>
+        <div class="mrow-teams">${m.teamA.join(' & ')} <span style="color:#94A3B8;font-weight:400">vs</span> ${m.teamB.join(' & ')}</div>
+        <div class="mrow-score">${m.scoreA} — ${m.scoreB}</div>
+      </td>
+      <td class="right"><span class="win-tag">🏆 ${winName}</span><div class="mtime">${m.time}</div></td>
+    </tr>`;
+  }).join('');
+  return `<table><tbody>${rows}</tbody></table>`;
+}
+function __printReportWindow(title, sectionsHtml){
   const w = window.open('', '_blank');
   if(!w){ showToast('⚠️ Pop-up diblokir browser — izinkan pop-up untuk print'); return; }
-  const logoHtml = commProfile.logoData ? `<img src="${commProfile.logoData}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;margin-bottom:10px">` : '';
+  const accentHex = SPORT_CONFIG[sport].hex;
   w.document.write(`<html><head><title>${title}</title><style>
-    body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;padding:28px;color:#1E293B}
-    h1{font-size:19px;margin-bottom:2px}
-    h2{font-size:14px;margin:24px 0 8px;color:#1E293B}
-    .sub{font-size:12px;color:#64748B;margin-bottom:20px}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{padding:6px 8px;border-bottom:1px solid #E2E8F0;text-align:left}
+    :root{--accent:${accentHex}}
+    *{box-sizing:border-box}
+    body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;padding:0;margin:0;color:#1E293B;background:#fff}
+    .sheet{max-width:820px;margin:0 auto;padding:30px 34px 40px}
+    .topbrand{text-align:center;margin-bottom:20px}
+    .topbrand img{height:34px}
+    .headrow{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;
+      background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 8%,white),#fff);
+      border:1px solid #E2E8F0;margin-bottom:26px}
+    .headrow .clogo{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0}
+    .headrow .clogo-ph{width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;
+      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;flex-shrink:0}
+    .headrow h1{font-size:20px;font-weight:800;margin:0 0 3px}
+    .headrow .meta{font-size:12.5px;color:#64748B}
+    .headrow .chip{display:inline-block;margin-top:6px;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px;background:var(--accent);color:#fff}
+    h2.sec{font-size:14px;font-weight:800;margin:24px 0 10px;padding-left:10px;border-left:4px solid var(--accent);color:#1E293B}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    th{text-align:left;padding:8px 10px;color:#64748B;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;border-bottom:2px solid #E2E8F0}
     th.right,td.right{text-align:right}
-    .stat-chip{padding:2px 7px;border-radius:6px;background:#F1F5F9;font-weight:700;font-size:11px}
-    .pts-chip{background:#FEF3C7}
-    .player-name{font-weight:700}
-    .win-rate{font-size:10.5px;color:#64748B}
-    .level-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#F1F5F9}
-    .lb-note{font-size:10.5px;color:#64748B;margin-top:8px}
-    .match-item{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #E2E8F0;padding:9px 0;gap:10px;font-size:12px}
-    .match-num{color:#64748B;font-weight:700;font-size:11px}
-    .win-label{font-weight:700;color:#0F766E}
-    .m-time{font-size:10.5px;color:#64748B}
-    .m-actions{display:none}
-    .empty{color:#64748B;font-size:13px;padding:16px 0}
-    .empty-icon{display:none}
-    @media print{ body{padding:10px} }
+    td{padding:9px 10px;border-bottom:1px solid #F1F5F9}
+    tr.medal-1{background:#FEF3C7}
+    tr.medal-2{background:#F1F5F9}
+    tr.medal-3{background:#FFEDD5}
+    .rank-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;font-weight:800;font-size:12px;background:#E2E8F0;color:#475569}
+    .rank-badge.g{background:#F59E0B;color:#fff}
+    .rank-badge.s{background:#94A3B8;color:#fff}
+    .rank-badge.b{background:#C2703D;color:#fff}
+    .pname{font-weight:700}
+    .pts{font-weight:800;color:var(--accent);font-size:13.5px}
+    .diff-pos{color:#16A34A;font-weight:700}
+    .diff-neg{color:#DC2626;font-weight:700}
+    .diff-zero{color:#64748B;font-weight:700}
+    .mrow-teams{font-weight:600}
+    .mrow-score{font-size:14px;font-weight:800;margin-top:2px}
+    .win-tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:99px;background:#DCFCE7;color:#16A34A}
+    .mtime{font-size:10.5px;color:#94A3B8;margin-top:2px}
+    .footnote{margin-top:30px;text-align:center;font-size:10.5px;color:#94A3B8}
+    @media print{
+      .sheet{padding:14px 18px}
+      body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    }
   </style></head><body>
-    ${logoHtml}
-    <h1>${(commProfile.name||'HOSTMABAR')}</h1>
-    <div class="sub">${SPORT_CONFIG[sport].label} · ${state.session.name||'Sesi'} · ${state.session.date||''}</div>
-    ${bodyHtml}
+    <div class="sheet">
+      <div class="topbrand"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
+      ${__commHeaderHtml()}
+      ${sectionsHtml}
+      <div class="footnote">Dibuat otomatis oleh HOSTMABAR · hostmabar.com</div>
+    </div>
   </body></html>`);
   w.document.close();
   w.focus();
-  setTimeout(()=>w.print(), 400);
+  setTimeout(()=>w.print(), 500);
 }
 function printMatchReport(){
   if(!state.matches.length){ showToast('⚠️ Belum ada pertandingan untuk dicetak'); return; }
-  const historyHtml = document.getElementById('matchHistory').innerHTML;
   __printReportWindow('Riwayat Pertandingan — '+(commProfile.name||'HOSTMABAR'),
-    `<h2>📜 Riwayat Pertandingan</h2>${historyHtml}`);
+    `<h2 class="sec">📜 Riwayat Pertandingan</h2>${__historyTableHtml()}`);
 }
 function printBoardReport(){
   if(!state.matches.length){ showToast('⚠️ Belum ada data untuk dicetak'); return; }
-  const lbHtml = document.getElementById('leaderboardContent').innerHTML;
-  const historyHtml = document.getElementById('matchHistory').innerHTML;
   __printReportWindow('Leaderboard — '+(commProfile.name||'HOSTMABAR'),
-    `<h2>🏆 Leaderboard</h2>${lbHtml}<h2>📜 Riwayat Pertandingan</h2>${historyHtml}`);
+    `<h2 class="sec">🏆 Leaderboard</h2>${__lbTableHtml()}<h2 class="sec">📜 Riwayat Pertandingan</h2>${__historyTableHtml()}`);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1648,6 +1719,9 @@ function printBoardReport(){
 // Disimpan namespaced per akun (localStorage, lihat dataStorageKey())
 // ═══════════════════════════════════════════════════════════════════
 const commProfile = { name: __appData.commProfile.name || '', logoData: __appData.commProfile.logoData || null, logoImg:null };
+// Logo resmi HOSTMABAR — dipreload untuk dipakai di footer canvas Share Leaderboard (bukan lagi badge "HM" manual)
+const __hmBrandLogo = new Image();
+__hmBrandLogo.src = 'Logohostmabarv3.png';
 if(commProfile.logoData){
   const __restoreLogo = new Image();
   __restoreLogo.onload = () => { commProfile.logoImg = __restoreLogo; refreshCommUI(); };
@@ -1686,6 +1760,17 @@ function refreshCommUI(){
 // SHARE / POST LEADERBOARD — gambar 1080×1350 siap post IG (peringkat 1-7)
 // ═══════════════════════════════════════════════════════════════════
 function rr(x,y,w,h,r,ctx){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
+// Cari ukuran font terbesar yang masih muat dalam maxWidth — mencegah nama komunitas panjang
+// menabrak elemen lain atau meluber keluar kanvas.
+function fitFont(ctx, text, family, weight, maxWidth, startSize, minSize){
+  let size = startSize;
+  ctx.font = weight+' '+size+'px '+family;
+  while(ctx.measureText(text).width > maxWidth && size > minSize){
+    size -= 2;
+    ctx.font = weight+' '+size+'px '+family;
+  }
+  return size;
+}
 function shareBoard(){
   const stats = calcStats().filter(s=>s.played>0).slice(0,7);
   if(!stats.length){ showToast('⚠️ Belum ada match yang tercatat untuk dibagikan'); return; }
@@ -1709,10 +1794,11 @@ function shareBoard(){
     x.drawImage(commProfile.logoImg, 448, y, 184, 184); x.restore();
     x.beginPath(); x.arc(540, y+92, 92, 0, Math.PI*2);
     x.lineWidth = 7; x.strokeStyle = c.hex; x.stroke();
-    y += 226;
+    y += 258; // jarak aman di bawah logo bulat (184px) supaya tidak menabrak nama komunitas
   } else { y += 26; }
-  x.font = '800 58px '+F; x.fillStyle = '#1E293B';
-  x.fillText(commProfile.name, 540, y);
+  const nameSize = fitFont(x, commProfile.name||'Komunitas', F, '800', 900, 58, 32);
+  x.font = '800 '+nameSize+'px '+F; x.fillStyle = '#1E293B';
+  x.fillText(commProfile.name||'Komunitas', 540, y);
   y += 46;
   x.font = '600 28px '+F; x.fillStyle = '#64748B';
   x.fillText((state.session.name||'Sesi Mabar')+' · '+(state.session.date||''), 540, y);
@@ -1778,18 +1864,24 @@ function shareBoard(){
   }
   if(stats.length>3) y += (stats.length-3)*(smH+smGap);
 
-  // ── FOOTER: logo + tulisan HOSTMABAR ──
+  // ── FOOTER: logo resmi HOSTMABAR (bukan lagi badge "HM" gambar tangan) ──
   const fy = 1272;
-  x.font = '800 32px '+F;
-  const brand = 'HOSTMABAR';
-  const bw = x.measureText(brand).width;
-  const badge = 44, gapB = 14;
-  const startX = 540 - (badge+gapB+bw)/2;
-  rr(startX, fy-32, badge, badge, 12, x); x.fillStyle = grad; x.fill();
-  x.textAlign = 'center'; x.fillStyle = '#FFFFFF';
-  x.font = '800 22px '+F; x.fillText('HM', startX+badge/2, fy-2);
-  x.textAlign = 'left'; x.fillStyle = '#1E293B';
-  x.font = '800 32px '+F; x.fillText(brand, startX+badge+gapB, fy+2);
+  if(__hmBrandLogo.complete && __hmBrandLogo.naturalWidth>0){
+    const lh = 48, lw = lh * (__hmBrandLogo.naturalWidth/__hmBrandLogo.naturalHeight);
+    x.drawImage(__hmBrandLogo, 540-lw/2, fy-40, lw, lh);
+  } else {
+    // fallback kalau logo belum sempat termuat — badge manual seperti sebelumnya
+    x.font = '800 32px '+F;
+    const brand = 'HOSTMABAR';
+    const bw = x.measureText(brand).width;
+    const badge = 44, gapB = 14;
+    const startX = 540 - (badge+gapB+bw)/2;
+    rr(startX, fy-32, badge, badge, 12, x); x.fillStyle = grad; x.fill();
+    x.textAlign = 'center'; x.fillStyle = '#FFFFFF';
+    x.font = '800 22px '+F; x.fillText('HM', startX+badge/2, fy-2);
+    x.textAlign = 'left'; x.fillStyle = '#1E293B';
+    x.font = '800 32px '+F; x.fillText(brand, startX+badge+gapB, fy+2);
+  }
   x.textAlign = 'center'; x.font = '600 20px '+F; x.fillStyle = '#94A3B8';
   x.fillText('hostmabar.com', 540, fy+34);
 
