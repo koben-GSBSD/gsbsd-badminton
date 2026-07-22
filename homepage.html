@@ -48,6 +48,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdro
   radial-gradient(500px 300px at 10% 90%,rgba(232,23,74,.06),transparent)}
 .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center}
 .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:20px}
+.hero-badge img{width:17px;height:17px;object-fit:contain}
 .hero-badge b{color:var(--badminton)}
 .hero h1{font-size:clamp(34px,5vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.15}
 .hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--orange),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -80,6 +81,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdro
 .sport-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 22px;text-align:center;position:relative;transition:transform .2s, box-shadow .2s;border-top:4px solid var(--accent)}
 .sport-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
 .sport-card .icon{width:56px;height:56px;margin:0 auto 14px;border-radius:16px;display:grid;place-items:center;font-size:26px;background:color-mix(in srgb,var(--accent) 10%,white)}
+.sport-card .icon img{width:32px;height:32px;object-fit:contain}
 .sport-card h3{font-size:17px;font-weight:800;margin-bottom:6px}
 .sport-card p{font-size:13px;color:var(--muted)}
 .sport-status{position:absolute;top:14px;right:14px;font-size:10px;font-weight:800;letter-spacing:.05em;padding:4px 10px;border-radius:99px;text-transform:uppercase}
@@ -222,7 +224,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:48px
 <section class="hero">
   <div class="container hero-grid">
     <div>
-      <div class="hero-badge">🏸 Dipercaya komunitas mabar di Indonesia · <b>Badminton live</b></div>
+      <div class="hero-badge"><img src="logobadminton.png" alt=""> Dipercaya komunitas mabar di Indonesia · <b>Badminton live</b></div>
       <h1>Kelola sesi mabar komunitasmu, <em>dari skor sampai kas</em></h1>
       <p>Match tracker, leaderboard, rotasi pemain, dan kas komunitas dalam satu platform ringan. Host fokus ke lapangan, HOSTMABAR yang mencatat.</p>
       <div class="hero-actions">
@@ -258,28 +260,28 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:48px
     <div class="sport-grid">
       <a class="sport-card" href="badminton.html" style="--accent:var(--badminton);text-decoration:none;color:inherit;display:block">
         <span class="sport-status status-live">Live</span>
-        <div class="icon">🏸</div>
+        <div class="icon"><img src="logobadminton.png" alt="Badminton"></div>
         <h3>Badminton</h3>
         <p>Match tracker, skill tier 5 level, leaderboard, dan play counter.</p>
         <p style="margin-top:10px;font-weight:700;color:var(--badminton);font-size:13px">Lihat halaman →</p>
       </a>
       <a class="sport-card" href="pickleball.html" style="--accent:var(--pickleball);text-decoration:none;color:inherit;display:block">
         <span class="sport-status status-soon">Segera</span>
-        <div class="icon">🥒</div>
+        <div class="icon"><img src="logopickleball.png" alt="Pickleball"></div>
         <h3>Pickleball</h3>
         <p>Skoring tradisional & rally, plus queue engine untuk open play.</p>
         <p style="margin-top:10px;font-weight:700;color:var(--pickleball);font-size:13px">Lihat halaman →</p>
       </a>
       <a class="sport-card" href="padel.html" style="--accent:var(--padel);text-decoration:none;color:inherit;display:block">
         <span class="sport-status status-soon">Segera</span>
-        <div class="icon">🎾</div>
+        <div class="icon"><img src="logopadel.png" alt="Padel"></div>
         <h3>Padel</h3>
         <p>Generator turnamen Americano & Mexicano untuk sesi sosial.</p>
         <p style="margin-top:10px;font-weight:700;color:var(--padel);font-size:13px">Lihat halaman →</p>
       </a>
       <a class="sport-card" href="tennis.html" style="--accent:var(--tennis);text-decoration:none;color:inherit;display:block">
         <span class="sport-status status-soon">Segera</span>
-        <div class="icon">🎾</div>
+        <div class="icon"><img src="logotennis.png" alt="Tennis"></div>
         <h3>Tennis</h3>
         <p>Format rekreasional: pro set & match tiebreak.</p>
         <p style="margin-top:10px;font-weight:700;color:var(--tennis);font-size:13px">Lihat halaman →</p>
