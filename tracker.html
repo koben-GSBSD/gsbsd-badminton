@@ -24,8 +24,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .demo-strip{background:var(--surface);border-bottom:1px solid var(--border)}
 .demo-inner{display:flex;align-items:center;gap:10px;padding:8px 16px;flex-wrap:wrap;max-width:860px;margin:0 auto}
 .demo-inner span{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.pill{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--muted)}
+.pill{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:99px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
 .pill.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pill-icon{width:15px;height:15px;object-fit:contain;display:inline-block;vertical-align:-2px}
+.tab-icon-img{width:15px;height:15px;object-fit:contain;display:inline-block;vertical-align:-2px}
 
 /* ── Header ── */
 .header{display:flex;align-items:center;gap:12px;padding:16px 0}
@@ -138,6 +140,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 .m-actions .del{color:var(--red)}
 .empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px}
 .empty-icon{font-size:30px;margin-bottom:6px}
+.empty-icon-img{width:38px;height:38px;object-fit:contain}
 
 /* Leaderboard */
 .lb-table{width:100%;border-collapse:collapse;font-size:13px}
@@ -246,6 +249,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
     </div>
     <div class="header-right">
       <div class="badge-pro" id="pakBadge">⚡ PRO</div>
+      <span id="cloudSyncBadge" style="font-size:10.5px;font-weight:700;color:var(--muted);margin-right:4px;white-space:nowrap"></span>
       <button class="btn btn-secondary btn-sm btn-logout" onclick="logout()">🚪 Logout</button>
     </div>
   </div>
@@ -253,7 +257,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   <!-- TABS -->
   <div class="tabs">
     <button class="tab active" onclick="switchTab('setup',this)">⚙️ Setup</button>
-    <button class="tab" onclick="switchTab('match',this)"><span id="matchTabIcon">🏸</span> Match</button>
+    <button class="tab" onclick="switchTab('match',this)"><span id="matchTabIcon"><img src="logobadminton.png" class="tab-icon-img" alt=""></span> Match</button>
     <button class="tab" onclick="switchTab('leaderboard',this)">🏆 Board</button>
     <button class="tab" onclick="switchTab('member',this)">📇 Member</button>
   </div>
@@ -339,7 +343,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   <!-- ══ MATCH ══ -->
   <div id="tab-match" class="section">
     <div class="card">
-      <div class="card-title" id="matchTitle">🏸 Input Pertandingan</div>
+      <div class="card-title" id="matchTitle"><img src="logobadminton.png" class="tab-icon-img" alt=""> Input Pertandingan</div>
 
       <div class="legend-bar">
         <span class="lbl">LEVEL:</span>
@@ -566,28 +570,28 @@ const ST_ORDER = {'Rutin':0,'Aktif':1,'Baru':2,'Coba-Coba':3};
 // ═══════════════════════════════════════════════════════════════════
 const SPORT_CONFIG = {
   badminton: {
-    label:'Badminton', emoji:'🏸', accentVar:'--badminton', hex:'#0F766E',
+    label:'Badminton', emoji:'🏸', icon:'logobadminton.png', accentVar:'--badminton', hex:'#0F766E',
     alert:'Double match · Pemain dipilih oleh Host · Catat skor setelah bertanding',
     placeholder:['21','15'],
     pairModes:['manual','americano','mexicano'],
     validate:(a,b)=> a===b ? 'Tidak boleh seri!' : null
   },
   pickleball: {
-    label:'Pickleball', emoji:'🥒', accentVar:'--pickleball', hex:'#E11D48',
+    label:'Pickleball', emoji:'🥒', icon:'logopickleball.png', accentVar:'--pickleball', hex:'#E11D48',
     alert:'Double match · Pemain dipilih oleh Host · Catat skor akhir game',
     placeholder:['11','8'],
     pairModes:['manual','americano','mexicano'],
     validate:(a,b)=> a===b ? 'Tidak boleh seri!' : null
   },
   padel: {
-    label:'Padel', emoji:'🎾', accentVar:'--padel', hex:'#9333EA',
+    label:'Padel', emoji:'🎾', icon:'logopadel.png', accentVar:'--padel', hex:'#9333EA',
     alert:'Double match · Pemain dipilih oleh Host · Catat skor akhir set/game',
     placeholder:['6','3'],
     pairModes:['manual','americano','mexicano'],
     validate:(a,b)=> a===b ? 'Tidak boleh seri!' : null
   },
   tennis: {
-    label:'Tennis', emoji:'🎾', accentVar:'--tennis', hex:'#84754E',
+    label:'Tennis', emoji:'🎾', icon:'logotennis.png', accentVar:'--tennis', hex:'#84754E',
     alert:'Double match · Pemain dipilih oleh Host · Catat skor akhir set/game',
     placeholder:['8','5'],
     pairModes:['manual','americano','mexicano'],
@@ -655,7 +659,108 @@ function saveAppData(){
       commProfile: { name: commProfile.name, logoData: commProfile.logoData }
     }));
   }catch(e){ console.warn('Gagal menyimpan data lokal:', e.message); }
+  syncToCloud();
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// SINKRONISASI CLOUD (Supabase) — pola sama dengan cuanmabar.html yang sudah live:
+// localStorage tetap jadi cache instan/offline-first, Supabase jadi sumber kebenaran
+// lintas device. Tabel BARU `tracker_data` (tidak menyentuh profiles/cuanmabar_data).
+// ═══════════════════════════════════════════════════════════════════
+const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
+const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
+const dbSync = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+});
+let _cloudUserId = null;
+let _cloudSyncing = false;
+let _cloudSaveTimer = null;
+// Batas aman ukuran logo (base64) yang dikirim ke cloud — logo besar tetap tersimpan
+// lokal di device ini saja supaya tidak gagal upsert diam-diam.
+const CLOUD_LOGO_MAX = 1_500_000;
+
+function showSyncBadge(msg, color){
+  const el = document.getElementById('cloudSyncBadge');
+  if(el){ el.textContent = msg; el.style.color = color || 'var(--muted)'; }
+}
+
+function syncToCloud(){
+  if(!_cloudUserId) return; // belum ada sesi cloud (offline / belum termuat) — cukup localStorage
+  clearTimeout(_cloudSaveTimer);
+  _cloudSaveTimer = setTimeout(async ()=>{
+    if(_cloudSyncing) return;
+    _cloudSyncing = true;
+    showSyncBadge('💾 Menyimpan online…', '#F59E0B');
+    try{
+      const logoOk = !commProfile.logoData || commProfile.logoData.length <= CLOUD_LOGO_MAX;
+      const payload = {
+        stateBySport, tournamentBySport, members: MEMBERS,
+        commProfile: { name: commProfile.name, logoData: logoOk ? commProfile.logoData : null }
+      };
+      const { error } = await dbSync.from('tracker_data')
+        .upsert({ user_id: _cloudUserId, payload, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      if(error) throw error;
+      showSyncBadge(logoOk ? '☁️ Tersimpan online' : '☁️ Tersimpan (logo terlalu besar, hanya lokal)', logoOk ? '#16A34A' : '#F59E0B');
+    }catch(e){
+      console.warn('syncToCloud:', e.message);
+      showSyncBadge('⚠️ Gagal sync online', '#DC2626');
+    }finally{
+      _cloudSyncing = false;
+    }
+  }, 600);
+}
+
+// Dipanggil setelah render awal (dari data lokal) supaya UI langsung tampil cepat —
+// begitu sesi cloud & data server dapat dipastikan, UI di-refresh ulang dengan data cloud.
+async function initCloudSync(){
+  try{
+    showSyncBadge('⏳ Sinkronisasi…', '#F59E0B');
+    let { data:{ session } } = await dbSync.auth.getSession();
+    if(!session){
+      const { data: refreshed } = await dbSync.auth.refreshSession();
+      session = refreshed?.session || null;
+    }
+    if(!session){ showSyncBadge('📶 Offline — data lokal', 'var(--muted)'); return; }
+    _cloudUserId = session.user.id;
+
+    const { data, error } = await dbSync
+      .from('tracker_data')
+      .select('payload')
+      .eq('user_id', _cloudUserId)
+      .maybeSingle();
+    if(error) throw error;
+
+    if(data && data.payload){
+      const p = data.payload;
+      Object.keys(stateBySport).forEach(k=>{ if(p.stateBySport && p.stateBySport[k]) stateBySport[k] = p.stateBySport[k]; });
+      Object.keys(tournamentBySport).forEach(k=>{ if(p.tournamentBySport && p.tournamentBySport[k]) tournamentBySport[k] = p.tournamentBySport[k]; });
+      if(Array.isArray(p.members)){ MEMBERS.length = 0; p.members.forEach(m=>MEMBERS.push(m)); }
+      if(p.commProfile){
+        commProfile.name = p.commProfile.name || commProfile.name;
+        if(p.commProfile.logoData){
+          commProfile.logoData = p.commProfile.logoData;
+          const img = new Image();
+          img.onload = () => { commProfile.logoImg = img; refreshCommUI(); };
+          img.src = commProfile.logoData;
+        }
+      }
+      // Cache lokal disamakan dengan versi cloud (source of truth) untuk pemakaian offline berikutnya.
+      try{ localStorage.setItem(dataStorageKey(), JSON.stringify({stateBySport,tournamentBySport,members:MEMBERS,commProfile:{name:commProfile.name,logoData:commProfile.logoData}})); }catch(e){}
+      showSyncBadge('☁️ Data online', '#16A34A');
+    } else {
+      // Akun ini belum punya baris di cloud — kirim data lokal yang ada sekarang agar baris terbentuk.
+      showSyncBadge('☁️ Data siap', '#16A34A');
+      saveAppData();
+    }
+    sport = new URLSearchParams(location.search).get('sport') || sport;
+    if(!SPORT_CONFIG[sport]) sport = 'badminton';
+    applySport(); refreshCommUI(); renderTurnamenTab();
+  }catch(e){
+    console.warn('initCloudSync:', e.message);
+    showSyncBadge('📶 Offline — data lokal', 'var(--muted)');
+  }
+}
+
 const __appData = loadAppData();
 const stateBySport = __appData.stateBySport;
 __appData.members.forEach(m=>MEMBERS.push(m)); // restore database member permanen dari localStorage
@@ -697,14 +802,14 @@ function applySport(){
   pairMode = 'manual';
   document.documentElement.style.setProperty('--accent', `var(${c.accentVar})`);
   document.getElementById('headerSub').textContent = 'Sports Community · ' + c.label;
-  document.getElementById('matchTabIcon').textContent = c.emoji;
-  document.getElementById('matchTitle').textContent = c.emoji + ' Input Pertandingan';
+  document.getElementById('matchTabIcon').innerHTML = '<img src="'+c.icon+'" class="tab-icon-img" alt="">';
+  document.getElementById('matchTitle').innerHTML = '<img src="'+c.icon+'" class="tab-icon-img" alt=""> Input Pertandingan';
   document.getElementById('ruleAlert').textContent = c.alert;
   document.getElementById('scoreA').placeholder = c.placeholder[0];
   document.getElementById('scoreB').placeholder = c.placeholder[1];
   document.getElementById('validHint').innerHTML = 'Aturan: <b>tidak boleh seri</b> · sistem poin bebas mengikuti aturan komunitas masing-masing';
   document.getElementById('pills').innerHTML = Object.keys(SPORT_CONFIG).map(k=>
-    `<button class="pill ${k===sport?'on':''}" onclick="gantiSport('${k}')">${SPORT_CONFIG[k].emoji} ${SPORT_CONFIG[k].label}</button>`).join(' ');
+    `<button class="pill ${k===sport?'on':''}" onclick="gantiSport('${k}')"><img src="${SPORT_CONFIG[k].icon}" class="pill-icon" alt=""> ${SPORT_CONFIG[k].label}</button>`).join(' ');
   document.getElementById('sessionDate').value = state.session.date;
   document.getElementById('sessionName').value = state.session.name;
   renderModeRow();
@@ -901,7 +1006,7 @@ function deleteMatch(id){
 }
 function renderMatchHistory(){
   const el=document.getElementById('matchHistory');
-  if(!state.matches.length){el.innerHTML='<div class="empty"><div class="empty-icon">'+SPORT_CONFIG[sport].emoji+'</div>Belum ada pertandingan</div>';return;}
+  if(!state.matches.length){el.innerHTML='<div class="empty"><div class="empty-icon"><img src="'+SPORT_CONFIG[sport].icon+'" class="empty-icon-img" alt=""></div>Belum ada pertandingan</div>';return;}
   el.innerHTML=[...state.matches].reverse().map((m,i)=>{
     const num=state.matches.length-i;
     return `<div class="match-item">
@@ -1603,7 +1708,7 @@ function __commHeaderHtml(){
     <div>
       <h1>${commProfile.name||'HOSTMABAR'}</h1>
       <div class="meta">${state.session.name||'Sesi Mabar'} · ${state.session.date||''}</div>
-      <span class="chip">${SPORT_CONFIG[sport].emoji} ${SPORT_CONFIG[sport].label}</span>
+      <span class="chip"><img src="${SPORT_CONFIG[sport].icon}" style="width:13px;height:13px;object-fit:contain;vertical-align:-2px;margin-right:2px"> ${SPORT_CONFIG[sport].label}</span>
     </div>
   </div>`;
 }
@@ -1611,23 +1716,23 @@ function __lbTableHtml(){
   const stats = calcStats();
   if(!stats.length) return '<p style="color:#64748B;font-size:13px">Belum ada data pemain.</p>';
   const medalCls = i => i===0?'medal-1':i===1?'medal-2':i===2?'medal-3':'';
-  const rankBadge = i => i===0?'<span class="rank-badge g">1</span>':i===1?'<span class="rank-badge s">2</span>':i===2?'<span class="rank-badge b">3</span>':`<span class="rank-badge">${i+1}</span>`;
+  const rankBadge = i => i===0?'<span class="rank-badge g">🥇</span>':i===1?'<span class="rank-badge s">🥈</span>':i===2?'<span class="rank-badge b">🥉</span>':`<span class="rank-badge">${i+1}</span>`;
   const rows = stats.map((s,i)=>{
     const diffCls = s.scoreDiff>0?'diff-pos':s.scoreDiff<0?'diff-neg':'diff-zero';
-    const diffTxt = s.scoreDiff>0?'+'+s.scoreDiff:s.scoreDiff;
+    const diffTxt = s.played>0 ? (s.scoreDiff>0?'+'+s.scoreDiff:s.scoreDiff) : '—';
     const winPct = s.played ? Math.round(s.wins/s.played*100) : 0;
     return `<tr class="${medalCls(i)}">
       <td>${rankBadge(i)}</td>
-      <td class="pname">${s.name}</td>
+      <td class="pname">${s.name}<div class="winpct">${winPct}% win</div></td>
       <td class="right">${s.played}</td>
-      <td class="right">${s.wins}</td>
-      <td class="right">${s.losses}</td>
-      <td class="right">${winPct}%</td>
-      <td class="right ${diffCls}">${diffTxt}</td>
+      <td class="right" style="color:#16A34A;font-weight:700">${s.wins}</td>
+      <td class="right" style="color:#DC2626;font-weight:700">${s.losses}</td>
       <td class="right pts">${s.points}</td>
+      <td class="right ${diffCls}">${diffTxt}</td>
     </tr>`;
   }).join('');
-  return `<table><thead><tr><th></th><th>Pemain</th><th class="right">Main</th><th class="right">M</th><th class="right">K</th><th class="right">Win%</th><th class="right">+/-</th><th class="right">Pts</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table><thead><tr><th></th><th>Member</th><th class="right">MP</th><th class="right">W</th><th class="right">L</th><th class="right">Pts</th><th class="right">+/&minus;</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="lb-note">MP = Match Play (jumlah bermain) · W = Win +3 · L = Lose +1 · Tie-breaker: Score Diff</div>`;
 }
 function __historyTableHtml(){
   if(!state.matches.length) return '<p style="color:#64748B;font-size:13px">Belum ada pertandingan.</p>';
@@ -1674,10 +1779,9 @@ function __printReportWindow(title, sectionsHtml){
     tr.medal-2{background:#F1F5F9}
     tr.medal-3{background:#FFEDD5}
     .rank-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;font-weight:800;font-size:12px;background:#E2E8F0;color:#475569}
-    .rank-badge.g{background:#F59E0B;color:#fff}
-    .rank-badge.s{background:#94A3B8;color:#fff}
-    .rank-badge.b{background:#C2703D;color:#fff}
+    .rank-badge.g,.rank-badge.s,.rank-badge.b{background:none;font-size:17px}
     .pname{font-weight:700}
+    .winpct{font-size:10.5px;color:#64748B;font-weight:400;margin-top:1px}
     .pts{font-weight:800;color:var(--accent);font-size:13.5px}
     .diff-pos{color:#16A34A;font-weight:700}
     .diff-neg{color:#DC2626;font-weight:700}
@@ -1686,6 +1790,7 @@ function __printReportWindow(title, sectionsHtml){
     .mrow-score{font-size:14px;font-weight:800;margin-top:2px}
     .win-tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:99px;background:#DCFCE7;color:#16A34A}
     .mtime{font-size:10.5px;color:#94A3B8;margin-top:2px}
+    .lb-note{font-size:10.5px;color:#94A3B8;margin-top:10px}
     .footnote{margin-top:30px;text-align:center;font-size:10.5px;color:#94A3B8}
     @media print{
       .sheet{padding:14px 18px}
@@ -1722,6 +1827,13 @@ const commProfile = { name: __appData.commProfile.name || '', logoData: __appDat
 // Logo resmi HOSTMABAR — dipreload untuk dipakai di footer canvas Share Leaderboard (bukan lagi badge "HM" manual)
 const __hmBrandLogo = new Image();
 __hmBrandLogo.src = 'Logohostmabarv3.png';
+// Ikon resmi per cabang (logobadminton.png dkk, upload Koben) — dipreload untuk dipakai di chip cabang Share PNG.
+const __sportIcons = {};
+Object.keys(SPORT_CONFIG).forEach(k=>{
+  const img = new Image();
+  img.src = SPORT_CONFIG[k].icon;
+  __sportIcons[k] = img;
+});
 if(commProfile.logoData){
   const __restoreLogo = new Image();
   __restoreLogo.onload = () => { commProfile.logoImg = __restoreLogo; refreshCommUI(); };
@@ -1760,6 +1872,16 @@ function refreshCommUI(){
 // SHARE / POST LEADERBOARD — gambar 1080×1350 siap post IG (peringkat 1-7)
 // ═══════════════════════════════════════════════════════════════════
 function rr(x,y,w,h,r,ctx){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
+// object-fit:cover manual untuk canvas — mencegah logo non-persegi tampil stretch/gepeng saat digambar ke kotak/lingkaran.
+function drawImageCover(ctx, img, dx, dy, dw, dh){
+  const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  if(!iw || !ih){ ctx.drawImage(img, dx, dy, dw, dh); return; }
+  const ir = iw/ih, dr = dw/dh;
+  let sx,sy,sw,sh;
+  if(ir > dr){ sh = ih; sw = ih*dr; sx = (iw-sw)/2; sy = 0; }
+  else { sw = iw; sh = iw/dr; sx = 0; sy = (ih-sh)/2; }
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+}
 // Cari ukuran font terbesar yang masih muat dalam maxWidth — mencegah nama komunitas panjang
 // menabrak elemen lain atau meluber keluar kanvas.
 function fitFont(ctx, text, family, weight, maxWidth, startSize, minSize){
@@ -1791,7 +1913,7 @@ function shareBoard(){
   x.textAlign = 'center';
   if(commProfile.logoImg){
     x.save(); x.beginPath(); x.arc(540, y+92, 92, 0, Math.PI*2); x.clip();
-    x.drawImage(commProfile.logoImg, 448, y, 184, 184); x.restore();
+    drawImageCover(x, commProfile.logoImg, 448, y, 184, 184); x.restore();
     x.beginPath(); x.arc(540, y+92, 92, 0, Math.PI*2);
     x.lineWidth = 7; x.strokeStyle = c.hex; x.stroke();
     y += 258; // jarak aman di bawah logo bulat (184px) supaya tidak menabrak nama komunitas
@@ -1803,12 +1925,24 @@ function shareBoard(){
   x.font = '600 28px '+F; x.fillStyle = '#64748B';
   x.fillText((state.session.name||'Sesi Mabar')+' · '+(state.session.date||''), 540, y);
   y += 34;
-  // chip cabang
-  const chipTxt = (c.emoji+'  '+c.label).toUpperCase();
+  // chip cabang — ikon resmi (bukan emoji) + label
+  const chipTxt = c.label.toUpperCase();
   x.font = '800 24px '+F;
-  const cw = x.measureText(chipTxt).width + 56;
+  const chipIcon = __sportIcons[sport];
+  const hasIcon = chipIcon && chipIcon.complete && chipIcon.naturalWidth>0;
+  const iconSz = 26, iconGap = hasIcon ? 10 : 0;
+  const cw = x.measureText(chipTxt).width + (hasIcon?iconSz+iconGap:0) + 56;
   rr(540-cw/2, y, cw, 46, 23, x); x.fillStyle = c.hex; x.fill();
-  x.fillStyle = '#FFFFFF'; x.fillText(chipTxt, 540, y+32);
+  x.fillStyle = '#FFFFFF';
+  if(hasIcon){
+    const iconX = 540 - cw/2 + 20;
+    drawImageCover(x, chipIcon, iconX, y+10, iconSz, iconSz);
+    x.textAlign = 'left';
+    x.fillText(chipTxt, iconX+iconSz+iconGap, y+32);
+    x.textAlign = 'center';
+  } else {
+    x.fillText(chipTxt, 540, y+32);
+  }
   y += 84;
 
   // ── PERINGKAT 1-3: kartu besar beraksen ──
@@ -1903,6 +2037,7 @@ function closeShare(e){
 document.getElementById('commName').value = commProfile.name;
 applySport();
 refreshCommUI();
+initCloudSync(); // paint cepat dari localStorage dulu, lalu disamakan dengan data cloud begitu sesi terverifikasi
 
 // Deep-link ?turnamen=1 (dipakai tombol "Buat Turnamen" di mabarpro.html)
 // untuk langsung membuka modal Turnamen tanpa mengubah tab utama yang aktif.
