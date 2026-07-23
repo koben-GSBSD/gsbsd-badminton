@@ -123,14 +123,18 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdro
 .price-card li::before{content:"✓";color:var(--badminton);font-weight:800;flex-shrink:0}
 .price-card li.no{color:#94A3B8}
 .price-card li.no::before{content:"—";color:#CBD5E1}
-.compare{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.compare{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
 .compare table{width:100%;border-collapse:collapse;font-size:14px}
-.compare th,.compare td{padding:14px 18px;text-align:center;border-bottom:1px solid var(--border)}
+.compare th,.compare td{padding:14px 18px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
 .compare th{background:var(--bg);font-weight:800;font-size:13px}
 .compare td:first-child,.compare th:first-child{text-align:left;font-weight:600}
 .compare tr:last-child td{border-bottom:none}
 .yes{color:var(--badminton);font-weight:800}
 .no-mark{color:#CBD5E1}
+
+/* ===== Kalkulasi Biaya (Hemat) ===== */
+.cost-image{margin:32px auto 0;max-width:520px;text-align:center}
+.cost-image img{width:100%;height:auto;display:block;border-radius:var(--radius);box-shadow:0 12px 32px rgba(30,41,59,.1)}
 
 /* ===== FAQ ===== */
 .faq-list{max-width:720px;margin:0 auto}
@@ -194,7 +198,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:48px
   .price-card .desc{font-size:14px}
   .price-card li{font-size:15px}
   .price-card .amount small{font-size:15px}
-  .compare table{font-size:14.5px}
+  .compare table{font-size:14.5px;min-width:640px}
   details p{font-size:15px}
   .footer-grid p,.footer-grid a{font-size:15px}
   .footer-bottom{font-size:14px}
@@ -246,6 +250,19 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:48px
       <div class="lb-row"><div class="rank" style="background:#CBD5E1">4</div><div class="name">Rina M.</div><div class="tier">Beginner</div><div class="pts">11 pts</div></div>
       <div class="mockup-float">Kas komunitas<b>Rp 1.250.000</b></div>
       <div class="mockup-float2">Match hari ini<b>24 selesai</b></div>
+    </div>
+  </div>
+</section>
+
+<section id="hemat" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Hitungan Biaya</span>
+      <h2>Hanya <em style="font-style:normal;background:linear-gradient(90deg,var(--orange),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent">Rp 6 ribuan</em> per lapangan</h2>
+      <p class="section-sub">Sangat terjangkau dan hemat untuk komunitas yang mau bertumbuh dan berkembang.</p>
+    </div>
+    <div class="cost-image">
+      <img src="hitunganbiaya.png" alt="Hitungan biaya HOSTMABAR — Rp 6 ribuan per lapangan">
     </div>
   </div>
 </section>
@@ -322,16 +339,16 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:48px
     </div>
     <div class="testi-grid">
       <div class="testi">
-        <p>"Dulu catat skor di notes HP, sering kereset. Sekarang leaderboard otomatis, member makin semangat datang."</p>
-        <div class="who"><div class="ava" style="background:var(--badminton)">DA</div><div><b>Dimas A.</b><span>Host komunitas, BSD</span></div></div>
+        <p>"Sangat tertolong memakai Hostmabar karena dulu harus bawa-bawa kertas atau papan tulis, sekarang dari HP data online dan mudah banget dipakai. Indikator pemain lengkap dengan level, sangat membantu host dalam pemilihan pemain untuk mabar."</p>
+        <div class="who"><div class="ava" style="background:var(--badminton)">LI</div><div><b>Lina</b><span>Host Light Badminton, Tangerang</span></div></div>
       </div>
       <div class="testi">
-        <p>"Play counter-nya ngebantu banget. Nggak ada lagi drama 'kok dia main terus' — semua kelihatan transparan."</p>
-        <div class="who"><div class="ava" style="background:var(--orange)">MS</div><div><b>Mega S.</b><span>Host mabar mingguan, Tangerang</span></div></div>
+        <p>"Bisa ngeliat jumlah bermain setiap pemain ngebantu banget! Sangat gampang dipakainya, bisa dipakai untuk turnamen, hitung poin ga pusing soalnya udah ada leaderboard. Top deh pakai Hostmabar untuk komunitas."</p>
+        <div class="who"><div class="ava" style="background:var(--orange)">EV</div><div><b>Evelyn</b><span>Host Nowmintown, Jakarta</span></div></div>
       </div>
       <div class="testi">
-        <p>"CUANMABAR bikin laporan kas tinggal share PDF. Member percaya, bendahara tenang."</p>
-        <div class="who"><div class="ava" style="background:var(--pink)">RF</div><div><b>Rizky F.</b><span>Bendahara komunitas, Jakarta</span></div></div>
+        <p>"Bahkan bisa leveling pemain, pairing pemain lebih mudah di lapangan. Mudah dan bisa tau siapa juaranya setiap kali mabar tinggal lihat menu Leaderboard. Sukses terus Hostmabar!"</p>
+        <div class="who"><div class="ava" style="background:var(--pink)">ST</div><div><b>Stephani</b><span>Host Piiminton, Alam Sutera</span></div></div>
       </div>
     </div>
   </div>
