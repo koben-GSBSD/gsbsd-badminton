@@ -454,7 +454,10 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <p style="font-size:11.5px;color:var(--muted)">Definisi: <b>Rutin</b> = 4 kehadiran dalam 30 hari · <b>Aktif</b> = hadir dalam 60 hari terakhir · <b>Baru</b> = bergabung &lt;30 hari · <b>Coba-Coba</b> = sudah tidak main dalam 60 hari</p>
     </div>
     <div class="card">
-      <div class="card-title">🏅 Hostmabar Medalist — <span id="medalistSportLabel">Badminton</span></div>
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <span>🏅 Hostmabar Medalist — <span id="medalistSportLabel">Badminton</span></span>
+        <select id="medalistPeriod" onchange="onMedalistPeriodChange(this.value)" style="font-size:12px;font-weight:700;padding:6px 10px;border-radius:9px;border:1.5px solid var(--border);background:#fff;color:var(--text);width:auto"></select>
+      </div>
       <div id="medalistContent"></div>
     </div>
     <div class="pdf-banner">
@@ -658,7 +661,24 @@ const PAIR_MODES = {
 // ── STATE per cabang — disimpan di localStorage, namespaced per akun (username dari hm_session) ──
 // Sebelumnya data ini hanya in-memory (hilang tiap refresh) dan diisi contoh dummy (Andri, Bimo, dst).
 // Sekarang: disimpan persisten per akun di browser ini, mulai kosong untuk akun baru.
-function freshState(){ return {players:[],matches:[],playCount:{},partnerHist:{},medals:{},session:{date:new Date().toISOString().split('T')[0],name:''}}; }
+function freshState(){ return {players:[],matches:[],playCount:{},partnerHist:{},medals:{},medalHistory:[],session:{date:new Date().toISOString().split('T')[0],name:''}}; }
+// Migrasi satu-kali: versi lama Medalist cuma simpan counter (state.medals, tanpa tanggal).
+// Versi baru simpan log per kejadian (state.medalHistory: {name,medal,date}) supaya bisa
+// difilter per bulan/tahun. Counter lama dipindah jadi entri "date:null" — tetap terhitung
+// di rekap "Semua Waktu", tapi tidak bisa masuk filter bulan tertentu karena tanggal aslinya
+// memang tidak pernah tercatat.
+function normalizeMedalist(st){
+  if(!st.medals) st.medals = {};
+  if(!st.medalHistory){
+    st.medalHistory = [];
+    Object.keys(st.medals).forEach(name=>{
+      const m = st.medals[name] || {};
+      for(let i=0;i<(m.gold||0);i++) st.medalHistory.push({name,medal:'gold',date:null});
+      for(let i=0;i<(m.silver||0);i++) st.medalHistory.push({name,medal:'silver',date:null});
+      for(let i=0;i<(m.bronze||0);i++) st.medalHistory.push({name,medal:'bronze',date:null});
+    });
+  }
+}
 const today = new Date().toISOString().split('T')[0];
 
 function dataStorageKey(){
@@ -781,7 +801,7 @@ async function initCloudSync(){
     if(data && data.payload){
       const p = data.payload;
       Object.keys(stateBySport).forEach(k=>{ if(p.stateBySport && p.stateBySport[k]) stateBySport[k] = p.stateBySport[k]; });
-      Object.values(stateBySport).forEach(st=>{ if(!st.medals) st.medals = {}; });
+      Object.values(stateBySport).forEach(normalizeMedalist);
       Object.keys(tournamentBySport).forEach(k=>{ if(p.tournamentBySport && p.tournamentBySport[k]) tournamentBySport[k] = p.tournamentBySport[k]; });
       if(Array.isArray(p.members)){ MEMBERS.length = 0; p.members.forEach(m=>MEMBERS.push(m)); }
       if(p.commProfile){
@@ -812,8 +832,8 @@ async function initCloudSync(){
 
 const __appData = loadAppData();
 const stateBySport = __appData.stateBySport;
-// Normalisasi: data lama (sebelum fitur Medalist) belum punya field `medals` — pastikan selalu ada.
-Object.values(stateBySport).forEach(st=>{ if(!st.medals) st.medals = {}; });
+// Normalisasi + migrasi Medalist (lihat normalizeMedalist() di atas).
+Object.values(stateBySport).forEach(normalizeMedalist);
 __appData.members.forEach(m=>MEMBERS.push(m)); // restore database member permanen dari localStorage
 
 // ═══════════════════════════════════════════════════════════════════
@@ -849,6 +869,7 @@ function applySport(){
   const c = SPORT_CONFIG[sport];
   state = stateBySport[sport];
   tournament = tournamentBySport[sport];
+  _medalistPeriod = null; // reset filter bulan/tahun saat ganti cabang — histori tiap cabang beda
   fmt = null;
   pairMode = 'manual';
   document.documentElement.style.setProperty('--accent', `var(${c.accentVar})`);
@@ -1194,7 +1215,7 @@ function renderMemberTab(){
       </tr>`).join('')}</tbody></table>`;
 }
 function removeMember(name){
-  if(!confirm('Hapus '+name+' dari database member secara permanen? Riwayat kehadirannya ikut hilang.'))return;
+  if(!confirm('Hapus '+name+' dari database member secara permanen? Riwayat kehadirannya ikut hilang.\n\nCatatan: riwayat match & medali "'+name+'" di Hostmabar Medalist TIDAK ikut terhapus otomatis (data historis). Hapus manual di tab Member → Hostmabar Medalist kalau perlu.'))return;
   const i=MEMBERS.findIndex(m=>m.name===name);
   if(i>-1)MEMBERS.splice(i,1);
   state.players=state.players.filter(p=>p.name!==name);
@@ -1740,16 +1761,61 @@ function renderAll(){renderPlayerList();renderMemberPicker();populateSelects();r
 
 // ═══════════════════════════════════════════════════════════════════
 // HOSTMABAR MEDALIST — hall of fame per cabang: akumulasi 🥇🥈🥉 dari sesi
-// yang sudah "ditutup" (lihat tutupSesi()). Disimpan di state.medals (per cabang),
-// ikut tersinkron cloud lewat saveAppData() seperti data lain.
+// yang sudah "ditutup" (lihat tutupSesi()). Sumber data: state.medalHistory,
+// log per kejadian {name, medal, date} — supaya bisa direkap per bulan/tahun.
+// (state.medals lama tetap ada di data tersimpan sebagai arsip, sudah tidak
+// ditulis lagi — lihat normalizeMedalist() untuk migrasi satu-kali.)
 // ═══════════════════════════════════════════════════════════════════
-function medalistRows(){
-  const medals = state.medals || {};
-  return Object.keys(medals).map(name=>{
-    const m = medals[name] || {};
-    const gold=m.gold||0, silver=m.silver||0, bronze=m.bronze||0;
-    return {name, gold, silver, bronze, total:gold+silver+bronze};
-  }).filter(r=>r.total>0).sort((a,b)=> b.gold-a.gold || b.silver-a.silver || b.bronze-a.bronze);
+const BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+let _medalistPeriod = null; // null = Semua Waktu, atau {year,month} (month 1-12)
+
+function medalistPeriodOptions(){
+  const keys = new Set();
+  (state.medalHistory||[]).forEach(e=>{
+    if(!e.date) return;
+    const d = new Date(e.date);
+    keys.add(d.getFullYear()+'-'+(d.getMonth()+1));
+  });
+  return [...keys].map(k=>{
+    const [y,m] = k.split('-').map(Number);
+    return {year:y, month:m, label:BULAN_ID[m-1]+' '+y};
+  }).sort((a,b)=> b.year-a.year || b.month-a.month);
+}
+function medalistRows(filter){
+  const hist = (state.medalHistory||[]).filter(e=>{
+    if(!filter) return true;
+    if(!e.date) return false; // entri lama tanpa tanggal cuma tampil di "Semua Waktu"
+    const d = new Date(e.date);
+    return d.getFullYear()===filter.year && (d.getMonth()+1)===filter.month;
+  });
+  const agg = {};
+  hist.forEach(e=>{
+    if(!agg[e.name]) agg[e.name] = {name:e.name, gold:0, silver:0, bronze:0};
+    if(e.medal==='gold') agg[e.name].gold++;
+    else if(e.medal==='silver') agg[e.name].silver++;
+    else if(e.medal==='bronze') agg[e.name].bronze++;
+  });
+  return Object.values(agg).map(r=>({...r, total:r.gold+r.silver+r.bronze}))
+    .filter(r=>r.total>0).sort((a,b)=> b.gold-a.gold || b.silver-a.silver || b.bronze-a.bronze);
+}
+function onMedalistPeriodChange(val){
+  if(val==='all'){ _medalistPeriod = null; }
+  else{ const [y,m] = val.split('-').map(Number); _medalistPeriod = {year:y, month:m}; }
+  renderMedalist();
+}
+function removeMedalistEntry(name){
+  const label = _medalistPeriod ? (BULAN_ID[_medalistPeriod.month-1]+' '+_medalistPeriod.year) : 'Semua Waktu';
+  if(!confirm('Hapus semua medali "'+name+'" untuk periode '+label+' ('+SPORT_CONFIG[sport].label+')? Tindakan ini tidak bisa dibatalkan.')) return;
+  state.medalHistory = (state.medalHistory||[]).filter(e=>{
+    if(e.name!==name) return true;
+    if(!_medalistPeriod) return false; // Semua Waktu → hapus semua entri nama ini
+    if(!e.date) return true; // entri legacy (date:null) tidak ikut terhapus oleh filter bulan tertentu
+    const d = new Date(e.date);
+    return !(d.getFullYear()===_medalistPeriod.year && (d.getMonth()+1)===_medalistPeriod.month);
+  });
+  renderMedalist();
+  saveAppData();
+  showToast('🗑️ Medali "'+name+'" dihapus dari periode '+label);
 }
 // Tutup Sesi sekarang dipakai oleh 2 tombol (Board: "Tutup Sesi & Catat Medali", Setup: "Reset")
 // — keduanya sama persis: catat peringkat 1-3 ke Medalist, lalu reset match & daftar hadir
@@ -1776,12 +1842,11 @@ function confirmTutupSesi(){
   const top3 = _pendingTutupSesi;
   document.getElementById('tutupSesiModalOverlay').classList.remove('open');
   if(!top3) return;
-  if(!state.medals) state.medals = {};
+  if(!state.medalHistory) state.medalHistory = [];
+  const today = new Date().toISOString().split('T')[0];
   top3.forEach((s,i)=>{
-    if(!state.medals[s.name]) state.medals[s.name] = {gold:0,silver:0,bronze:0};
-    if(i===0) state.medals[s.name].gold++;
-    else if(i===1) state.medals[s.name].silver++;
-    else state.medals[s.name].bronze++;
+    const medal = i===0?'gold':i===1?'silver':'bronze';
+    state.medalHistory.push({name:s.name, medal, date:today});
   });
   state.matches = [];
   state.playCount = {};
@@ -1798,15 +1863,25 @@ function confirmTutupSesi(){
 function renderMedalist(){
   const lbl = document.getElementById('medalistSportLabel');
   if(lbl) lbl.textContent = SPORT_CONFIG[sport].label;
+  const selEl = document.getElementById('medalistPeriod');
+  if(selEl){
+    const opts = medalistPeriodOptions();
+    const curVal = _medalistPeriod ? (_medalistPeriod.year+'-'+_medalistPeriod.month) : 'all';
+    selEl.innerHTML = '<option value="all">📅 Semua Waktu</option>' +
+      opts.map(o=>`<option value="${o.year}-${o.month}">${o.label}</option>`).join('');
+    selEl.value = curVal;
+  }
   const el = document.getElementById('medalistContent');
   if(!el) return;
-  const rows = medalistRows();
+  const rows = medalistRows(_medalistPeriod);
   if(!rows.length){
-    el.innerHTML = '<div class="empty"><div class="empty-icon">🏅</div>Belum ada sesi '+SPORT_CONFIG[sport].label+' yang ditutup — tekan "Tutup Sesi" di tab Board setelah match selesai untuk mulai mencatat Medalist.</div>';
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🏅</div>'+
+      (_medalistPeriod ? 'Tidak ada Medalist '+SPORT_CONFIG[sport].label+' untuk periode ini.' :
+      'Belum ada sesi '+SPORT_CONFIG[sport].label+' yang ditutup — tekan "Tutup Sesi" di tab Board setelah match selesai untuk mulai mencatat Medalist.')+'</div>';
     return;
   }
   el.innerHTML = `<div style="overflow-x:auto"><table class="lb-table"><thead><tr>
-    <th>#</th><th>Nama</th><th class="right">🥇</th><th class="right">🥈</th><th class="right">🥉</th><th class="right">Jumlah</th>
+    <th>#</th><th>Nama</th><th class="right">🥇</th><th class="right">🥈</th><th class="right">🥉</th><th class="right">Jumlah</th><th></th>
   </tr></thead><tbody>
   ${rows.map((r,i)=>`<tr>
     <td style="font-size:15px;font-weight:800;color:var(--muted)">${i+1}</td>
@@ -1815,9 +1890,10 @@ function renderMedalist(){
     <td class="right"><span class="stat-chip" style="background:#F1F5F9;color:#475569">${r.silver}</span></td>
     <td class="right"><span class="stat-chip" style="background:#FFEDD5;color:#9A3412">${r.bronze}</span></td>
     <td class="right"><span class="stat-chip pts-chip">${r.total}</span></td>
+    <td style="text-align:right"><button class="remove" onclick="removeMedalistEntry('${esc(r.name)}')" title="Hapus catatan medali ini">×</button></td>
   </tr>`).join('')}
   </tbody></table></div>
-  <div class="lb-note">Kumulatif dari semua sesi ${SPORT_CONFIG[sport].label} yang sudah ditutup · diurutkan seperti tabel medali Olimpiade (🥇 lebih dulu, baru 🥈 lalu 🥉)</div>`;
+  <div class="lb-note">${_medalistPeriod ? 'Periode '+BULAN_ID[_medalistPeriod.month-1]+' '+_medalistPeriod.year : 'Kumulatif dari semua sesi '+SPORT_CONFIG[sport].label+' yang sudah ditutup'} · diurutkan seperti tabel medali Olimpiade (🥇 lebih dulu, baru 🥈 lalu 🥉)</div>`;
 }
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -2192,7 +2268,7 @@ function closeShare(e){
 
 // ── SHARE / POST MEDALIST — sama gaya dengan shareBoard(), peringkat 1-7, kolom medali ──
 function shareMedalist(){
-  const rows = medalistRows().slice(0,7);
+  const rows = medalistRows(_medalistPeriod).slice(0,7);
   if(!rows.length){ showToast('⚠️ Belum ada Medalist '+SPORT_CONFIG[sport].label+' — tutup sesi dulu di tab Board'); return; }
   const c = SPORT_CONFIG[sport];
   const cv = document.getElementById('shareCanvas');
@@ -2219,7 +2295,7 @@ function shareMedalist(){
   x.fillText((commProfile.name||'Komunitas')+' Medalist', 540, y);
   y += 40;
   x.font = '600 26px '+F; x.fillStyle = '#64748B';
-  x.fillText('Hostmabar Medalist · Kumulatif Sesi', 540, y);
+  x.fillText('Hostmabar Medalist · '+(_medalistPeriod ? BULAN_ID[_medalistPeriod.month-1]+' '+_medalistPeriod.year : 'Kumulatif Sesi'), 540, y);
   y += 34;
   const chipTxt = c.label.toUpperCase();
   x.font = '800 24px '+F;
