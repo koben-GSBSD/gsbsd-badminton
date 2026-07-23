@@ -358,7 +358,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       </div>
       <div class="session-id" id="sessionInfo"></div>
       <div style="border-top:1px dashed var(--border);margin:16px 0 12px"></div>
-      <button class="btn btn-sm btn-secondary" style="width:100%;background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.25);color:#B91C1C" onclick="openTurnamenModal()">🥇 Mode Turnamen (khusus Ganda) — opsional, jarang dipakai</button>
+      <button id="turnamenBtn" class="btn btn-sm btn-secondary" style="width:100%;background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.25);color:#B91C1C" onclick="openTurnamenModal()">🥇 Mode Turnamen (khusus Ganda) — opsional, jarang dipakai</button>
     </div>
   </div>
 
@@ -409,7 +409,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 
     <div class="pdf-banner">
       <div><h3>📄 Download Laporan PDF</h3><p>Leaderboard + Riwayat · Siap posting Instagram</p></div>
-      <button class="btn btn-pdf" onclick="printMatchReport()">🖨️ Print / Save PDF</button>
+      <button id="printMatchBtn" class="btn btn-pdf" onclick="printMatchReport()">🖨️ Print / Save PDF</button>
     </div>
 
     <div class="card">
@@ -438,7 +438,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
     </div>
     <div class="pdf-banner">
       <div><h3>📄 Download Laporan PDF</h3><p>Leaderboard + Riwayat · logo & nama komunitas ikut tercetak</p></div>
-      <button class="btn btn-pdf" onclick="printBoardReport()">🖨️ Print / Save PDF</button>
+      <button id="printBoardBtn" class="btn btn-pdf" onclick="printBoardReport()">🖨️ Print / Save PDF</button>
     </div>
     <div class="pdf-banner" style="background:linear-gradient(120deg,rgba(247,148,29,.08),rgba(232,23,74,.06));border:1px solid rgba(247,148,29,.25)">
       <div><h3>🏁 Tutup Sesi & Catat Medali</h3><p>Peringkat 1-3 saat ini masuk ke Hostmabar Medalist (tab Member). Match & daftar hadir sesi ini direset untuk sesi berikutnya — member & medali tetap aman.</p></div>
@@ -958,6 +958,10 @@ function uSI(){
 function toggleHadir(name){
   const m = MEMBERS.find(x=>x.name===name);
   if(!m || state.players.find(p=>p.name===name)) return;
+  if(isPlusPlan() && state.players.length >= PLUS_MAX_PLAYERS){
+    showToast('🔒 Paket Plus maksimal '+PLUS_MAX_PLAYERS+' pemain/sesi — upgrade ke Mabar Pro untuk pemain tanpa batas');
+    return;
+  }
   state.players.push({name:m.name, level:m.level});
   if(!state.playCount[name]) state.playCount[name]=0;
   const t = new Date().toISOString().split('T')[0];
@@ -992,6 +996,10 @@ function addPlayer(){
   if(state.players.find(p=>p.name===name)){showToast('⚠️ Sudah masuk sesi ini!');inp.value='';return;}
   const existing = MEMBERS.find(m=>m.name===name);
   if(existing){ inp.value=''; toggleHadir(name); showToast('📇 '+name+' sudah member — langsung dimasukkan ke sesi'); return; }
+  if(isPlusPlan() && state.players.length >= PLUS_MAX_PLAYERS){
+    showToast('🔒 Paket Plus maksimal '+PLUS_MAX_PLAYERS+' pemain/sesi — upgrade ke Mabar Pro untuk pemain tanpa batas');
+    return;
+  }
   const t = new Date().toISOString().split('T')[0];
   MEMBERS.push({name, level, joined:t, hadir:[t]});
   state.players.push({name,level});
@@ -2381,20 +2389,51 @@ initCloudSync(); // paint cepat dari localStorage dulu, lalu disamakan dengan da
 // untuk langsung membuka modal Turnamen tanpa mengubah tab utama yang aktif.
 if(new URLSearchParams(location.search).get('turnamen')==='1') openTurnamenModal();
 
-// Badge paket header — ikut paket_langganan akun yang login (bukan selalu "PRO")
-(function setPaketBadge(){
+// ═══════════════════════════════════════════════════════════════════
+// PEMBATASAN PAKET — SATU file tracker.html untuk semua paket (Trial/Plus/Pro),
+// sesuai prinsip V3 (satu file per config, bukan file terpisah per varian).
+// Trial = akses penuh setara Pro (lihat tabel pricing 3.0). Hanya Plus yang dibatasi:
+// maks. 20 pemain/sesi, tanpa PDF export, tanpa Mode Turnamen, tanpa CUANMABAR
+// (CUANMABAR sendiri tidak ada di tracker.html — link-nya di dashboard mabarpro).
+// ═══════════════════════════════════════════════════════════════════
+const PLUS_MAX_PLAYERS = 20;
+function getPaket(){
   try{
     const raw = localStorage.getItem('hm_session');
     const s = raw ? JSON.parse(raw) : null;
-    const paket = (s && s.paket) ? String(s.paket).toLowerCase() : '';
-    const el = document.getElementById('pakBadge');
-    if(!el) return;
-    if(paket.includes('pro')) el.textContent = '⚡ PRO';
-    else if(paket.includes('plus')) el.textContent = '⚡ PLUS';
-    else if(paket.includes('trial')) el.textContent = '⚡ TRIAL';
-    else el.textContent = '⚡ PRO';
-  }catch(e){}
+    return (s && s.paket) ? String(s.paket).toLowerCase() : '';
+  }catch(e){ return ''; }
+}
+function isPlusPlan(){ const p = getPaket(); return p.includes('plus') && !p.includes('pro'); }
+
+// Badge paket header — ikut paket_langganan akun yang login (bukan selalu "PRO")
+(function setPaketBadge(){
+  const paket = getPaket();
+  const el = document.getElementById('pakBadge');
+  if(!el) return;
+  if(paket.includes('pro')) el.textContent = '⚡ PRO';
+  else if(paket.includes('plus')) el.textContent = '⚡ PLUS';
+  else if(paket.includes('trial')) el.textContent = '⚡ TRIAL';
+  else el.textContent = '⚡ PRO';
 })();
+
+// Kunci fitur khusus Pro (PDF export, Mode Turnamen) untuk akun Plus.
+// Tombol tetap terlihat (transparansi produk) tapi menampilkan ajakan upgrade saat ditekan.
+function applyPlanRestrictions(){
+  if(!isPlusPlan()) return;
+  const lock = (id, fiturNama)=>{
+    const btn = document.getElementById(id);
+    if(!btn || btn.dataset.locked) return;
+    btn.dataset.locked = '1';
+    btn.style.opacity = '.55'; btn.style.cursor = 'not-allowed';
+    btn.setAttribute('onclick', '');
+    btn.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); showToast('🔒 '+fiturNama+' khusus paket Mabar Pro — upgrade untuk membuka fitur ini'); };
+  };
+  lock('printMatchBtn', 'Export PDF');
+  lock('printBoardBtn', 'Export PDF');
+  lock('turnamenBtn', 'Mode Turnamen');
+}
+applyPlanRestrictions();
 
 // ═══════════════════════════════════════════════════════════════════
 // LOGOUT — sama alur dengan sistem live (hapus sesi lokal + signOut Supabase)
