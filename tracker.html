@@ -42,7 +42,11 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .header-sub{font-size:11.5px;color:var(--muted);font-weight:600}
 .header-right{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .header-right-stack{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.header-right-row{display:flex;align-items:center;gap:8px}
 .sync-badge{font-size:10px;font-weight:700;white-space:nowrap}
+@media(max-width:640px){
+  #hdrLogo{display:none !important}
+}
 .badge-pro{font-size:10px;font-weight:800;letter-spacing:.06em;background:linear-gradient(135deg,rgba(247,148,29,.12),rgba(232,23,74,.12));border:1.5px solid rgba(247,148,29,.5);color:#B45309;padding:5px 12px;border-radius:20px;text-transform:uppercase}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:11px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;text-decoration:none;transition:transform .12s}
 .btn:hover{transform:translateY(-1px)}
@@ -69,6 +73,10 @@ label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-b
 input,select{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:14px;background:var(--bg);color:var(--text)}
 input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff}
 .mt{margin-top:12px}
+.sesi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){
+  .sesi-grid{grid-template-columns:1fr}
+}
 .row{display:flex;gap:10px}
 
 /* ── Level badges (upgrade dari mabarprov2) ── */
@@ -229,6 +237,9 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   .modal{padding:18px}
   .tform-row{flex-direction:column}
   .tform-row .fmt-opt{width:100%;text-align:center}
+  .fmt-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .fmt-row .fmt-opt{width:100%;text-align:center}
+  .fmt-row .fmt-opt:first-child{grid-column:1/-1}
 }
 </style>
 </head>
@@ -255,10 +266,12 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <div class="header-sub" id="headerSub">Sports Community · Badminton</div>
     </div>
     <div class="header-right">
-      <div class="badge-pro" id="pakBadge">⚡ PRO</div>
       <div class="header-right-stack">
         <span id="cloudSyncBadge" class="sync-badge"></span>
-        <button class="btn btn-secondary btn-sm btn-logout" onclick="logout()">🚪 Logout</button>
+        <div class="header-right-row">
+          <div class="badge-pro" id="pakBadge">⚡ PRO</div>
+          <button class="btn btn-secondary btn-sm btn-logout" onclick="logout()">🚪 Logout</button>
+        </div>
       </div>
     </div>
   </div>
@@ -336,16 +349,16 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 
     <div class="card">
       <div class="card-title">🗓️ Sesi Mabar</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="sesi-grid">
         <div><label>Tanggal</label><input type="date" id="sessionDate"></div>
         <div><label>Nama Sesi</label><input type="text" id="sessionName" placeholder="Mabar Sabtu Pagi"></div>
       </div>
       <div class="mt">
-        <button class="btn btn-sm btn-secondary" style="color:var(--red);border-color:rgba(220,38,38,.3)" onclick="resetAll()">🗑️ Reset Semua Data</button>
+        <button class="btn btn-sm btn-secondary" style="color:var(--red);border-color:rgba(220,38,38,.3)" onclick="tutupSesi()">🗑️ Reset (Tutup Sesi & Catat Medali)</button>
       </div>
       <div class="session-id" id="sessionInfo"></div>
       <div style="border-top:1px dashed var(--border);margin:16px 0 12px"></div>
-      <button class="btn btn-sm btn-secondary" style="color:var(--muted);width:100%" onclick="openTurnamenModal()">🥇 Mode Turnamen (khusus Ganda) — opsional, jarang dipakai</button>
+      <button class="btn btn-sm btn-secondary" style="width:100%;background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.25);color:#B91C1C" onclick="openTurnamenModal()">🥇 Mode Turnamen (khusus Ganda) — opsional, jarang dipakai</button>
     </div>
   </div>
 
@@ -419,10 +432,6 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <div class="card-title">🏆 Leaderboard</div>
       <div id="leaderboardContent"></div>
     </div>
-    <div class="pdf-banner" style="background:linear-gradient(120deg,rgba(247,148,29,.08),rgba(232,23,74,.06));border:1px solid rgba(247,148,29,.25)">
-      <div><h3>🏁 Tutup Sesi & Catat Medali</h3><p>Peringkat 1-3 saat ini masuk ke Hostmabar Medalist (tab Member). Match & daftar hadir sesi ini direset untuk sesi berikutnya — member & medali tetap aman.</p></div>
-      <button class="btn btn-pdf" onclick="tutupSesi()">🏁 Tutup Sesi</button>
-    </div>
     <div class="pdf-banner">
       <div><h3>📸 Share / Post Leaderboard</h3><p>Peringkat 1-7 dengan logo & nama komunitas · siap post ke Instagram story/feed</p></div>
       <button class="btn btn-pdf" onclick="shareBoard()">📸 Buat Gambar</button>
@@ -430,6 +439,10 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
     <div class="pdf-banner">
       <div><h3>📄 Download Laporan PDF</h3><p>Leaderboard + Riwayat · logo & nama komunitas ikut tercetak</p></div>
       <button class="btn btn-pdf" onclick="printBoardReport()">🖨️ Print / Save PDF</button>
+    </div>
+    <div class="pdf-banner" style="background:linear-gradient(120deg,rgba(247,148,29,.08),rgba(232,23,74,.06));border:1px solid rgba(247,148,29,.25)">
+      <div><h3>🏁 Tutup Sesi & Catat Medali</h3><p>Peringkat 1-3 saat ini masuk ke Hostmabar Medalist (tab Member). Match & daftar hadir sesi ini direset untuk sesi berikutnya — member & medali tetap aman.</p></div>
+      <button class="btn btn-pdf" onclick="tutupSesi()">🏁 Tutup Sesi</button>
     </div>
   </div>
 
@@ -456,6 +469,21 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
     </div>
   </div>
 
+</div>
+
+<!-- TUTUP SESI CONFIRM MODAL -->
+<div class="modal-overlay" id="tutupSesiModalOverlay" onclick="closeTutupSesiModal(event)">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h2>🏁 Tutup Sesi</h2>
+      <button class="modal-close" onclick="closeTutupSesiModal()">✕</button>
+    </div>
+    <p id="tutupSesiMsg" style="font-size:13.5px;color:var(--text);line-height:1.6;margin-bottom:18px"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeTutupSesiModal()">Kembali</button>
+      <button class="btn btn-primary" onclick="confirmTutupSesi()">Setuju</button>
+    </div>
+  </div>
 </div>
 
 <!-- EDIT SCORE MODAL -->
@@ -904,8 +932,6 @@ function uSI(){
   document.getElementById('sessionInfo').textContent=txt;
   const b=document.getElementById('boardSessInfo'); if(b)b.textContent=txt;
 }
-function resetAll(){ if(!confirm('Reset semua data '+SPORT_CONFIG[sport].label+'? Data sesi, pemain & match yang sudah dicatat akan hilang permanen.'))return; stateBySport[sport]=freshState(); applySport(); saveAppData(); showToast('🗑️ Data '+SPORT_CONFIG[sport].label+' direset'); }
-
 // ── PEMAIN SESI vs MEMBER ──────────────────────────────────────────
 // Member = database permanen. Pemain sesi = dipilih dari member (tap).
 function toggleHadir(name){
@@ -1725,12 +1751,31 @@ function medalistRows(){
     return {name, gold, silver, bronze, total:gold+silver+bronze};
   }).filter(r=>r.total>0).sort((a,b)=> b.gold-a.gold || b.silver-a.silver || b.bronze-a.bronze);
 }
+// Tutup Sesi sekarang dipakai oleh 2 tombol (Board: "Tutup Sesi & Catat Medali", Setup: "Reset")
+// — keduanya sama persis: catat peringkat 1-3 ke Medalist, lalu reset match & daftar hadir
+// untuk sesi berikutnya. Konfirmasi pakai modal custom (tombol "Setuju"/"Kembali"), bukan
+// confirm() bawaan browser, supaya labelnya bisa disesuaikan.
+let _pendingTutupSesi = null;
 function tutupSesi(){
   const stats = calcStats().filter(s=>s.played>0);
   if(!stats.length){ showToast('⚠️ Belum ada match untuk ditutup'); return; }
-  const top3 = stats.slice(0,3);
-  const preview = top3.map((s,i)=>(i===0?'🥇':i===1?'🥈':'🥉')+' '+s.name).join('  ·  ');
-  if(!confirm('Tutup sesi '+SPORT_CONFIG[sport].label+' sekarang?\n\nPeringkat masuk Medalist:\n'+preview+'\n\nData match & daftar hadir sesi ini akan direset untuk sesi berikutnya. Member, medali, dan database tidak hilang.')) return;
+  _pendingTutupSesi = stats.slice(0,3);
+  const preview = _pendingTutupSesi.map((s,i)=>(i===0?'🥇':i===1?'🥈':'🥉')+' '+s.name).join('  ·  ');
+  document.getElementById('tutupSesiMsg').innerHTML =
+    'Apakah Anda yakin akan menutup sesi? Ingat untuk share Leaderboard dan download PDF dahulu. '+
+    'Match &amp; daftar hadir sesi ini direset untuk sesi berikutnya — member &amp; medali tetap aman.'+
+    '<div style="margin-top:10px;font-size:12px;color:var(--muted)">Masuk Medalist: '+preview+'</div>';
+  document.getElementById('tutupSesiModalOverlay').classList.add('open');
+}
+function closeTutupSesiModal(e){
+  if(e && e.target!==document.getElementById('tutupSesiModalOverlay')) return;
+  document.getElementById('tutupSesiModalOverlay').classList.remove('open');
+  _pendingTutupSesi = null;
+}
+function confirmTutupSesi(){
+  const top3 = _pendingTutupSesi;
+  document.getElementById('tutupSesiModalOverlay').classList.remove('open');
+  if(!top3) return;
   if(!state.medals) state.medals = {};
   top3.forEach((s,i)=>{
     if(!state.medals[s.name]) state.medals[s.name] = {gold:0,silver:0,bronze:0};
@@ -1747,6 +1792,7 @@ function tutupSesi(){
   document.getElementById('sessionName') && (document.getElementById('sessionName').value = '');
   renderAll(); refreshCommUI();
   saveAppData();
+  _pendingTutupSesi = null;
   showToast('🏁 Sesi ditutup — Medalist tercatat! Siap untuk sesi berikutnya.');
 }
 function renderMedalist(){
