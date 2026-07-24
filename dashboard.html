@@ -143,9 +143,9 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
   <!-- STATS -->
   <div class="stats">
-    <div class="stat"><b>38</b><span>Jumlah pemain di Data Member</span></div>
-    <div class="stat"><b>124</b><span>Match bulan ini</span></div>
-    <div class="stat"><b>9</b><span>Sesi bulan ini</span></div>
+    <div class="stat"><b id="statMembers">0</b><span>Jumlah pemain di Data Member</span></div>
+    <div class="stat"><b id="statMatches">0</b><span>Match tercatat (sesi berjalan)</span></div>
+    <div class="stat"><b id="statSesi">0 / 4</b><span>Sesi aktif sekarang</span></div>
     <div class="stat kas"><b><a href="loginpage.html#cuanmabar" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none">Akses CUANMABAR ↗</a></b><span>Kelola kas komunitas — buka di tab baru</span></div>
   </div>
 
@@ -162,40 +162,37 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 </div>
 
 <script>
-// ═══ Data dummy per olahraga ═══
-const SPORTS = {
-  badminton: {
-    nama:'Badminton', emoji:'🏸', icon:'logobadminton.png', accent:'var(--badminton)',
-    formats:['Ganda','Tunggal','Skor 21 (selisih 2)'],
-    session:{
-      nama:'Mabar Kamis Malam', venue:'GOR Sutera Utama', mulai:'19:05',
-      pemain:14, match:12, antre:3,
-      leaderboard:[
-        {nm:'Andri W.', tier:'Intermediate', pt:'18 pts', plays:'6x main'},
-        {nm:'Sasha P.', tier:'Beginner+',   pt:'15 pts', plays:'5x main'},
-        {nm:'Bimo K.',  tier:'Intermediate',pt:'14 pts', plays:'6x main'},
-        {nm:'Rina M.',  tier:'Beginner',    pt:'11 pts', plays:'4x main'},
-      ]
+// ═══════════════════════════════════════════════════════════════════
+// SECURITY GUARD — sama pola dengan tracker.html/cuanmabar.html.
+// Cek sesi lokal 'hm_session' SEBELUM data apa pun dimuat; belum
+// login / sesi kedaluwarsa → redirect ke loginpage.html.
+// ═══════════════════════════════════════════════════════════════════
+(function proteksiHalaman(){
+  try{
+    const raw = localStorage.getItem('hm_session');
+    if(!raw){ window.location.replace('loginpage.html'); return; }
+    const s = JSON.parse(raw);
+    if(!s || !s.loginAt){ window.location.replace('loginpage.html'); return; }
+    if(s.expiresAt && Date.now() > s.expiresAt){
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html'); return;
     }
-  },
-  pickleball: {
-    nama:'Pickleball', emoji:'🥒', icon:'logopickleball.png', accent:'var(--pickleball)',
-    formats:['Tradisional ke-11','Rally scoring 11/15/21','Queue open play'],
-    session:null
-  },
-  padel: {
-    nama:'Padel', emoji:'🎾', icon:'logopadel.png', accent:'var(--padel)',
-    formats:['Golden point + 1 set','Americano','Mexicano'],
-    session:null
-  },
-  tennis: {
-    nama:'Tennis', emoji:'🎾', icon:'logotennis.png', accent:'var(--tennis)',
-    formats:['Pro set 8 game','Match tiebreak ke-10'],
-    session:null
-  }
-};
+  }catch(e){ window.location.replace('loginpage.html'); }
+})();
 
+// ═══ Metadata statis per cabang (label/ikon/format) — BUKAN data pemain ═══
+const SPORT_META = {
+  badminton:  { nama:'Badminton',  icon:'logobadminton.png',  accent:'var(--badminton)',  formats:['Ganda','Tunggal','Skor 21 (selisih 2)'] },
+  pickleball: { nama:'Pickleball', icon:'logopickleball.png', accent:'var(--pickleball)', formats:['Tradisional ke-11','Rally scoring 11/15/21','Queue open play'] },
+  padel:      { nama:'Padel',      icon:'logopadel.png',      accent:'var(--padel)',      formats:['Golden point + 1 set','Americano','Mexicano'] },
+  tennis:     { nama:'Tennis',     icon:'logotennis.png',     accent:'var(--tennis)',     formats:['Pro set 8 game','Match tiebreak ke-10'] }
+};
+let SPORTS = {};
 let current = 'badminton';
+let totalMembers = 0;
+
+function esc(str){ return String(str??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ═══ Sesi login (hm_session) — sama seperti tracker.html ═══
 function getSession(){
@@ -226,18 +223,73 @@ function logout(){
   }catch(e){ window.location.href = 'loginpage.html'; }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// DATA ASLI — dibaca dari tabel Supabase `tracker_data`, baris yang
+// sama persis dipakai/di-update oleh tracker.html untuk akun ini.
+// Logika poin (W=+3, L=+1, tie-break selisih skor) sengaja disamakan
+// persis dengan calcStats() di tracker.html supaya angka konsisten.
+// ═══════════════════════════════════════════════════════════════════
+function calcStatsFor(state){
+  const stats={};
+  (state.players||[]).forEach(p=>{stats[p.name]={name:p.name,level:p.level,played:0,wins:0,losses:0,points:0,scoreDiff:0};});
+  (state.matches||[]).forEach(m=>{
+    const winners=m.winner==='A'?m.teamA:m.teamB, losers=m.winner==='A'?m.teamB:m.teamA;
+    const ws=m.winner==='A'?m.scoreA:m.scoreB, ls=m.winner==='A'?m.scoreB:m.scoreA, diff=ws-ls;
+    winners.forEach(p=>{ if(!stats[p]) stats[p]={name:p,played:0,wins:0,losses:0,points:0,scoreDiff:0};
+      const s=stats[p]; s.played++; s.wins++; s.points+=3; s.scoreDiff+=diff; });
+    losers.forEach(p=>{ if(!stats[p]) stats[p]={name:p,played:0,wins:0,losses:0,points:0,scoreDiff:0};
+      const s=stats[p]; s.played++; s.losses++; s.points+=1; s.scoreDiff-=diff; });
+  });
+  return Object.values(stats).sort((a,b)=>b.points-a.points||b.scoreDiff-a.scoreDiff||b.wins-a.wins);
+}
+
+function freshSportEntry(key){
+  const m = SPORT_META[key];
+  return { nama:m.nama, icon:m.icon, accent:m.accent, formats:m.formats, active:false, session:null, players:[], matches:[], leaderboard:[] };
+}
+
+// Payload sama persis bentuknya dengan yang disimpan tracker.html:
+// { stateBySport:{badminton,pickleball,padel,tennis}, tournamentBySport, members, commProfile }
+function buildSportsFromPayload(payload){
+  const sb = (payload && payload.stateBySport) || {};
+  const out = {};
+  Object.keys(SPORT_META).forEach(key=>{
+    const entry = freshSportEntry(key);
+    const state = sb[key];
+    if(state){
+      const hasSession = !!(state.session && state.session.name);
+      entry.active  = hasSession;
+      entry.session = hasSession ? { nama: state.session.name, tanggal: state.session.date || '' } : null;
+      entry.players = state.players || [];
+      entry.matches = state.matches || [];
+      entry.leaderboard = calcStatsFor(state).slice(0,4);
+    }
+    out[key] = entry;
+  });
+  return out;
+}
+
+function renderTopStats(payload){
+  totalMembers = Array.isArray(payload && payload.members) ? payload.members.length : 0;
+  const matchesBerjalan = Object.values(SPORTS).reduce((n,s)=>n+(s.matches?s.matches.length:0),0);
+  const sesiAktif = Object.values(SPORTS).filter(s=>s.active).length;
+  document.getElementById('statMembers').textContent = totalMembers;
+  document.getElementById('statMatches').textContent = matchesBerjalan;
+  document.getElementById('statSesi').textContent = sesiAktif + ' / 4';
+}
+
 function renderTabs() {
   document.getElementById('sportTabs').innerHTML = Object.entries(SPORTS).map(([key,s]) => `
-    <button class="sport-tab ${s.session?'live':''} ${key===current?'active':''}"
+    <button class="sport-tab ${s.active?'live':''} ${key===current?'active':''}"
       style="--tab-accent:${s.accent}" onclick="pilihSport('${key}')">
       <div class="st-top"><img src="${s.icon}" alt=""> ${s.nama}</div>
-      <div class="st-status"><span class="dot"></span>${s.session ? 'Sesi aktif — '+s.session.nama : 'Tidak ada sesi'}</div>
+      <div class="st-status"><span class="dot"></span>${s.active ? 'Sesi aktif — '+esc(s.session.nama||'Sesi') : 'Tidak ada sesi'}</div>
     </button>`).join('');
 }
 
 function renderPanel() {
   const s = SPORTS[current];
-  document.documentElement.style.setProperty('--accent', `var(--${current})`);
+  document.documentElement.style.setProperty('--accent', s.accent);
   const panel = document.getElementById('mainPanel');
 
   const turnamenCard = `
@@ -247,40 +299,38 @@ function renderPanel() {
       <button class="btn btn-accent" onclick="location.href='tracker.html?sport=${current}&turnamen=1'">➕ Buat Turnamen</button>
     </div>`;
 
-  if (s.session) {
-    const sess = s.session;
+  if (s.active) {
     panel.innerHTML = `
       <div>
         <div class="card session-live">
           <div class="sess-head">
             <div class="pulse"></div>
             <div>
-              <h2>${sess.nama}</h2>
-              <p><img src="${s.icon}" style="width:14px;height:14px;object-fit:contain;vertical-align:-2px"> ${s.nama} · ${sess.venue} · dimulai ${sess.mulai}</p>
+              <h2>${esc(s.session.nama||'Sesi Mabar')}</h2>
+              <p><img src="${s.icon}" style="width:14px;height:14px;object-fit:contain;vertical-align:-2px"> ${s.nama}${s.session.tanggal?(' · '+esc(s.session.tanggal)):''}</p>
             </div>
           </div>
           <div class="sess-meta">
-            <div><b>${sess.pemain}</b><span>Pemain hadir</span></div>
-            <div><b>${sess.match}</b><span>Match selesai</span></div>
-            <div><b>${sess.antre}</b><span>Antrean berikut</span></div>
+            <div><b>${s.players.length}</b><span>Pemain hadir</span></div>
+            <div><b>${s.matches.length}</b><span>Match selesai</span></div>
+            <div><b>${totalMembers}</b><span>Total member terdaftar</span></div>
           </div>
           <div class="sess-actions">
             <button class="btn btn-accent btn-lg" onclick="bukaTracker()">▶ Lanjutkan Pencatatan</button>
-            <button class="btn btn-danger" onclick="dummyAlert('Tutup Sesi')">⏹ Tutup Sesi</button>
           </div>
         </div>
         ${turnamenCard}
       </div>
       <div class="card">
         <div class="card-title">🏆 Leaderboard Sesi Ini</div>
-        ${sess.leaderboard.map((r,i)=>`
+        ${s.leaderboard.length ? s.leaderboard.map((r,i)=>`
           <div class="lb-row">
             <div class="rank">${i+1}</div>
-            <div><div class="nm">${r.nm}</div><div class="plays">${r.plays}</div></div>
-            <div class="tier">${r.tier}</div>
-            <div class="pt" style="margin-left:auto">${r.pt}</div>
-          </div>`).join('')}
-        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:10px" onclick="dummyAlert('Leaderboard lengkap')">Lihat semua pemain</button>
+            <div><div class="nm">${esc(r.name)}</div><div class="plays">${r.played}x main</div></div>
+            <div class="tier">${esc(r.level||'—')}</div>
+            <div class="pt" style="margin-left:auto">${r.points} pts</div>
+          </div>`).join('') : `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Belum ada match tercatat di sesi ini.</div>`}
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:10px" onclick="bukaTracker()">Lihat semua pemain</button>
       </div>`;
   } else {
     panel.innerHTML = `
@@ -307,10 +357,49 @@ function renderPanel() {
 }
 
 function pilihSport(key){ current = key; renderTabs(); renderPanel(); }
-function dummyAlert(fitur){ alert('Ini dummy tampilan — "'+fitur+'" akan aktif setelah aktivasi.\\nLogika tracker existing tidak disentuh.'); }
 function bukaTracker(){ location.href = 'tracker.html?sport=' + current; }
 
-renderTabs(); renderPanel();
+// ═══════════════════════════════════════════════════════════════════
+// MUAT DATA CLOUD — sama URL/tabel/pola dengan initCloudSync() di
+// tracker.html: baca baris `tracker_data` milik user yang login lewat
+// Supabase Auth (RLS scoped ke auth.uid() = user_id).
+// ═══════════════════════════════════════════════════════════════════
+const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
+const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
+const dbData = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:false }
+});
+
+async function loadDashboardData(){
+  // Render dulu dengan state kosong supaya UI langsung tampil (tidak nge-blank).
+  const spQ = new URLSearchParams(location.search).get('sport');
+  if(spQ && SPORT_META[spQ]) current = spQ;
+  SPORTS = buildSportsFromPayload(null);
+  renderTabs(); renderPanel(); renderTopStats(null);
+
+  try{
+    let { data:{ session } } = await dbData.auth.getSession();
+    if(!session){
+      const { data: refreshed } = await dbData.auth.refreshSession();
+      session = refreshed?.session || null;
+    }
+    if(!session) return; // belum ada sesi cloud siap — tetap tampilkan state kosong di atas
+
+    const { data, error } = await dbData
+      .from('tracker_data')
+      .select('payload')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    if(error) throw error;
+
+    SPORTS = buildSportsFromPayload(data && data.payload);
+    renderTabs(); renderPanel(); renderTopStats(data && data.payload);
+  }catch(e){
+    console.warn('loadDashboardData:', e.message);
+  }
+}
+
+loadDashboardData();
 </script>
 </body>
 </html>
