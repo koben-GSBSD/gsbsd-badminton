@@ -6,6 +6,7 @@
 <title>Dashboard — Mabar Pro | HOSTMABAR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#F8FAFC; --surface:#FFFFFF; --border:#E2E8F0;
@@ -20,12 +21,11 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 /* ── Top bar ── */
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:40}
-.topbar-inner{display:flex;align-items:center;gap:14px;height:62px}
+.topbar-inner{display:flex;align-items:center;gap:12px;height:62px}
 .logo{display:inline-flex;align-items:center}
 .logo img{height:30px;width:auto;display:block}
-.komunitas{display:flex;align-items:center;gap:10px;margin-left:8px;padding-left:16px;border-left:1px solid var(--border)}
-.komunitas b{font-size:14px}
-.badge-pro{font-size:10px;font-weight:800;letter-spacing:.05em;background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff;padding:4px 10px;border-radius:99px}
+.header-sub{font-size:11.5px;color:var(--muted);font-weight:600}
+.badge-pro{font-size:10px;font-weight:800;letter-spacing:.06em;background:linear-gradient(135deg,rgba(247,148,29,.12),rgba(232,23,74,.12));border:1.5px solid rgba(247,148,29,.5);color:#B45309;padding:5px 12px;border-radius:20px;text-transform:uppercase}
 .top-right{margin-left:auto;display:flex;gap:10px;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:11px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;text-decoration:none;transition:transform .12s}
 .btn:hover{transform:translateY(-1px)}
@@ -91,8 +91,6 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .rule-note{margin-top:16px;font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:12px 16px}
 .rule-note b{color:var(--text)}
 
-.dummy-note{position:fixed;bottom:14px;right:14px;font-size:11px;font-weight:700;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;padding:6px 12px;border-radius:99px;z-index:99}
-
 /* ── Responsive ──
    Laptop ≥1024 : 4 kolom penuh
    Tablet ≤1024 : stats 2x2, panel tetap 2 kolom
@@ -111,8 +109,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
   .logo img{height:24px}
   .bl{display:none}                      /* tombol atas: ikon saja */
   .btn{padding:9px 12px}
-  .komunitas{padding-left:10px;margin-left:2px;gap:6px}
-  .komunitas b{font-size:12px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .header-sub{font-size:10.5px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .badge-pro{font-size:9px;padding:3px 8px}
   .stats{gap:8px;margin:14px 0}
   .stat{padding:12px 14px}
@@ -126,7 +123,6 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
   .card{padding:16px}
   .empty-sess .btn{width:100%;justify-content:center}
   .rule-note{font-size:11.5px}
-  .dummy-note{left:14px;right:14px;text-align:center}
 }
 </style>
 </head>
@@ -135,11 +131,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 <div class="topbar">
   <div class="wrap topbar-inner">
     <div class="logo"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
-    <div class="komunitas"><b id="namaKomunitas">GSBSD BSD City</b><span class="badge-pro">MABAR PRO</span></div>
+    <div><div class="header-sub" id="namaKomunitas">Komunitas</div></div>
     <div class="top-right">
-      <a class="btn btn-ghost" href="#" onclick="dummyAlert('Riwayat & Download PDF');return false"><span>📄</span><span class="bl">Riwayat & PDF</span></a>
-      <a class="btn btn-ghost" href="#" onclick="dummyAlert('Daftar Pemain');return false"><span>👥</span><span class="bl">Daftar Pemain</span></a>
-      <a class="btn btn-ghost" href="loginpage.html"><span>🚪</span><span class="bl">Keluar</span></a>
+      <div class="badge-pro" id="pakBadge">⚡ PRO</div>
+      <button class="btn btn-ghost" onclick="logout()"><span>🚪</span><span class="bl">Keluar</span></button>
     </div>
   </div>
 </div>
@@ -148,10 +143,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
   <!-- STATS -->
   <div class="stats">
-    <div class="stat"><b>38</b><span>Pemain di roster</span></div>
+    <div class="stat"><b>38</b><span>Jumlah pemain di Data Member</span></div>
     <div class="stat"><b>124</b><span>Match bulan ini</span></div>
     <div class="stat"><b>9</b><span>Sesi bulan ini</span></div>
-    <div class="stat kas"><b>Rp 2.450.000</b><span>Kas komunitas · <a href="loginpage.html#cuanmabar" target="_blank" rel="noopener">buka CUANMABAR ↗</a></span></div>
+    <div class="stat kas"><b><a href="loginpage.html#cuanmabar" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none">Akses CUANMABAR ↗</a></b><span>Kelola kas komunitas — buka di tab baru</span></div>
   </div>
 
   <!-- SPORT TABS -->
@@ -165,8 +160,6 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
   </div>
 
 </div>
-
-<div class="dummy-note">⚠️ DUMMY — tampilan 4 cabang aktif, belum tersambung data live</div>
 
 <script>
 // ═══ Data dummy per olahraga ═══
@@ -203,6 +196,35 @@ const SPORTS = {
 };
 
 let current = 'badminton';
+
+// ═══ Sesi login (hm_session) — sama seperti tracker.html ═══
+function getSession(){
+  try{ return JSON.parse(localStorage.getItem('hm_session')) || {}; }
+  catch(e){ return {}; }
+}
+(function initHeaderFromSession(){
+  const sess = getSession();
+  const namaEl = document.getElementById('namaKomunitas');
+  if(namaEl && sess.username) namaEl.textContent = sess.username;
+  const paket = (sess.paket || '').toLowerCase();
+  const badgeEl = document.getElementById('pakBadge');
+  if(badgeEl){
+    if(paket.includes('pro')) badgeEl.textContent = '⚡ PRO';
+    else if(paket.includes('plus')) badgeEl.textContent = '⚡ PLUS';
+    else if(paket.includes('trial')) badgeEl.textContent = '⚡ TRIAL';
+    else badgeEl.textContent = '⚡ PRO';
+  }
+})();
+function logout(){
+  if(!confirm('Keluar dari HOSTMABAR? Sesi kamu akan diakhiri dan kembali ke halaman login.')) return;
+  localStorage.removeItem('hm_session');
+  localStorage.removeItem('hm_komunitas');
+  try{
+    const { createClient } = window.supabase;
+    const dbAuth = createClient('https://pxfpskzwkfpxslsvqbpz.supabase.co','sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp');
+    dbAuth.auth.signOut().finally(()=>{ window.location.href = 'loginpage.html'; });
+  }catch(e){ window.location.href = 'loginpage.html'; }
+}
 
 function renderTabs() {
   document.getElementById('sportTabs').innerHTML = Object.entries(SPORTS).map(([key,s]) => `
