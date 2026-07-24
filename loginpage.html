@@ -31,6 +31,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .brand-mid p{color:var(--muted);margin-top:14px;max-width:380px;font-size:15px}
 .sport-chips{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap}
 .chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:8px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted)}
+.chip img{width:15px;height:15px;object-fit:contain;display:block}
 .chip.live{border-color:var(--badminton);color:var(--badminton);background:rgba(15,118,110,.06)}
 .chip small{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
 .brand-foot{font-size:13px;color:var(--muted)}
@@ -110,10 +111,10 @@ input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
     <h1>Selamat datang kembali, <em>Host!</em></h1>
     <p>Masuk untuk mengelola sesi mabar komunitasmu — match tracker, leaderboard, dan kas dalam satu tempat.</p>
     <div class="sport-chips">
-      <span class="chip live">🏸 Badminton <small>Live</small></span>
-      <span class="chip live" style="border-color:var(--pickleball);color:var(--pickleball);background:rgba(225,29,72,.06)">🥒 Pickleball <small>Live</small></span>
-      <span class="chip live" style="border-color:var(--padel);color:var(--padel);background:rgba(147,51,234,.06)">🎾 Padel <small>Live</small></span>
-      <span class="chip live" style="border-color:var(--tennis);color:var(--tennis);background:rgba(132,117,78,.06)">🎾 Tennis <small>Live</small></span>
+      <span class="chip live"><img src="logobadminton.png" alt=""> Badminton <small>Live</small></span>
+      <span class="chip live" style="border-color:var(--pickleball);color:var(--pickleball);background:rgba(225,29,72,.06)"><img src="logopickleball.png" alt=""> Pickleball <small>Live</small></span>
+      <span class="chip live" style="border-color:var(--padel);color:var(--padel);background:rgba(147,51,234,.06)"><img src="logopadel.png" alt=""> Padel <small>Live</small></span>
+      <span class="chip live" style="border-color:var(--tennis);color:var(--tennis);background:rgba(132,117,78,.06)"><img src="logotennis.png" alt=""> Tennis <small>Live</small></span>
     </div>
   </div>
   <div class="brand-foot">© 2026 HOSTMABAR · <a href="https://instagram.com/koben.gsbsd" target="_blank">@koben.gsbsd</a></div>
