@@ -65,9 +65,8 @@ input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
 
 /* Sport select di form HOSTMABAR */
 .sport-select{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px}
-.sport-opt{border:1.5px solid var(--border);border-radius:12px;padding:12px 4px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;position:relative}
-.sport-opt .ic{font-size:20px;display:block}
-.sport-opt .nm{font-size:10.5px;font-weight:700;margin-top:4px;display:block}
+.sport-opt{border:1.5px solid var(--border);border-radius:12px;padding:16px 4px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;position:relative}
+.sport-opt .ic-img{width:30px;height:30px;object-fit:contain;display:block;margin:0 auto}
 .sport-opt.selected{border-color:var(--badminton);background:rgba(15,118,110,.06)}
 .sport-opt.soon{opacity:.45;cursor:not-allowed}
 .sport-opt.soon::after{content:"Segera";position:absolute;top:-8px;right:-4px;font-size:8.5px;font-weight:800;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:2px 6px;border-radius:99px}
@@ -132,10 +131,10 @@ input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
       <h2>Masuk ke HOSTMABAR</h2>
       <div class="sub">Pilih olahraga, lalu masuk dengan akunmu.</div>
       <div class="sport-select">
-        <div class="sport-opt selected"><span class="ic">🏸</span><span class="nm">Badminton</span></div>
-        <div class="sport-opt"><span class="ic">🥒</span><span class="nm">Pickleball</span></div>
-        <div class="sport-opt"><span class="ic">🎾</span><span class="nm">Padel</span></div>
-        <div class="sport-opt"><span class="ic">🎾</span><span class="nm">Tennis</span></div>
+        <div class="sport-opt"><img src="logobadminton.png" alt="Badminton" class="ic-img"></div>
+        <div class="sport-opt"><img src="logopickleball.png" alt="Pickleball" class="ic-img"></div>
+        <div class="sport-opt"><img src="logopadel.png" alt="Padel" class="ic-img"></div>
+        <div class="sport-opt"><img src="logotennis.png" alt="Tennis" class="ic-img"></div>
       </div>
       <div class="login-error" id="errorHM"><span>⚠️</span><span id="errorTextHM">Email atau password salah.</span></div>
       <label>Email</label>
@@ -346,6 +345,10 @@ async function doLogin(which){
 // CEK SESI AKTIF — auto-redirect jika sudah login (sama seperti produksi)
 // ════════════════════════════════════════════════════════════════════
 async function checkActiveSession(){
+  // Jika datang lewat #cuanmabar (mis. dari tombol "Akses CUANMABAR" di dashboard),
+  // jangan auto-redirect pakai sesi yang sedang aktif — tampilkan form supaya
+  // host/bendahara bisa login dengan akun CUANMABAR yang berbeda.
+  if (location.hash === '#cuanmabar') return;
   try {
     const { data: { session } } = await db.auth.getSession();
     if (!session) return; // belum login, tampilkan form
