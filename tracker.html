@@ -2433,9 +2433,19 @@ applySport();
 refreshCommUI();
 initCloudSync(); // paint cepat dari localStorage dulu, lalu disamakan dengan data cloud begitu sesi terverifikasi
 
-// Deep-link ?turnamen=1 (dipakai tombol "Buat Turnamen" di mabarpro.html)
+// Deep-link ?turnamen=1 (dipakai tombol "Buat Turnamen" di dashboard.html)
 // untuk langsung membuka modal Turnamen tanpa mengubah tab utama yang aktif.
-if(new URLSearchParams(location.search).get('turnamen')==='1') openTurnamenModal();
+// isPlusPlan()/getPaket() adalah function declaration (di-hoist), jadi aman dipanggil
+// di sini walau didefinisikan lebih bawah di file ini — cek plan HARUS dilakukan di sini juga
+// (bukan cuma di dashboard.html) supaya deep-link ini sendiri tidak bisa dipakai untuk
+// melewati pembatasan paket Plus (mis. lewat URL lama yang ter-cache atau diketik manual).
+if(new URLSearchParams(location.search).get('turnamen')==='1'){
+  if(isPlusPlan()){
+    showToast('🔒 Mode Turnamen khusus paket Mabar Pro — upgrade untuk membuka fitur ini');
+  } else {
+    openTurnamenModal();
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // PEMBATASAN PAKET — SATU file tracker.html untuk semua paket (Trial/Plus/Pro),
