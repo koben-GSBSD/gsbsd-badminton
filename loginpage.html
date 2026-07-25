@@ -40,10 +40,6 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 /* ===== Panel kanan (form) ===== */
 .form-panel{display:flex;align-items:center;justify-content:center;padding:48px 24px}
 .card{width:100%;max-width:420px}
-.product-toggle{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:5px;margin-bottom:28px}
-.product-toggle button{border:none;background:transparent;font-family:inherit;font-weight:800;font-size:14px;padding:11px;border-radius:10px;cursor:pointer;color:var(--muted);transition:all .2s}
-.product-toggle button.active-hm{background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff;box-shadow:0 4px 12px rgba(232,23,74,.25)}
-.product-toggle button.active-cm{background:linear-gradient(90deg,var(--cyan),var(--navy));color:#fff;box-shadow:0 4px 12px rgba(8,145,178,.25)}
 .form-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,41,59,.06)}
 .form-card h2{font-size:22px;font-weight:800;letter-spacing:-.01em}
 .form-card .sub{font-size:14px;color:var(--muted);margin:6px 0 24px}
@@ -56,7 +52,6 @@ input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
 .row-between a{color:var(--pink);font-weight:700;text-decoration:none}
 .btn-submit{width:100%;padding:14px;border:none;border-radius:13px;font-family:inherit;font-weight:800;font-size:15px;color:#fff;cursor:pointer;transition:transform .15s,box-shadow .15s}
 .btn-hm{background:linear-gradient(90deg,var(--orange),var(--pink));box-shadow:0 6px 18px rgba(232,23,74,.25)}
-.btn-cm{background:linear-gradient(90deg,var(--cyan),var(--navy));box-shadow:0 6px 18px rgba(8,145,178,.25)}
 .btn-submit:hover{transform:translateY(-2px)}
 .session-note{text-align:center;font-size:12px;color:var(--muted);margin-top:16px}
 .signup{text-align:center;font-size:14px;color:var(--muted);margin-top:24px}
@@ -124,12 +119,7 @@ input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
 <div class="form-panel">
   <div class="card">
 
-    <div class="product-toggle">
-      <button id="tabHM" class="active-hm" onclick="switchProduct('hm')">HOSTMABAR</button>
-      <button id="tabCM" onclick="switchProduct('cm')">CUANMABAR</button>
-    </div>
-
-    <!-- Form HOSTMABAR -->
+    <!-- Form HOSTMABAR — 1 akun untuk HOSTMABAR & CUANMABAR (akses CUANMABAR lewat tombol di dashboard.html) -->
     <div class="form-card" id="formHM" style="--accent:var(--pink)">
       <h2>Masuk ke HOSTMABAR</h2>
       <div class="sub">Pilih olahraga, lalu masuk dengan akunmu.</div>
@@ -152,23 +142,6 @@ input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
       <div class="session-note">Sesi login berlaku 8 jam</div>
     </div>
 
-    <!-- Form CUANMABAR -->
-    <div class="form-card" id="formCM" style="display:none;--accent:var(--cyan)">
-      <h2 style="background:linear-gradient(90deg,var(--cyan),var(--navy));-webkit-background-clip:text;background-clip:text;color:transparent">Masuk ke CUANMABAR</h2>
-      <div class="sub">Kelola kas komunitasmu: iuran, pengeluaran, dan split bill.</div>
-      <div class="login-error" id="errorCM"><span>⚠️</span><span id="errorTextCM">Email atau password salah.</span></div>
-      <label>Email</label>
-      <input type="email" id="cmEmail" placeholder="bendahara@email.com" autocomplete="username">
-      <label>Password</label>
-      <input type="password" id="cmPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin('cm')">
-      <div class="row-between">
-        <label><input type="checkbox" checked> Ingat saya</label>
-        <a href="#" style="color:var(--cyan)">Lupa password?</a>
-      </div>
-      <button class="btn-submit btn-cm" id="btnCM" onclick="doLogin('cm')"><span class="btn-spin" id="spinCM"></span><span id="btnTextCM">Masuk</span></button>
-      <div class="session-note">Sesi login berlaku 4 jam · khusus paket CUANMABAR</div>
-    </div>
-
     <div class="signup">Belum punya akun? <a href="homepage.html#harga">Coba gratis 14 hari</a></div>
     <a class="back-link" href="homepage.html">← Kembali ke beranda</a>
   </div>
@@ -183,15 +156,9 @@ input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
 </div>
 
 <script>
-function switchProduct(p){
-  const hm = p === 'hm';
-  document.getElementById('formHM').style.display = hm ? '' : 'none';
-  document.getElementById('formCM').style.display = hm ? 'none' : '';
-  document.getElementById('tabHM').className = hm ? 'active-hm' : '';
-  document.getElementById('tabCM').className = hm ? '' : 'active-cm';
-}
-// Buka langsung tab CUANMABAR bila dipanggil dengan #cuanmabar (mis. dari dashboard)
-if (location.hash === '#cuanmabar') switchProduct('cm');
+// (Tab CUANMABAR sudah dihapus — 1 akun HOSTMABAR yang sama juga dipakai untuk
+// CUANMABAR, aksesnya lewat tombol "Akses CUANMABAR" di dashboard.html, bukan
+// login terpisah di sini lagi.)
 
 // ════════════════════════════════════════════════════════════════════
 // CONFIG — Supabase (sama persis dengan login.html produksi)
@@ -234,7 +201,7 @@ function setLoadingState(which, active){
   el.spin.classList.toggle('show', active);
   el.btnTxt.textContent = active ? 'Memeriksa...' : 'Masuk';
 }
-['hm','cm'].forEach(which=>{
+['hm'].forEach(which=>{
   const el = ids(which);
   el.email.addEventListener('input', ()=>hideError(which));
   el.pass.addEventListener('input', ()=>hideError(which));
@@ -251,7 +218,6 @@ function showSuccess(redirectUrl, subtext){
     console.error('redirect_url tidak valid:', redirectUrl);
     showError('hm', 'Halaman tujuan tidak ditemukan. Hubungi HOSTMABAR.');
     setLoadingState('hm', false);
-    setLoadingState('cm', false);
     return;
   }
 
@@ -264,8 +230,9 @@ function showSuccess(redirectUrl, subtext){
 
 // ════════════════════════════════════════════════════════════════════
 // LOGIN UTAMA — Supabase Auth (sama alur dengan login.html produksi)
-// which = 'hm' | 'cm' — keduanya login ke tabel `profiles` yang sama,
-// redirect_url di profil menentukan tujuan akhir per akun.
+// 1 akun untuk HOSTMABAR & CUANMABAR — redirect_url di profil menentukan
+// tujuan akhir. Akses CUANMABAR sekarang lewat tombol di dashboard.html,
+// bukan tab/login terpisah di halaman ini.
 // ════════════════════════════════════════════════════════════════════
 async function doLogin(which){
   const el = ids(which);
@@ -332,7 +299,7 @@ async function doLogin(which){
     localStorage.setItem('hm_session', JSON.stringify(sessionPayload));
     localStorage.setItem('hm_komunitas', JSON.stringify(sessionPayload));
 
-    // STEP 5: Sukses → redirect
+    // STEP 5: Sukses → redirect sesuai redirect_url di profil.
     showSuccess(profile.redirect_url);
 
   } catch (err) {
@@ -348,10 +315,6 @@ async function doLogin(which){
 // CEK SESI AKTIF — auto-redirect jika sudah login (sama seperti produksi)
 // ════════════════════════════════════════════════════════════════════
 async function checkActiveSession(){
-  // Jika datang lewat #cuanmabar (mis. dari tombol "Akses CUANMABAR" di dashboard),
-  // jangan auto-redirect pakai sesi yang sedang aktif — tampilkan form supaya
-  // host/bendahara bisa login dengan akun CUANMABAR yang berbeda.
-  if (location.hash === '#cuanmabar') return;
   try {
     const { data: { session } } = await db.auth.getSession();
     if (!session) return; // belum login, tampilkan form
