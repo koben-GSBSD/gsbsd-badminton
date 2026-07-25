@@ -199,6 +199,12 @@ function getSession(){
   try{ return JSON.parse(localStorage.getItem('hm_session')) || {}; }
   catch(e){ return {}; }
 }
+// Sama logic dengan isPlusPlan() di tracker.html — dipakai untuk gate fitur khusus Pro
+// (Mode Turnamen, CUANMABAR) yang ditampilkan di dashboard ini juga.
+function isPlusPlan(){
+  const paket = (getSession().paket || '').toLowerCase();
+  return paket.includes('plus') && !paket.includes('pro');
+}
 (function initHeaderFromSession(){
   const sess = getSession();
   const namaEl = document.getElementById('namaKomunitas');
@@ -226,8 +232,8 @@ function getSession(){
   }
 })();
 
-// ═══ Notifikasi upgrade — muncul saat paket Plus klik Akses CUANMABAR ═══
-function showCuanmabarUpgradeModal(){
+// ═══ Notifikasi upgrade — dipakai bareng oleh CUANMABAR & Mode Turnamen (paket Plus) ═══
+function showUpgradeModal(opts){
   let el = document.getElementById('cmUpgradeModal');
   if(el) el.remove();
   el = document.createElement('div');
@@ -235,12 +241,10 @@ function showCuanmabarUpgradeModal(){
   el.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(30,41,59,.45);display:flex;align-items:center;justify-content:center;padding:20px';
   el.innerHTML = `
     <div style="background:#fff;border-radius:20px;padding:32px 26px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(30,41,59,.25)">
-      <div style="font-size:44px;margin-bottom:10px">💰</div>
-      <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:6px">CUANMABAR belum termasuk paket Plus</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6">
-        Upgrade ke <strong style="color:#B45309">Mabar Pro</strong> untuk kelola kas komunitas, iuran, dan inventori langsung dari CUANMABAR.
-      </div>
-      <a href="https://wa.me/62895704016969?text=Halo+Koben%2C+saya+mau+upgrade+ke+Mabar+Pro+untuk+akses+CUANMABAR"
+      <div style="font-size:44px;margin-bottom:10px">${opts.icon}</div>
+      <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:6px">${opts.title}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6">${opts.desc}</div>
+      <a href="https://wa.me/62895704016969?text=${opts.waText}"
          target="_blank" rel="noopener"
          style="display:block;padding:13px 20px;border-radius:12px;font-weight:800;font-size:14px;color:#fff;text-decoration:none;margin-bottom:10px;background:linear-gradient(90deg,var(--orange),var(--pink));box-shadow:0 4px 16px rgba(232,23,74,.3)">
         💬 Upgrade via WhatsApp
@@ -249,6 +253,22 @@ function showCuanmabarUpgradeModal(){
     </div>`;
   el.addEventListener('click', (e)=>{ if(e.target === el) el.remove(); });
   document.body.appendChild(el);
+}
+function showCuanmabarUpgradeModal(){
+  showUpgradeModal({
+    icon: '💰',
+    title: 'CUANMABAR belum termasuk paket Plus',
+    desc: 'Upgrade ke <strong style="color:#B45309">Mabar Pro</strong> untuk kelola kas komunitas, iuran, dan inventori langsung dari CUANMABAR.',
+    waText: encodeURIComponent('Halo Koben, saya mau upgrade ke Mabar Pro untuk akses CUANMABAR')
+  });
+}
+function showTurnamenUpgradeModal(){
+  showUpgradeModal({
+    icon: '🥇',
+    title: 'Mode Turnamen belum termasuk paket Plus',
+    desc: 'Upgrade ke <strong style="color:#B45309">Mabar Pro</strong> untuk membuat bagan turnamen sistem gugur langsung dari sini.',
+    waText: encodeURIComponent('Halo Koben, saya mau upgrade ke Mabar Pro untuk akses Mode Turnamen')
+  });
 }
 function logout(){
   if(!confirm('Keluar dari HOSTMABAR? Sesi kamu akan diakhiri dan kembali ke halaman login.')) return;
@@ -330,11 +350,17 @@ function renderPanel() {
   document.documentElement.style.setProperty('--accent', s.accent);
   const panel = document.getElementById('mainPanel');
 
+  // Mode Turnamen khusus Trial & Pro — Mabar Plus tetap lihat kartunya (transparansi produk)
+  // tapi tombolnya diarahkan ke notifikasi upgrade, bukan langsung ke tracker.html.
+  const turnamenLocked = isPlusPlan();
   const turnamenCard = `
     <div class="card turnamen">
       <div class="card-title">🥇 Mode Turnamen Knock-out <span style="font-size:9px;background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff;padding:2px 8px;border-radius:99px;">PRO</span></div>
       <p>Buat bagan sistem gugur ${s.nama.toLowerCase()} — jumlah tim dan pemain bisa diatur, bye otomatis untuk jumlah ganjil.</p>
-      <button class="btn btn-accent" onclick="location.href='tracker.html?sport=${current}&turnamen=1'">➕ Buat Turnamen</button>
+      <button class="btn btn-accent" ${turnamenLocked
+        ? `style="opacity:.55;cursor:not-allowed" onclick="showTurnamenUpgradeModal()"`
+        : `onclick="location.href='tracker.html?sport=${current}&turnamen=1'"`
+      }>➕ Buat Turnamen</button>
     </div>`;
 
   if (s.active) {
