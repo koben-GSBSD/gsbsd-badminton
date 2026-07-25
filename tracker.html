@@ -1888,6 +1888,15 @@ function confirmTutupSesi(){
     const medal = i===0?'gold':i===1?'silver':'bronze';
     state.medalHistory.push({name:s.name, medal, date:today});
   });
+  // Snapshot daftar peserta sesi ini SEBELUM direset — dipakai CUANMABAR (fitur "Import dari
+  // Sesi Terakhir" di tab Iuran, manual/atas klik host, tidak otomatis). Additive saja: field
+  // baru, tidak mengubah state/logic tutup-sesi yang sudah ada.
+  state.lastClosedSession = {
+    date: today,
+    name: state.session.name || '',
+    sport: sport,
+    players: state.players.map(p=>p.name)
+  };
   state.matches = [];
   state.playCount = {};
   state.partnerHist = {};
