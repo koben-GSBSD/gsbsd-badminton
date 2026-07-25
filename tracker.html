@@ -116,7 +116,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 
 /* Format & mode pills */
 .fmt-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.fmt-opt{font-size:12px;font-weight:700;padding:7px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-family:inherit;color:var(--muted)}
+.fmt-opt{font-size:13px;font-weight:700;padding:8px 15px;border-radius:99px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-family:inherit;color:var(--muted)}
 .fmt-opt.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,white);color:var(--accent)}
 
 /* Generator box (Americano/Mexicano) */
@@ -181,22 +181,22 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 
 /* Turnamen */
 .tform-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
-.t-entry-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;font-size:13px;font-weight:700}
+.t-entry-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;font-size:14px;font-weight:700}
 .bracket-outer{overflow-x:auto;overflow-y:hidden;padding:6px 2px 16px;visibility:hidden}
 .bracket-outer.ready{visibility:visible}
 .bracket-wrap{position:relative}
 .bracket-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
 .bracket-svg .bl{stroke:#334155;stroke-width:2px}
-.round-label{position:absolute;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center}
+.round-label{position:absolute;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center}
 .match-card{position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-sizing:border-box;z-index:1}
 .match-card.bye-card{background:rgba(22,163,74,.05);border-style:dashed;border-color:rgba(22,163,74,.35)}
 @media(max-width:480px){
-  .match-card{padding:8px 10px}
-  .match-slot{font-size:11.5px}
-  .match-score-row input{width:42px;font-size:13px;padding:5px}
-  .round-label{font-size:9px}
+  .match-card{padding:9px 11px}
+  .match-slot{font-size:13px}
+  .match-score-row input{width:48px;font-size:16px;padding:6px}
+  .round-label{font-size:10.5px}
 }
-.match-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:12.5px;font-weight:700;gap:6px}
+.match-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:13.5px;font-weight:700;gap:6px}
 .match-slot.winner{color:var(--accent)}
 .match-score-row{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
 .match-score-row input{width:50px;padding:6px;text-align:center;font-weight:800;font-size:14px}
@@ -212,9 +212,9 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 .modal-close{border:none;background:var(--bg);width:30px;height:30px;border-radius:9px;cursor:pointer;font-weight:800;color:var(--muted)}
 .modal-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;margin-bottom:14px;align-items:center}
 .modal-team{background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:10px;text-align:center}
-.modal-team-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase}
-.modal-team-name{font-size:12.5px;font-weight:800;margin-top:3px}
-.modal-vs{font-size:12px;font-weight:800;color:var(--muted)}
+.modal-team-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.modal-team-name{font-size:13.5px;font-weight:800;margin-top:3px}
+.modal-vs{font-size:13px;font-weight:800;color:var(--muted)}
 .score-edit-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end;margin-bottom:12px}
 .score-edit-input{text-align:center;font-size:24px;font-weight:800}
 .score-edit-sep{padding-bottom:12px;font-weight:800;color:var(--muted)}
@@ -240,6 +240,38 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   .fmt-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .fmt-row .fmt-opt{width:100%;text-align:center}
   .fmt-row .fmt-opt:first-child{grid-column:1/-1}
+}
+
+/* ── Tablet (641px–1024px) — ruang masih luas, teks sebelumnya terlalu kecil ── */
+@media(min-width:641px) and (max-width:1024px){
+  body{font-size:15.5px}
+  label{font-size:12.5px}
+  input,select{font-size:15px;padding:12px 14px}
+  .card-title{font-size:15px}
+  .tab{font-size:14px}
+  .header-sub{font-size:12.5px}
+  .demo-title{font-size:11.5px}
+  .pill{font-size:12px;padding:6px 12px}
+  .player-table{font-size:14px}
+  .lb-table{font-size:14px}
+  .player-name{font-size:14.5px}
+  .m-chip{font-size:14px}
+  .st-badge{font-size:11px}
+  .level-badge{font-size:11px}
+  .insight-card b{font-size:26px}
+  .insight-card span{font-size:12px}
+  .fmt-opt{font-size:14px;padding:9px 18px}
+  .t-entry-row{font-size:15px}
+  .match-slot{font-size:14.5px}
+  .round-label{font-size:12.5px}
+  .match-score-row input{font-size:17px}
+  .modal-team-name{font-size:14.5px}
+  .modal-team-label{font-size:11.5px}
+  .valid-hint{font-size:13px}
+  .match-item .teams-line{font-size:13.5px}
+  .match-item .score-line{font-size:17px}
+  .counter-name{font-size:14px}
+  .counter-count{font-size:32px}
 }
 </style>
 </head>
@@ -2432,6 +2464,8 @@ function applyPlanRestrictions(){
   lock('printMatchBtn', 'Export PDF');
   lock('printBoardBtn', 'Export PDF');
   lock('turnamenBtn', 'Mode Turnamen');
+  // (CUANMABAR sendiri tidak ada di tracker.html — gate satu-satunya ada di
+  // dashboard.html, sesuai keputusan Koben supaya cuma ada 1 pintu masuk.)
 }
 applyPlanRestrictions();
 
