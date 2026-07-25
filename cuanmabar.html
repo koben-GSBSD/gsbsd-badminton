@@ -34,13 +34,13 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    body { font-family: 'Nunito', sans-serif; background-color: #F1F5F9; color: #1E293B; }
+    body { font-family: 'Nunito', sans-serif; background-color: #0f172a; color: #f1f5f9; }
     .font-norwester { font-family: 'norwester', sans-serif; letter-spacing: 1px; }
 
     /* Scrollbar minimalis untuk mobile feel */
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
       .pb-safe { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
@@ -132,25 +132,25 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="min-h-screen flex justify-center selection:bg-lime-500/30">
+<body class="min-h-screen flex justify-center selection:bg-orange-500/30">
 
-  <div class="w-full max-w-md bg-white min-h-screen relative shadow-2xl flex flex-col">
+  <div class="w-full max-w-md bg-slate-900 min-h-screen relative shadow-2xl flex flex-col">
 
-    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm px-5 py-4 print:hidden" style="box-shadow:inset 0 3px 0 0 #65a30d, 0 1px 2px rgba(0,0,0,.04)">
+    <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-5 py-4 print:hidden">
       <div class="flex justify-between items-center">
         <div class="flex items-center space-x-3">
-          <img src="logocuanmabar.png" alt="Logo" class="w-10 h-10 object-contain"
-               onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%2365a30d%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-family=%22sans-serif%22 font-weight=%22bold%22 font-size=%2216%22 fill=%22white%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22%3EHM%3C/text%3E%3C/svg%3E'"/>
+          <img src="logocuanmabarv3.png" alt="Logo" class="w-10 h-10 object-contain"
+               onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23f97316%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-family=%22sans-serif%22 font-weight=%22bold%22 font-size=%2216%22 fill=%22white%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22%3EHM%3C/text%3E%3C/svg%3E'"/>
           <div class="flex flex-col justify-center">
-            <h1 class="text-2xl text-slate-800 leading-none font-norwester">CUANMABAR</h1>
-            <p class="text-[10px] text-lime-600 font-semibold mt-1 tracking-wide">Financial Community App - Cuan Terus!</p>
+            <h1 class="text-2xl text-white leading-none font-norwester">CUANMABAR</h1>
+            <p class="text-[10px] text-emerald-500 font-semibold mt-1 tracking-wide">Financial Community App - Cuan Terus!</p>
           </div>
         </div>
         <div class="flex space-x-4">
-          <button onclick="window.print()" class="text-slate-400 hover:text-slate-700 transition-colors" title="Cetak Laporan">
+          <button onclick="window.print()" class="text-slate-400 hover:text-white transition-colors" title="Cetak Laporan">
             <i data-lucide="printer" class="w-5 h-5"></i>
           </button>
-          <button onclick="handleLogout()" class="text-red-500 hover:text-red-600 transition-all" title="Keluar / Logout">
+          <button onclick="handleLogout()" class="text-red-400 hover:text-red-300 transition-all" title="Keluar / Logout">
             <i data-lucide="log-out" class="w-5 h-5"></i>
           </button>
         </div>
@@ -162,17 +162,17 @@
     <main id="app-content" class="flex-1 overflow-y-auto px-5 pt-6 pb-24 custom-scrollbar print:hidden">
       </main>
 
-    <nav class="fixed bottom-0 w-full max-w-md bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-2px_12px_rgba(15,23,42,0.06)] pb-safe pt-2 px-6 pb-4 flex justify-between z-40 print:hidden">
-      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center w-full space-y-1 py-1 rounded-xl text-slate-400 hover:text-slate-500 transition-colors">
+    <nav class="fixed bottom-0 w-full max-w-md bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-safe pt-2 px-6 pb-4 flex justify-between z-40 print:hidden">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center w-full space-y-1 text-slate-500 hover:text-slate-400 transition-colors">
         <i data-lucide="home" class="w-5 h-5"></i><span class="text-[10px] font-medium">Dashboard</span>
       </button>
-      <button onclick="switchTab('kas')" id="nav-kas" class="flex flex-col items-center justify-center w-full space-y-1 py-1 rounded-xl text-slate-400 hover:text-slate-500 transition-colors">
+      <button onclick="switchTab('kas')" id="nav-kas" class="flex flex-col items-center justify-center w-full space-y-1 text-slate-500 hover:text-slate-400 transition-colors">
         <i data-lucide="wallet" class="w-5 h-5"></i><span class="text-[10px] font-medium">Kas</span>
       </button>
-      <button onclick="switchTab('iuran')" id="nav-iuran" class="flex flex-col items-center justify-center w-full space-y-1 py-1 rounded-xl text-slate-400 hover:text-slate-500 transition-colors">
+      <button onclick="switchTab('iuran')" id="nav-iuran" class="flex flex-col items-center justify-center w-full space-y-1 text-slate-500 hover:text-slate-400 transition-colors">
         <i data-lucide="users" class="w-5 h-5"></i><span class="text-[10px] font-medium">Iuran</span>
       </button>
-      <button onclick="switchTab('inventory')" id="nav-inventory" class="flex flex-col items-center justify-center w-full space-y-1 py-1 rounded-xl text-slate-400 hover:text-slate-500 transition-colors">
+      <button onclick="switchTab('inventory')" id="nav-inventory" class="flex flex-col items-center justify-center w-full space-y-1 text-slate-500 hover:text-slate-400 transition-colors">
         <i data-lucide="package" class="w-5 h-5"></i><span class="text-[10px] font-medium">Inventori</span>
       </button>
     </nav>
@@ -206,9 +206,10 @@
     let transactions = [];  // init kosong — akan diisi dari Supabase
     let members      = [];
     let inventoryTxs = [];
+    let importedSessions = []; // daftar ts sesi yang sudah diimpor ke Iuran (lihat blok IMPORT SESI)
     let _userId      = null;
     let _isSyncing   = false;
-    let _lsKey       = { kas: 'cm_kas', mem: 'cm_members', inv: 'cm_inv' }; // default, override per user
+    let _lsKey       = { kas: 'cm_kas', mem: 'cm_members', inv: 'cm_inv', imp: 'cm_imp' }; // default, override per user
 
     let activeTab = 'dashboard';
     let editingId = null;
@@ -253,7 +254,8 @@
         _lsKey = {
           kas: 'cm_kas_'  + _userId,
           mem: 'cm_mem_'  + _userId,
-          inv: 'cm_inv_'  + _userId
+          inv: 'cm_inv_'  + _userId,
+          imp: 'cm_imp_'  + _userId
         };
 
         // ── 1. Cek status langganan dari profiles ──────────────────────────
@@ -301,6 +303,10 @@
               inventoryTxs = row.payload;
               localStorage.setItem(_lsKey.inv, JSON.stringify(inventoryTxs));
             }
+            if (row.data_type === 'importLog') {
+              importedSessions = row.payload || [];
+              localStorage.setItem(_lsKey.imp, JSON.stringify(importedSessions));
+            }
           });
           showSyncStatus('✅ Data dimuat', '#22c55e');
         } else {
@@ -308,14 +314,19 @@
           const lsKas = localStorage.getItem(_lsKey.kas);
           const lsMem = localStorage.getItem(_lsKey.mem);
           const lsInv = localStorage.getItem(_lsKey.inv);
-          if (lsKas) transactions  = JSON.parse(lsKas);
-          if (lsMem) members       = JSON.parse(lsMem);
-          if (lsInv) inventoryTxs  = JSON.parse(lsInv);
+          const lsImp = localStorage.getItem(_lsKey.imp);
+          if (lsKas) transactions      = JSON.parse(lsKas);
+          if (lsMem) members           = JSON.parse(lsMem);
+          if (lsInv) inventoryTxs      = JSON.parse(lsInv);
+          if (lsImp) importedSessions  = JSON.parse(lsImp);
           showSyncStatus('✅ Data siap', '#22c55e');
           // Inisialisasi baris di Supabase (payload kosong) agar upsert berikutnya bekerja
           await saveCloud();
         }
         updateUI();
+        // Cek riwayat sesi HOSTMABAR yang belum diimpor (untuk notifikasi di tombol Import Sesi
+        // pada tab Iuran) — non-blocking, tidak menunda tampilnya UI utama.
+        fetchClosedSessions().then(() => { if (activeTab === 'iuran') updateUI(); });
       } catch(e) {
         console.error('loadCloudData:', e.message);
         // Offline — load dari localStorage user ini jika ada
@@ -323,9 +334,11 @@
           const lsKas = localStorage.getItem(_lsKey.kas);
           const lsMem = localStorage.getItem(_lsKey.mem);
           const lsInv = localStorage.getItem(_lsKey.inv);
-          if (lsKas) transactions  = JSON.parse(lsKas);
-          if (lsMem) members       = JSON.parse(lsMem);
-          if (lsInv) inventoryTxs  = JSON.parse(lsInv);
+          const lsImp = localStorage.getItem(_lsKey.imp);
+          if (lsKas) transactions      = JSON.parse(lsKas);
+          if (lsMem) members           = JSON.parse(lsMem);
+          if (lsInv) inventoryTxs      = JSON.parse(lsInv);
+          if (lsImp) importedSessions  = JSON.parse(lsImp);
         }
         showSyncStatus('📶 Offline — data lokal', '#f59e0b');
         updateUI();
@@ -345,9 +358,11 @@
         : '—';
       const isExpired = prof.tanggal_kedaluarsa && Date.now() > new Date(prof.tanggal_kedaluarsa).getTime();
       el.innerHTML = `
-        <span style="font-size:11px;font-weight:800;font-family:'Nunito',sans-serif;
-                     padding:4px 12px;border-radius:20px;color:#fff;
-                     background:${isExpired ? 'linear-gradient(90deg,#ef4444,#dc2626)' : 'linear-gradient(90deg,#65a30d,#4d7c0f)'};">
+        <span style="font-size:11px;font-weight:700;font-family:'Nunito',sans-serif;
+                     padding:3px 10px;border-radius:20px;
+                     background:${isExpired ? 'rgba(239,68,68,.2)' : 'rgba(247,148,29,.2)'};
+                     border:1.5px solid ${isExpired ? '#ef4444' : '#F7941D'};
+                     color:${isExpired ? '#ef4444' : '#FFB347'};">
           ${isExpired ? '⛔' : '⚡'} ${paket || 'BASIC'}
         </span>
         <span style="font-size:10px;color:#64748b;margin-left:6px;">
@@ -374,21 +389,21 @@
       const hariText = daysLeft === 0 ? 'hari ini' : daysLeft === 1 ? 'besok' : `${daysLeft} hari lagi`;
 
       document.getElementById('modal-container').innerHTML = `
-        <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-white w-full max-w-sm rounded-2xl p-6 border border-amber-200 shadow-2xl modal-enter text-center">
+        <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 border border-amber-500/40 shadow-2xl modal-enter text-center">
             <div class="text-4xl mb-3">⏰</div>
-            <h3 class="text-lg font-bold text-slate-800 mb-1">Langganan Segera Berakhir</h3>
-            <p class="text-sm text-slate-500 mb-4">
-              Akses CUANMABAR kamu berakhir <strong class="text-amber-600">${hariText}</strong> (${expStr}).
+            <h3 class="text-lg font-bold text-white mb-1">Langganan Segera Berakhir</h3>
+            <p class="text-sm text-slate-400 mb-4">
+              Akses CUANMABAR kamu berakhir <strong class="text-amber-400">${hariText}</strong> (${expStr}).
               Perpanjang sekarang supaya pencatatan kas tidak terhenti.
             </p>
-            <a href="https://wa.me/6281234567890?text=Halo+HOSTMABAR%2C+saya+ingin+perpanjang+CUANMABAR"
+            <a href="https://wa.me/62895704016969?text=Halo+Koben%2C+saya+ingin+perpanjang+CUANMABAR"
                target="_blank" rel="noopener"
                class="block w-full mb-2 p-3 rounded-lg font-bold text-sm text-white text-center"
-               style="background:linear-gradient(135deg,#84cc16,#4d7c0f)">
+               style="background:linear-gradient(135deg,#F7941D,#E8174A)">
               💬 Perpanjang via WhatsApp
             </a>
-            <button onclick="closeModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 p-2.5 rounded-lg text-sm font-medium transition-colors">Nanti saja</button>
+            <button onclick="closeModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 p-2.5 rounded-lg text-sm font-medium transition-colors">Nanti saja</button>
           </div>
         </div>`;
       if (window.lucide) lucide.createIcons();
@@ -414,25 +429,25 @@
         : '—';
       banner.innerHTML = `
         <div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px;">
-          <div style="background:#ffffff;border:2px solid #FECACA;border-radius:24px;box-shadow:0 8px 32px rgba(30,41,59,.08);
+          <div style="background:#1e1e28;border:2px solid rgba(239,68,68,.4);border-radius:24px;
                       padding:36px 28px;max-width:400px;width:100%;text-align:center;">
             <div style="font-size:52px;margin-bottom:12px;">⛔</div>
             <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;
-                        color:#1E293B;margin-bottom:8px;">Akses Berakhir</div>
-            <div style="font-size:13px;color:#475569;margin-bottom:6px;line-height:1.6;">
-              Langganan <strong style="color:#4d7c0f;">${(prof.paket_langganan||'BASIC').toUpperCase()}</strong>
-              kamu berakhir pada <strong style="color:#dc2626;">${exp}</strong>.
+                        color:#f0f0f8;margin-bottom:8px;">Akses Berakhir</div>
+            <div style="font-size:13px;color:#94a3b8;margin-bottom:6px;line-height:1.6;">
+              Langganan <strong style="color:#FFB347;">${(prof.paket_langganan||'BASIC').toUpperCase()}</strong>
+              kamu berakhir pada <strong style="color:#f87171;">${exp}</strong>.
             </div>
             <div style="font-size:12px;color:#64748b;margin-bottom:24px;line-height:1.6;">
-              📦 Data keuangan kamu <strong style="color:#16a34a;">tetap tersimpan</strong> dan aman.<br>
+              📦 Data keuangan kamu <strong style="color:#22c55e;">tetap tersimpan</strong> dan aman.<br>
               Perpanjang akses untuk melanjutkan pencatatan.
             </div>
-            <a href="https://wa.me/6281234567890?text=Halo+HOSTMABAR%2C+saya+ingin+perpanjang+CUANMABAR"
+            <a href="https://wa.me/62895704016969?text=Halo+Koben%2C+saya+ingin+perpanjang+CUANMABAR"
                target="_blank"
-               style="display:block;padding:13px 24px;background:linear-gradient(135deg,#84cc16,#4d7c0f);
+               style="display:block;padding:13px 24px;background:linear-gradient(135deg,#F7941D,#E8174A);
                       color:#fff;border-radius:12px;font-family:'Nunito',sans-serif;font-size:14px;
                       font-weight:800;text-decoration:none;margin-bottom:12px;
-                      box-shadow:0 4px 16px rgba(101,163,13,.35);">
+                      box-shadow:0 4px 16px rgba(247,148,29,.4);">
               💬 Perpanjang via WhatsApp
             </a>
             <button onclick="handleLogout()"
@@ -452,9 +467,10 @@
       try {
         const now = new Date().toISOString();
         const rows = [
-          { user_id: _userId, data_type: 'kas',     payload: transactions,  updated_at: now },
-          { user_id: _userId, data_type: 'members', payload: members,       updated_at: now },
-          { user_id: _userId, data_type: 'inv',     payload: inventoryTxs, updated_at: now },
+          { user_id: _userId, data_type: 'kas',       payload: transactions,     updated_at: now },
+          { user_id: _userId, data_type: 'members',   payload: members,          updated_at: now },
+          { user_id: _userId, data_type: 'inv',       payload: inventoryTxs,     updated_at: now },
+          { user_id: _userId, data_type: 'importLog', payload: importedSessions, updated_at: now },
         ];
         const { error } = await db
           .from('cuanmabar_data')
@@ -476,6 +492,7 @@
       localStorage.setItem(_lsKey.kas, JSON.stringify(transactions));
       localStorage.setItem(_lsKey.mem, JSON.stringify(members));
       localStorage.setItem(_lsKey.inv, JSON.stringify(inventoryTxs));
+      localStorage.setItem(_lsKey.imp, JSON.stringify(importedSessions));
       // Sync ke Supabase
       saveCloud();
     };
@@ -496,9 +513,9 @@
       ['dashboard', 'kas', 'iuran', 'inventory'].forEach(t => {
         const btn = document.getElementById(`nav-${t}`);
         if(t === activeTab) {
-          btn.classList.add('text-lime-700', 'bg-lime-100'); btn.classList.remove('text-slate-400');
+          btn.classList.add('text-orange-500'); btn.classList.remove('text-slate-500');
         } else {
-          btn.classList.remove('text-lime-700', 'bg-lime-100'); btn.classList.add('text-slate-400');
+          btn.classList.remove('text-orange-500'); btn.classList.add('text-slate-500');
         }
       });
     }
@@ -543,23 +560,21 @@
       let recentTx = transactions.slice(0, 3);
 
       let html = `
-        <div class="rounded-2xl p-6 shadow-lg mb-6" style="background:linear-gradient(135deg,#65a30d,#3f6212)">
-          <h3 class="text-lime-100 text-sm font-medium mb-1">Total Saldo Kas</h3>
-          <h1 class="text-4xl font-bold mb-6 text-white">${formatRp(balance)}</h1>
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 shadow-xl border border-slate-700 mb-6">
+          <h3 class="text-slate-400 text-sm font-medium mb-1">Total Saldo Kas</h3>
+          <h1 class="text-4xl font-bold mb-6 ${balance >= 0 ? 'text-white' : 'text-red-400'}">${formatRp(balance)}</h1>
 
-          <div class="flex items-center space-x-6 border-t border-white/20 pt-5">
-            <div class="relative w-16 h-16 flex-shrink-0 rounded-full" style="background: conic-gradient(${total === 0 ? 'rgba(255,255,255,.25) 0% 100%' : `#a3e635 0% ${inPercent}%, #fca5a5 ${inPercent}% 100%`})">
-              <div class="absolute inset-1.5 rounded-full flex items-center justify-center" style="background:#3f6212">
-                ${total === 0 ? '<i data-lucide="pie-chart" class="w-5 h-5 text-lime-300"></i>' : ''}
-              </div>
+          <div class="flex items-center space-x-6 border-t border-slate-700 pt-5">
+            <div class="relative w-16 h-16 flex-shrink-0 rounded-full" style="background: conic-gradient(${total === 0 ? '#475569 0% 100%' : `#10b981 0% ${inPercent}%, #ef4444 ${inPercent}% 100%`})">
+              <div class="absolute inset-1.5 bg-slate-800 rounded-full"></div>
             </div>
             <div class="flex-1 space-y-2">
               <div class="flex justify-between items-center text-sm">
-                <div class="flex items-center text-lime-200"><i data-lucide="arrow-up-right" class="w-4 h-4 mr-1"></i> Masuk</div>
+                <div class="flex items-center text-emerald-400"><i data-lucide="arrow-up-right" class="w-4 h-4 mr-1"></i> Masuk</div>
                 <div class="text-white font-semibold">${formatRp(tIn)}</div>
               </div>
               <div class="flex justify-between items-center text-sm">
-                <div class="flex items-center text-red-200"><i data-lucide="arrow-down-right" class="w-4 h-4 mr-1"></i> Keluar</div>
+                <div class="flex items-center text-red-400"><i data-lucide="arrow-down-right" class="w-4 h-4 mr-1"></i> Keluar</div>
                 <div class="text-white font-semibold">${formatRp(tOut)}</div>
               </div>
             </div>
@@ -569,12 +584,12 @@
 
       if(unpaid.length > 0) {
         html += `
-          <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3 mb-6">
-            <i data-lucide="alert-circle" class="text-red-500 mt-0.5 flex-shrink-0 w-5 h-5"></i>
+          <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start space-x-3 mb-6">
+            <i data-lucide="alert-circle" class="text-red-400 mt-0.5 flex-shrink-0 w-5 h-5"></i>
             <div>
-              <h4 class="text-red-600 font-medium text-sm">Perhatian: Ada Iuran Tertunggak</h4>
-              <p class="text-slate-600 text-xs mt-1">${unpaid.length} member belum bayar iuran periode ini.</p>
-              <button onclick="switchTab('iuran')" class="text-red-600 text-xs font-bold mt-2 underline">Cek Detail Member</button>
+              <h4 class="text-red-400 font-medium text-sm">Perhatian: Ada Iuran Tertunggak</h4>
+              <p class="text-slate-300 text-xs mt-1">${unpaid.length} member belum bayar iuran periode ini.</p>
+              <button onclick="switchTab('iuran')" class="text-red-400 text-xs font-bold mt-2 underline">Cek Detail Member</button>
             </div>
           </div>
         `;
@@ -583,27 +598,27 @@
       html += `
         <div>
           <div class="flex justify-between items-center mb-3">
-            <h3 class="text-slate-800 font-bold flex items-center"><span class="w-1.5 h-4 rounded-full mr-2" style="background:#65a30d"></span>Transaksi Terakhir</h3>
-            <button onclick="switchTab('kas')" class="text-lime-700 text-xs font-bold hover:underline">Lihat Semua</button>
+            <h3 class="text-slate-200 font-bold">Transaksi Terakhir</h3>
+            <button onclick="switchTab('kas')" class="text-orange-500 text-xs font-medium hover:underline">Lihat Semua</button>
           </div>
           <div class="space-y-3">
             ${recentTx.length === 0 ? `
-              <div class="text-center text-slate-400 py-8 px-4 text-sm bg-lime-50/60 rounded-xl border border-dashed border-lime-200">
-                <i data-lucide="activity" class="w-8 h-8 mx-auto mb-2 text-lime-300"></i>
+              <div class="text-center text-slate-500 py-8 px-4 text-sm bg-slate-800/30 rounded-xl border border-dashed border-slate-700">
+                <i data-lucide="activity" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
                 Belum ada aktivitas finansial baru.
               </div>
             ` : recentTx.map(tx => `
-              <div class="bg-white rounded-lg p-3 flex justify-between items-center border border-slate-200 shadow-sm">
+              <div class="bg-slate-800 rounded-lg p-3 flex justify-between items-center border border-slate-700/50">
                 <div class="flex items-center space-x-3">
-                  <div class="p-2 rounded-full ${tx.type === 'in' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+                  <div class="p-2 rounded-full ${tx.type === 'in' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
                     <i data-lucide="${tx.type === 'in' ? 'arrow-up-right' : 'arrow-down-right'}" class="w-4 h-4"></i>
                   </div>
                   <div>
-                    <p class="text-sm font-medium text-slate-700">${tx.description}</p>
-                    <p class="text-xs text-slate-400 capitalize">${tx.date} • ${tx.category}</p>
+                    <p class="text-sm font-medium text-slate-200">${tx.description}</p>
+                    <p class="text-xs text-slate-500 capitalize">${tx.date} • ${tx.category}</p>
                   </div>
                 </div>
-                <div class="font-semibold text-sm ${tx.type === 'in' ? 'text-emerald-600' : 'text-red-600'}">
+                <div class="font-semibold text-sm ${tx.type === 'in' ? 'text-emerald-400' : 'text-red-400'}">
                   ${tx.type === 'in' ? '+' : '-'}${formatRp(tx.amount)}
                 </div>
               </div>
@@ -618,48 +633,48 @@
       let balance = transactions.reduce((acc, t) => t.type === 'in' ? acc + t.amount : acc - t.amount, 0);
       let html = `
         <div class="flex justify-between items-center mb-2">
-          <h2 class="text-xl font-bold text-slate-800">Buku Kas</h2>
-          <button onclick="openHistoriModal()" class="bg-white hover:bg-slate-50 rounded-lg px-3 py-1.5 text-sm text-slate-600 border border-slate-200 shadow-sm flex items-center transition-colors">
+          <h2 class="text-xl font-bold text-white">Buku Kas</h2>
+          <button onclick="openHistoriModal()" class="bg-slate-800 hover:bg-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-300 border border-slate-700 flex items-center transition-colors">
             <i data-lucide="calendar" class="w-4 h-4 mr-2 text-slate-400"></i> Histori
           </button>
         </div>
-        <div class="bg-white rounded-xl p-4 flex justify-between items-center border border-lime-100 shadow-sm mb-4">
+        <div class="bg-slate-800 rounded-xl p-4 flex justify-between items-center border border-slate-700 mb-4">
           <div class="flex items-center">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center mr-3" style="background:linear-gradient(135deg,#65a30d,#3f6212)">
-              <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center mr-3 bg-orange-500/20">
+              <i data-lucide="wallet" class="w-5 h-5 text-orange-400"></i>
             </div>
             <div>
               <p class="text-xs text-slate-400 mb-1">Saldo Berjalan</p>
-              <p class="text-xl font-bold text-slate-800">${formatRp(balance)}</p>
+              <p class="text-xl font-bold text-white">${formatRp(balance)}</p>
             </div>
           </div>
-          <button onclick="openModalKas(null)" class="bg-lime-600 hover:bg-lime-700 text-white px-4 py-2.5 rounded-xl flex items-center font-semibold text-sm shadow-sm transition-colors">
+          <button onclick="openModalKas(null)" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl flex items-center font-semibold text-sm">
             <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Catat Transaksi
           </button>
         </div>
         <div class="space-y-3">
           ${transactions.length === 0 ? `
-            <div class="text-center text-slate-400 py-16 px-4 bg-lime-50/60 rounded-xl border border-dashed border-lime-200">
-              <i data-lucide="wallet" class="w-10 h-10 mx-auto mb-3 text-lime-300"></i>
-              <p class="font-medium text-slate-500 text-base">Buku Kas Masih Kosong</p>
-              <p class="text-xs text-slate-400 mt-1">Gunakan tombol di atas untuk mencatat pemasukan/pengeluaran pertama mabar komunitas Anda.</p>
+            <div class="text-center text-slate-500 py-16 px-4 bg-slate-800/40 rounded-xl border border-dashed border-slate-700">
+              <i data-lucide="wallet" class="w-10 h-10 mx-auto mb-3 text-slate-600"></i>
+              <p class="font-medium text-slate-400 text-base">Buku Kas Masih Kosong</p>
+              <p class="text-xs text-slate-500 mt-1">Gunakan tombol di atas untuk mencatat pemasukan/pengeluaran pertama mabar komunitas Anda.</p>
             </div>
           ` : transactions.map(tx => `
-            <div class="bg-white rounded-lg p-4 border border-slate-200 shadow-sm border-l-4 ${tx.type === 'in' ? 'border-l-emerald-400' : 'border-l-red-400'}">
+            <div class="bg-slate-800 rounded-lg p-4 border border-slate-700/50">
               <div class="flex justify-between items-start mb-2">
                 <div>
-                  <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-lime-100 text-lime-700 capitalize mr-2">${tx.category}</span>
-                  <span class="text-xs text-slate-400">${tx.date}</span>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-700 text-slate-300 capitalize mr-2">${tx.category}</span>
+                  <span class="text-xs text-slate-500">${tx.date}</span>
                 </div>
                 <div class="flex items-center space-x-3">
-                  <button onclick="openModalKas(${tx.id})" class="text-slate-400 hover:text-lime-600"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                  <button onclick="deleteKas(${tx.id})" class="text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                  <div class="font-bold ${tx.type === 'in' ? 'text-emerald-600' : 'text-red-600'}">
+                  <button onclick="openModalKas(${tx.id})" class="text-slate-500 hover:text-orange-400"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                  <button onclick="deleteKas(${tx.id})" class="text-slate-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  <div class="font-bold ${tx.type === 'in' ? 'text-emerald-400' : 'text-red-400'}">
                     ${tx.type === 'in' ? '+' : '-'}${formatRp(tx.amount)}
                   </div>
                 </div>
               </div>
-              <p class="text-slate-700 text-sm">${tx.description}</p>
+              <p class="text-slate-200 text-sm">${tx.description}</p>
             </div>
           `).join('')}
         </div>
@@ -671,46 +686,47 @@
       let collected = members.filter(m => m.status === 'lunas').reduce((sum, m) => sum + m.dueAmount, 0);
       let html = `
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-slate-800">Daftar Iuran</h2>
+          <h2 class="text-xl font-bold text-white">Daftar Iuran</h2>
           <div class="flex items-center space-x-2">
-            <button onclick="openImportSesiModal()" class="bg-white hover:bg-lime-50 text-lime-700 border border-lime-200 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center shadow-sm transition-colors">
+            <button onclick="openImportSesiModal()" class="relative bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-700 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center transition-colors">
               <i data-lucide="download" class="w-4 h-4 mr-1"></i> Import Sesi
+              ${_closedSessionsCache.some(s => !importedSessions.includes(s.ts)) ? '<span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900"></span>' : ''}
             </button>
-            <button onclick="openModalMember()" class="bg-lime-600 hover:bg-lime-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center shadow-sm transition-colors">
+            <button onclick="openModalMember()" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center">
               <i data-lucide="user-plus" class="w-4 h-4 mr-1"></i> Tambah
             </button>
           </div>
         </div>
-        <div class="bg-white border border-lime-100 shadow-sm rounded-xl p-4 mb-4 flex justify-between items-start">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-4 flex justify-between items-start">
           <div>
             <p class="text-slate-400 text-xs mb-1">Total Terkumpul</p>
-            <p class="text-2xl font-bold text-emerald-600">${formatRp(collected)}</p>
+            <p class="text-2xl font-bold text-emerald-400">${formatRp(collected)}</p>
           </div>
-          <div class="bg-lime-100 text-slate-700 text-[10px] p-2 rounded-lg border border-lime-200 max-w-[150px]">
-            <strong class="text-lime-800">💡 Note:</strong> Host bisa catat dana ini ke Kas. Nama yg Lunas bisa dihapus jika siklus ganti.
+          <div class="bg-slate-900 text-slate-300 text-[10px] p-2 rounded-lg border border-slate-700 max-w-[150px]">
+            <strong class="text-orange-400">💡 Note:</strong> Host bisa catat dana ini ke Kas. Nama yg Lunas bisa dihapus jika siklus ganti.
           </div>
         </div>
         <div class="space-y-3">
           ${members.length === 0 ? `
-            <div class="text-center text-slate-400 py-16 px-4 bg-lime-50/60 rounded-xl border border-dashed border-lime-200">
-              <i data-lucide="users" class="w-10 h-10 mx-auto mb-3 text-lime-300"></i>
-              <p class="font-medium text-slate-500 text-base">Belum Ada Daftar Member</p>
-              <p class="text-xs text-slate-400 mt-1">Klik 'Tambah' untuk menginput nama pemain beserta target iuran wajib minggu/bulan ini.</p>
+            <div class="text-center text-slate-500 py-16 px-4 bg-slate-800/40 rounded-xl border border-dashed border-slate-700">
+              <i data-lucide="users" class="w-10 h-10 mx-auto mb-3 text-slate-600"></i>
+              <p class="font-medium text-slate-400 text-base">Belum Ada Daftar Member</p>
+              <p class="text-xs text-slate-500 mt-1">Klik 'Tambah' untuk menginput nama pemain beserta target iuran wajib minggu/bulan ini.</p>
             </div>
           ` : members.map(m => `
-            <div class="bg-white rounded-xl p-3 flex items-center justify-between border border-slate-200 shadow-sm border-l-4 ${m.status === 'lunas' ? 'border-l-lime-500' : m.status === 'belum' ? 'border-l-amber-400' : 'border-l-red-400'}">
+            <div class="bg-slate-800 rounded-xl p-3 flex items-center justify-between border border-slate-700/80">
               <div class="flex-1">
-                <h4 class="text-slate-800 font-semibold text-base">${m.name}</h4>
+                <h4 class="text-white font-semibold text-base">${m.name}</h4>
                 <p class="text-slate-400 text-xs">Tagihan: ${formatRp(m.dueAmount)}</p>
               </div>
               <div class="flex items-center space-x-2">
                 <select onchange="updateMemberStatus(${m.id}, this.value)" class="text-xs font-bold rounded-md px-2 py-1.5 outline-none cursor-pointer text-center text-white
-                  ${m.status === 'lunas' ? 'bg-lime-600' : m.status === 'belum' ? 'bg-amber-500' : 'bg-red-600'}">
-                  <option value="lunas" class="bg-white text-slate-800" ${m.status === 'lunas' ? 'selected' : ''}>✅ LUNAS</option>
-                  <option value="belum" class="bg-white text-slate-800" ${m.status === 'belum' ? 'selected' : ''}>⏳ BELUM</option>
-                  <option value="nunggak" class="bg-white text-slate-800" ${m.status === 'nunggak' ? 'selected' : ''}>❌ NUNGGAK</option>
+                  ${m.status === 'lunas' ? 'bg-green-600' : m.status === 'belum' ? 'bg-blue-600' : 'bg-red-600'}">
+                  <option value="lunas" class="bg-slate-800" ${m.status === 'lunas' ? 'selected' : ''}>✅ LUNAS</option>
+                  <option value="belum" class="bg-slate-800" ${m.status === 'belum' ? 'selected' : ''}>⏳ BELUM</option>
+                  <option value="nunggak" class="bg-slate-800" ${m.status === 'nunggak' ? 'selected' : ''}>❌ NUNGGAK</option>
                 </select>
-                <button onclick="deleteMember(${m.id})" class="p-1 text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <button onclick="deleteMember(${m.id})" class="p-1 text-slate-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
               </div>
             </div>
           `).join('')}
@@ -728,44 +744,44 @@
 
       let html = `
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-slate-800">Log Inventori</h2>
-          <button onclick="openModalInv(null)" class="bg-lime-600 hover:bg-lime-700 text-white px-3 py-2 rounded-xl flex items-center font-semibold text-sm shadow-sm transition-colors">
+          <h2 class="text-xl font-bold text-white">Log Inventori</h2>
+          <button onclick="openModalInv(null)" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl flex items-center font-semibold text-sm">
             <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Catat Barang
           </button>
         </div>
         <div class="grid grid-cols-2 gap-3 mb-6">
-          ${Object.keys(summary).length === 0 ? `<div class="col-span-2 text-center text-slate-400 py-6 bg-lime-50/60 rounded-xl border border-lime-200 text-sm">Stok barang kosong</div>` : ''}
+          ${Object.keys(summary).length === 0 ? `<div class="col-span-2 text-center text-slate-500 py-6 bg-slate-800/30 rounded-xl border border-slate-700/60 text-sm">Stok barang kosong</div>` : ''}
           ${Object.entries(summary).map(([item, qty]) => `
-            <div class="bg-white rounded-xl p-4 border border-lime-100 shadow-sm text-center relative overflow-hidden">
-              <i data-lucide="package" class="absolute -right-2 -bottom-2 w-10 h-10 text-lime-100"></i>
-              <div class="text-3xl font-black text-slate-800 relative z-10">${qty}</div>
-              <div class="text-xs text-slate-500 mt-1 relative z-10">${item}</div>
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 text-center relative overflow-hidden">
+              <i data-lucide="package" class="absolute -right-2 -bottom-2 w-10 h-10 text-slate-700 opacity-30"></i>
+              <div class="text-3xl font-black text-white relative z-10">${qty}</div>
+              <div class="text-xs text-slate-400 mt-1 relative z-10">${item}</div>
             </div>
           `).join('')}
         </div>
         <div>
-          <h3 class="text-slate-700 font-medium mb-3">Riwayat Keluar / Masuk</h3>
+          <h3 class="text-slate-300 font-medium mb-3">Riwayat Keluar / Masuk</h3>
           <div class="space-y-3">
             ${inventoryTxs.length === 0 ? `
-              <div class="text-center text-slate-400 py-12 px-4 bg-lime-50/60 rounded-xl border border-dashed border-lime-200">
-                <i data-lucide="package" class="w-10 h-10 mx-auto mb-2 text-lime-300"></i>
+              <div class="text-center text-slate-500 py-12 px-4 bg-slate-800/40 rounded-xl border border-dashed border-slate-700">
+                <i data-lucide="package" class="w-10 h-10 mx-auto mb-2 text-slate-600"></i>
                 Belum ada pergerakan kok/barang.
               </div>
             ` : inventoryTxs.map(tx => `
-              <div class="bg-white rounded-lg p-3 flex justify-between items-center border border-slate-200 shadow-sm">
+              <div class="bg-slate-800 rounded-lg p-3 flex justify-between items-center border border-slate-700/50">
                 <div class="flex items-center space-x-3">
-                  <div class="p-2 rounded-full ${tx.type === 'in' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+                  <div class="p-2 rounded-full ${tx.type === 'in' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
                     <i data-lucide="${tx.type === 'in' ? 'arrow-up-right' : 'arrow-down-right'}" class="w-4 h-4"></i>
                   </div>
                   <div>
-                    <p class="text-sm font-medium text-slate-700">${tx.itemName}</p>
-                    <p class="text-xs text-slate-400">${tx.date} • ${tx.description}</p>
+                    <p class="text-sm font-medium text-slate-200">${tx.itemName}</p>
+                    <p class="text-xs text-slate-500">${tx.date} • ${tx.description}</p>
                   </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                  <button onclick="openModalInv(${tx.id})" class="text-slate-400 hover:text-lime-600"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                  <button onclick="deleteInv(${tx.id})" class="text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                  <div class="font-bold text-sm ${tx.type === 'in' ? 'text-emerald-600' : 'text-red-600'}">
+                  <button onclick="openModalInv(${tx.id})" class="text-slate-500 hover:text-orange-400"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                  <button onclick="deleteInv(${tx.id})" class="text-slate-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  <div class="font-bold text-sm ${tx.type === 'in' ? 'text-emerald-400' : 'text-red-400'}">
                     ${tx.type === 'in' ? '+' : '-'}${tx.qty}
                   </div>
                 </div>
@@ -789,33 +805,33 @@
       editingId = id;
       let tx = id ? transactions.find(t => t.id === id) : null;
       let html = `
-        <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-white w-full max-w-md rounded-2xl p-6 border border-slate-200 shadow-2xl modal-enter">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">${id ? 'Edit Transaksi' : 'Catat Transaksi Baru'}</h3>
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-md rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter">
+            <h3 class="text-lg font-bold text-white mb-4">${id ? 'Edit Transaksi' : 'Catat Transaksi Baru'}</h3>
             <form onsubmit="saveKas(event)" class="space-y-4">
               <div class="grid grid-cols-2 gap-3">
-                <label class="flex items-center space-x-2 p-3 bg-slate-100 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
+                <label class="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10">
                   <input type="radio" name="type" value="in" ${(!tx || tx.type==='in') ? 'checked' : ''} class="hidden" />
-                  <span class="text-emerald-600 font-medium text-sm">Pemasukan</span>
+                  <span class="text-emerald-400 font-medium text-sm">Pemasukan</span>
                 </label>
-                <label class="flex items-center space-x-2 p-3 bg-slate-100 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
+                <label class="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-red-500 has-[:checked]:bg-red-500/10">
                   <input type="radio" name="type" value="out" ${(tx && tx.type==='out') ? 'checked' : ''} class="hidden" />
-                  <span class="text-red-600 font-medium text-sm">Pengeluaran</span>
+                  <span class="text-red-400 font-medium text-sm">Pengeluaran</span>
                 </label>
               </div>
-              <div><label class="text-xs text-slate-500">Tanggal</label>
-                <input type="date" name="date" required value="${tx ? tx.date : new Date().toISOString().split('T')[0]}" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition"></div>
-              <div><label class="text-xs text-slate-500">Kategori</label>
-                <select name="category" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 capitalize outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition">
+              <div><label class="text-xs text-slate-400">Tanggal</label>
+                <input type="date" name="date" required value="${tx ? tx.date : new Date().toISOString().split('T')[0]}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Kategori</label>
+                <select name="category" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white capitalize">
                   ${['iuran','donasi','denda','shuttlecock','sewa lapangan','konsumsi','hadiah','lain-lain'].map(c => `<option value="${c}" ${(tx && tx.category===c)?'selected':''}>${c}</option>`).join('')}
                 </select></div>
-              <div><label class="text-xs text-slate-500">Nominal (Rp)</label>
-                <input type="number" name="amount" required value="${tx ? tx.amount : ''}" placeholder="Contoh: 50000" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition"></div>
-              <div><label class="text-xs text-slate-500">Keterangan</label>
-                <input type="text" name="description" required value="${tx ? tx.description : ''}" placeholder="Contoh: Iuran mabar" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition"></div>
+              <div><label class="text-xs text-slate-400">Nominal (Rp)</label>
+                <input type="number" name="amount" required value="${tx ? tx.amount : ''}" placeholder="Contoh: 50000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Keterangan</label>
+                <input type="text" name="description" required value="${tx ? tx.description : ''}" placeholder="Contoh: Iuran mabar" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
               <div class="flex space-x-3 pt-2">
-                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg transition-colors">Batal</button>
-                <button type="submit" class="flex-1 bg-lime-600 hover:bg-lime-700 text-white p-3 rounded-lg font-medium shadow-sm transition-colors">Simpan</button>
+                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
+                <button type="submit" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-medium">Simpan</button>
               </div>
             </form>
           </div>
@@ -845,21 +861,21 @@
 
     function openModalMember() {
       let html = `
-        <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-white w-full max-w-sm rounded-2xl p-6 border border-slate-200 shadow-2xl modal-enter">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">Tambah Member Iuran</h3>
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter">
+            <h3 class="text-lg font-bold text-white mb-4">Tambah Member Iuran</h3>
             <form onsubmit="saveMember(event)" class="space-y-4">
-              <div><label class="text-xs text-slate-500">Nama Pemain</label>
-                <input type="text" name="name" required placeholder="Nama pemain mabar" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition"></div>
-              <div><label class="text-xs text-slate-500">Nominal Tagihan (Rp)</label>
-                <input type="number" name="dueAmount" required value="50000" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition"></div>
-              <div><label class="text-xs text-slate-500">Status Awal</label>
-                <select name="status" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition">
+              <div><label class="text-xs text-slate-400">Nama Pemain</label>
+                <input type="text" name="name" required placeholder="Nama pemain mabar" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Nominal Tagihan (Rp)</label>
+                <input type="number" name="dueAmount" required value="50000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Status Awal</label>
+                <select name="status" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
                   <option value="belum">Belum Bayar</option><option value="lunas">Lunas</option><option value="nunggak">Nunggak</option>
                 </select></div>
               <div class="flex space-x-3 pt-2">
-                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg transition-colors">Batal</button>
-                <button type="submit" class="flex-1 bg-lime-600 hover:bg-lime-700 text-white p-3 rounded-lg font-medium shadow-sm transition-colors">Simpan</button>
+                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
+                <button type="submit" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-medium">Simpan</button>
               </div>
             </form>
           </div>
@@ -883,25 +899,20 @@
     }
 
     // ── IMPORT SESI → IURAN (manual, atas klik host) ────────────────────────
-    // Sumber data: field `lastClosedSession` yang di-snapshot tracker.html tepat sebelum
-    // roster direset saat "Tutup Sesi" (lihat tutupSesi() di tracker.html). Dibaca dari tabel
+    // Sumber data: `closedSessionsLog` (maks 5 terakhir per cabang) yang di-snapshot
+    // tracker.html tepat sebelum roster direset saat "Tutup Sesi". Dibaca dari tabel
     // `tracker_data` milik akun yang sama (1 akun HOSTMABAR & CUANMABAR) — read-only, tidak
-    // pernah menulis balik ke tracker_data. Host tetap yang memilih nama & nominal sebelum
-    // Simpan — tidak ada apa pun yang masuk ke Daftar Iuran secara otomatis.
+    // pernah menulis balik ke tracker_data. Menyimpan riwayat (bukan cuma 1 slot) supaya kalau
+    // host lupa import sebelum sesi berikutnya ditutup, sesi lama tidak langsung hilang/tertimpa.
+    // Status "sudah/belum diimpor" dilacak via array `importedSessions` (data_type baru
+    // 'importLog' di cuanmabar_data) supaya ada indikator/notifikasi di tombol Import Sesi.
     let _importSesiRows = [];
     let _importSesiInfo = null;
+    let _closedSessionsCache = [];
 
-    async function openImportSesiModal() {
-      document.getElementById('modal-container').innerHTML = `
-        <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-white w-full max-w-sm rounded-2xl p-6 border border-slate-200 shadow-2xl modal-enter text-center">
-            <i data-lucide="loader" class="w-6 h-6 mx-auto mb-2 text-lime-500 animate-spin"></i>
-            <p class="text-sm text-slate-500">Mengambil data sesi terakhir...</p>
-          </div>
-        </div>`;
-      lucide.createIcons();
+    async function fetchClosedSessions() {
+      if (!_userId) return [];
       try {
-        if (!_userId) throw new Error('Sesi tidak ditemukan');
         const { data, error } = await db
           .from('tracker_data')
           .select('payload')
@@ -909,54 +920,113 @@
           .maybeSingle();
         if (error) throw error;
         const byS = data && data.payload && data.payload.stateBySport;
-        if (!byS) { closeModal(); showToastCM('⚠️ Belum ada sesi HOSTMABAR yang ditutup.'); return; }
-        // Ambil lastClosedSession dari semua cabang, pilih yang tanggalnya paling baru
-        let found = null;
+        if (!byS) { _closedSessionsCache = []; return []; }
+        let all = [];
         Object.values(byS).forEach(st => {
-          if (st && st.lastClosedSession && (!found || st.lastClosedSession.date >= found.date)) {
-            found = st.lastClosedSession;
+          if (!st) return;
+          if (Array.isArray(st.closedSessionsLog) && st.closedSessionsLog.length) {
+            all = all.concat(st.closedSessionsLog);
+          } else if (st.lastClosedSession) {
+            // Kompatibilitas mundur — data lama sebelum ada log, cuma 1 slot
+            all.push({ ts: st.lastClosedSession.ts || 0, ...st.lastClosedSession });
           }
         });
-        if (!found || !found.players || !found.players.length) {
-          closeModal(); showToastCM('⚠️ Belum ada sesi ditutup dengan daftar peserta.'); return;
-        }
-        _importSesiInfo = found;
-        _importSesiRows = found.players.map(name => ({ name, amount: 50000 }));
-        renderImportSesiModal();
+        all.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        _closedSessionsCache = all.slice(0, 5);
+        return _closedSessionsCache;
       } catch (e) {
-        console.error('openImportSesiModal:', e.message);
-        closeModal();
-        showToastCM('⚠️ Gagal memuat sesi — cek koneksi.');
+        console.error('fetchClosedSessions:', e.message);
+        return _closedSessionsCache;
       }
+    }
+
+    async function openImportSesiModal() {
+      document.getElementById('modal-container').innerHTML = `
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter text-center">
+            <i data-lucide="loader" class="w-6 h-6 mx-auto mb-2 text-orange-400 animate-spin"></i>
+            <p class="text-sm text-slate-400">Mengambil riwayat sesi...</p>
+          </div>
+        </div>`;
+      lucide.createIcons();
+      const list = await fetchClosedSessions();
+      if (!list.length) {
+        closeModal(); showToastCM('⚠️ Belum ada sesi HOSTMABAR yang ditutup.'); return;
+      }
+      renderImportSesiListModal();
+    }
+
+    function renderImportSesiListModal() {
+      const sportLabel = { badminton:'Badminton', padel:'Padel', pickleball:'Pickleball', tennis:'Tennis' };
+      document.getElementById('modal-container').innerHTML = `
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter max-h-[85vh] flex flex-col">
+            <h3 class="text-lg font-bold text-white mb-1">Import Sesi</h3>
+            <p class="text-xs text-slate-400 mb-4">Pilih salah satu dari ${_closedSessionsCache.length} sesi terakhir yang ditutup</p>
+            <div class="space-y-2 overflow-y-auto pr-1" style="max-height:50vh">
+              ${_closedSessionsCache.map(s => {
+                const done = importedSessions.includes(s.ts);
+                return `
+                <button onclick="selectSesiForImport(${s.ts})" class="w-full text-left bg-slate-900 hover:bg-slate-700 border ${done ? 'border-slate-700' : 'border-orange-500/50'} rounded-lg p-3 transition-colors">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="text-sm font-semibold text-white">${sportLabel[s.sport] || s.sport}${s.name ? ' · ' + s.name : ''}</div>
+                      <div class="text-xs text-slate-400 mt-0.5">${s.date} · ${(s.players||[]).length} peserta</div>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap ${done ? 'bg-slate-700 text-slate-400' : 'bg-orange-500/20 text-orange-400'}">${done ? '✅ Sudah diimpor' : '🔔 Belum diimpor'}</span>
+                  </div>
+                </button>`;
+              }).join('')}
+            </div>
+            <div class="pt-4">
+              <button type="button" onclick="closeModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-lg transition-colors">Tutup</button>
+            </div>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function selectSesiForImport(ts) {
+      const found = _closedSessionsCache.find(s => s.ts === ts);
+      if (!found || !found.players || !found.players.length) {
+        showToastCM('⚠️ Sesi ini tidak punya daftar peserta.'); return;
+      }
+      _importSesiInfo = found;
+      _importSesiRows = found.players.map(name => ({ name, amount: 50000 }));
+      renderImportSesiModal();
     }
 
     function renderImportSesiModal() {
       const sportLabel = { badminton:'Badminton', padel:'Padel', pickleball:'Pickleball', tennis:'Tennis' }[_importSesiInfo.sport] || _importSesiInfo.sport;
+      const alreadyDone = importedSessions.includes(_importSesiInfo.ts);
       document.getElementById('modal-container').innerHTML = `
-        <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-white w-full max-w-sm rounded-2xl p-6 border border-slate-200 shadow-2xl modal-enter max-h-[85vh] flex flex-col">
-            <h3 class="text-lg font-bold text-slate-800 mb-1">Import dari Sesi Terakhir</h3>
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter max-h-[85vh] flex flex-col">
+            <button onclick="renderImportSesiListModal()" class="text-xs text-slate-400 hover:text-orange-400 mb-2 text-left">← Pilih sesi lain</button>
+            <h3 class="text-lg font-bold text-white mb-1">Import Peserta</h3>
             <p class="text-xs text-slate-400 mb-4">${sportLabel}${_importSesiInfo.name ? ' · ' + _importSesiInfo.name : ''} · ${_importSesiInfo.date}</p>
+            ${alreadyDone ? `<div class="text-xs bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-lg p-2 mb-3">⚠️ Sesi ini sudah pernah diimpor sebelumnya. Simpan lagi akan menambahkan nama-nama ini sekali lagi (duplikat).</div>` : ''}
             ${_importSesiRows.length === 0 ? `
-              <div class="text-center text-slate-400 py-10 bg-lime-50/60 rounded-xl border border-dashed border-lime-200">Semua nama sudah dihapus dari daftar import.</div>
+              <div class="text-center text-slate-500 py-10 bg-slate-900/40 rounded-xl border border-dashed border-slate-700">Semua nama sudah dihapus dari daftar import.</div>
             ` : `
-              <div class="flex items-center space-x-2 mb-3 bg-lime-50 border border-lime-200 rounded-lg p-2">
-                <input type="number" id="importBulkAmount" placeholder="Nominal untuk semua" class="flex-1 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-lime-500/30">
-                <button onclick="importSesiBulkApply()" class="bg-lime-600 hover:bg-lime-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md whitespace-nowrap transition-colors">Terapkan ke Semua</button>
+              <div class="flex items-center space-x-2 mb-3 bg-slate-900 border border-slate-700 rounded-lg p-2">
+                <input type="number" id="importBulkAmount" placeholder="Nominal untuk semua" class="flex-1 bg-slate-800 border border-slate-700 rounded-md px-2 py-1.5 text-sm text-white outline-none">
+                <button onclick="importSesiBulkApply()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md whitespace-nowrap transition-colors">Terapkan ke Semua</button>
               </div>
-              <div class="space-y-2 overflow-y-auto pr-1" style="max-height:38vh">
+              <div class="space-y-2 overflow-y-auto pr-1" style="max-height:32vh">
                 ${_importSesiRows.map((r, i) => `
-                  <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
-                    <span class="flex-1 text-sm font-medium text-slate-700 truncate">${r.name}</span>
-                    <input type="number" value="${r.amount}" onchange="importSesiSetNominal(${i}, this.value)" class="w-24 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-lime-500/30">
-                    <button onclick="importSesiDeleteRow(${i})" title="Hapus dari daftar import" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+                  <div class="flex items-center space-x-2 bg-slate-900 border border-slate-700 rounded-lg p-2">
+                    <span class="flex-1 text-sm font-medium text-slate-200 truncate">${r.name}</span>
+                    <input type="number" value="${r.amount}" onchange="importSesiSetNominal(${i}, this.value)" class="w-24 bg-slate-800 border border-slate-700 rounded-md px-2 py-1.5 text-sm text-white outline-none">
+                    <button onclick="importSesiDeleteRow(${i})" title="Hapus dari daftar import" class="text-slate-500 hover:text-red-400 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
                   </div>
                 `).join('')}
               </div>
             `}
             <div class="flex space-x-3 pt-4">
-              <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg transition-colors">Batal</button>
-              <button type="button" onclick="importSesiSave()" ${_importSesiRows.length === 0 ? 'disabled' : ''} class="flex-1 bg-lime-600 hover:bg-lime-700 disabled:opacity-40 disabled:cursor-not-allowed text-white p-3 rounded-lg font-medium shadow-sm transition-colors">Simpan (${_importSesiRows.length})</button>
+              <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
+              <button type="button" onclick="importSesiSave()" ${_importSesiRows.length === 0 ? 'disabled' : ''} class="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white p-3 rounded-lg font-medium">Simpan (${_importSesiRows.length})</button>
             </div>
           </div>
         </div>
@@ -982,6 +1052,9 @@
       _importSesiRows.forEach((r, i) => {
         members.push({ id: Date.now() + i, name: r.name, dueAmount: r.amount, status: 'belum' });
       });
+      if (_importSesiInfo && !importedSessions.includes(_importSesiInfo.ts)) {
+        importedSessions.push(_importSesiInfo.ts);
+      }
       saveLocal(); closeModal(); updateUI();
       showToastCM('✅ ' + _importSesiRows.length + ' nama ditambahkan ke Daftar Iuran');
       _importSesiRows = []; _importSesiInfo = null;
@@ -999,37 +1072,37 @@
       let tx = id ? inventoryTxs.find(t => t.id === id) : null;
       let isDefaultItem = tx ? ['Shuttlecock (Slop)', 'Air Mineral (Dus)'].includes(tx.itemName) : true;
       let html = `
-        <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="bg-white w-full max-w-md rounded-2xl p-6 border border-slate-200 shadow-2xl modal-enter">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">${id ? 'Edit Barang' : 'Catat Barang'}</h3>
+        <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-slate-800 w-full max-w-md rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter">
+            <h3 class="text-lg font-bold text-white mb-4">${id ? 'Edit Barang' : 'Catat Barang'}</h3>
             <form onsubmit="saveInv(event)" class="space-y-4">
               <div class="grid grid-cols-2 gap-3">
-                <label class="flex items-center space-x-2 p-3 bg-slate-100 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
+                <label class="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10">
                   <input type="radio" name="type" value="in" ${(!tx || tx.type==='in') ? 'checked' : ''} class="hidden" />
-                  <span class="text-emerald-600 font-medium text-sm">Masuk</span>
+                  <span class="text-emerald-400 font-medium text-sm">Masuk</span>
                 </label>
-                <label class="flex items-center space-x-2 p-3 bg-slate-100 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
+                <label class="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg cursor-pointer border border-transparent has-[:checked]:border-red-500 has-[:checked]:bg-red-500/10">
                   <input type="radio" name="type" value="out" ${(tx && tx.type==='out') ? 'checked' : ''} class="hidden" />
-                  <span class="text-red-600 font-medium text-sm">Keluar</span>
+                  <span class="text-red-400 font-medium text-sm">Keluar</span>
                 </label>
               </div>
-              <div><label class="text-xs text-slate-500">Tanggal</label>
-                <input type="date" name="date" required value="${tx ? tx.date : new Date().toISOString().split('T')[0]}" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition"></div>
-              <div><label class="text-xs text-slate-500">Nama Item</label>
-                <select name="itemName" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 mb-2 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition">
+              <div><label class="text-xs text-slate-400">Tanggal</label>
+                <input type="date" name="date" required value="${tx ? tx.date : new Date().toISOString().split('T')[0]}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Nama Item</label>
+                <select name="itemName" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white mb-2">
                   <option value="Shuttlecock (Slop)" ${(tx && tx.itemName==='Shuttlecock (Slop)')?'selected':''}>Shuttlecock (Slop)</option>
                   <option value="Air Mineral (Dus)" ${(tx && tx.itemName==='Air Mineral (Dus)')?'selected':''}>Air Mineral (Dus)</option>
                   <option value="Lainnya" ${(!isDefaultItem)?'selected':''}>Lainnya...</option>
                 </select>
-                <input type="text" name="customItemName" value="${!isDefaultItem ? tx.itemName : ''}" placeholder="Jika pilih Lainnya, tulis di sini" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition">
+                <input type="text" name="customItemName" value="${!isDefaultItem ? tx.itemName : ''}" placeholder="Jika pilih Lainnya, tulis di sini" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
               </div>
-              <div><label class="text-xs text-slate-500">Jumlah/Qty</label>
-                <input type="number" name="qty" required value="${tx ? tx.qty : ''}" placeholder="Contoh: 1" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition"></div>
-              <div><label class="text-xs text-slate-500">Keterangan</label>
-                <input type="text" name="description" required value="${tx ? tx.description : ''}" placeholder="Contoh: Dipakai mabar" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 outline-none focus:ring-2 focus:ring-lime-500/30 focus:border-lime-500 transition"></div>
+              <div><label class="text-xs text-slate-400">Jumlah/Qty</label>
+                <input type="number" name="qty" required value="${tx ? tx.qty : ''}" placeholder="Contoh: 1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
+              <div><label class="text-xs text-slate-400">Keterangan</label>
+                <input type="text" name="description" required value="${tx ? tx.description : ''}" placeholder="Contoh: Dipakai mabar" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white"></div>
               <div class="flex space-x-3 pt-2">
-                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-lg transition-colors">Batal</button>
-                <button type="submit" class="flex-1 bg-lime-600 hover:bg-lime-700 text-white p-3 rounded-lg font-medium shadow-sm transition-colors">Simpan</button>
+                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 text-white p-3 rounded-lg">Batal</button>
+                <button type="submit" class="flex-1 bg-orange-500 text-white p-3 rounded-lg font-medium">Simpan</button>
               </div>
             </form>
           </div>
@@ -1082,12 +1155,12 @@
 
       if (months.length === 0) {
         document.getElementById('modal-container').innerHTML = `
-          <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
-            <div class="bg-white w-full max-w-sm rounded-2xl p-6 border border-slate-200 shadow-2xl modal-enter text-center">
+          <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
+            <div class="bg-slate-800 w-full max-w-sm rounded-2xl p-6 border border-slate-700 shadow-2xl modal-enter text-center">
               <div class="text-4xl mb-3">📅</div>
-              <p class="text-slate-800 font-bold mb-1">Belum Ada Histori</p>
-              <p class="text-slate-500 text-sm mb-4">Catat transaksi pertama untuk mulai melihat histori.</p>
-              <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2 rounded-lg text-sm font-semibold transition-colors">Tutup</button>
+              <p class="text-white font-bold mb-1">Belum Ada Histori</p>
+              <p class="text-slate-400 text-sm mb-4">Catat transaksi pertama untuk mulai melihat histori.</p>
+              <button onclick="closeModal()" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg text-sm font-semibold">Tutup</button>
             </div>
           </div>`;
         if (window.lucide) lucide.createIcons();
@@ -1101,28 +1174,28 @@
         const net = totalIn - totalOut;
         return `
           <button onclick="openHistoriDetail('${m.year}','${m.month}')"
-            class="bg-slate-50 hover:bg-lime-50 border border-slate-200 hover:border-lime-300
+            class="bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600/50 hover:border-orange-500/50
                    rounded-xl p-3 text-left transition-all">
             <div class="flex justify-between items-center mb-2">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${m.year}</span>
-              <span class="text-xs text-slate-400">${m.txs.length} txn</span>
+              <span class="text-xs text-slate-500">${m.txs.length} txn</span>
             </div>
-            <div class="text-slate-800 font-bold text-lg leading-tight">${BULAN_FULL[parseInt(m.month)]}</div>
-            <div class="mt-2 text-xs ${net >= 0 ? 'text-emerald-600' : 'text-red-600'} font-semibold">
+            <div class="text-white font-bold text-lg leading-tight">${BULAN_FULL[parseInt(m.month)]}</div>
+            <div class="mt-2 text-xs ${net >= 0 ? 'text-emerald-400' : 'text-red-400'} font-semibold">
               ${net >= 0 ? '+' : ''}${formatRp(net)}
             </div>
           </button>`;
       }).join('');
 
       document.getElementById('modal-container').innerHTML = `
-        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
-          <div class="bg-white w-full max-w-sm rounded-2xl border border-slate-200 shadow-2xl modal-enter overflow-hidden">
-            <div class="flex justify-between items-center px-5 py-4 border-b border-slate-200">
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeModal()">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl modal-enter overflow-hidden">
+            <div class="flex justify-between items-center px-5 py-4 border-b border-slate-700">
               <div>
-                <h3 class="text-slate-800 font-bold text-base">📅 Histori Kas</h3>
+                <h3 class="text-white font-bold text-base">📅 Histori Kas</h3>
                 <p class="text-slate-400 text-xs mt-0.5">Pilih bulan untuk melihat transaksi</p>
               </div>
-              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl leading-none">✕</button>
             </div>
             <div class="p-4 overflow-y-auto max-h-[70vh]">
               <div class="grid grid-cols-2 gap-2.5">
@@ -1148,50 +1221,50 @@
       const net = totalIn - totalOut;
 
       const txRows = txs.length === 0
-        ? `<p class="text-slate-400 text-sm text-center py-6">Tidak ada transaksi bulan ini.</p>`
+        ? `<p class="text-slate-500 text-sm text-center py-6">Tidak ada transaksi bulan ini.</p>`
         : txs.map(tx => `
-            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+            <div class="bg-slate-700/50 rounded-lg p-3 border border-slate-600/40">
               <div class="flex justify-between items-start">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-200 text-slate-600 capitalize">${tx.category}</span>
-                    <span class="text-xs text-slate-400">${tx.date}</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-600 text-slate-300 capitalize">${tx.category}</span>
+                    <span class="text-xs text-slate-500">${tx.date}</span>
                   </div>
-                  <p class="text-slate-700 text-sm truncate">${tx.description}</p>
+                  <p class="text-slate-200 text-sm truncate">${tx.description}</p>
                 </div>
-                <div class="font-bold text-sm ml-3 whitespace-nowrap ${tx.type === 'in' ? 'text-emerald-600' : 'text-red-600'}">
+                <div class="font-bold text-sm ml-3 whitespace-nowrap ${tx.type === 'in' ? 'text-emerald-400' : 'text-red-400'}">
                   ${tx.type === 'in' ? '+' : '-'}${formatRp(tx.amount)}
                 </div>
               </div>
             </div>`).join('');
 
       document.getElementById('modal-container').innerHTML = `
-        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)openHistoriModal()">
-          <div class="bg-white w-full max-w-sm rounded-2xl border border-slate-200 shadow-2xl modal-enter overflow-hidden">
-            <div class="flex justify-between items-center px-5 py-4 border-b border-slate-200">
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)openHistoriModal()">
+          <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl modal-enter overflow-hidden">
+            <div class="flex justify-between items-center px-5 py-4 border-b border-slate-700">
               <div class="flex items-center gap-2">
-                <button onclick="openHistoriModal()" class="text-slate-400 hover:text-lime-600 text-lg leading-none mr-1">←</button>
+                <button onclick="openHistoriModal()" class="text-slate-400 hover:text-orange-400 text-lg leading-none mr-1">←</button>
                 <div>
-                  <h3 class="text-slate-800 font-bold text-base">${label}</h3>
+                  <h3 class="text-white font-bold text-base">${label}</h3>
                   <p class="text-slate-400 text-xs mt-0.5">${txs.length} transaksi</p>
                 </div>
               </div>
-              <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
+              <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl leading-none">✕</button>
             </div>
 
             <!-- Ringkasan bulan -->
-            <div class="grid grid-cols-3 gap-0 border-b border-slate-200">
-              <div class="px-4 py-3 text-center border-r border-slate-200">
+            <div class="grid grid-cols-3 gap-0 border-b border-slate-700">
+              <div class="px-4 py-3 text-center border-r border-slate-700">
                 <p class="text-xs text-slate-400 mb-1">Pemasukan</p>
-                <p class="text-emerald-600 font-bold text-sm">${formatRp(totalIn)}</p>
+                <p class="text-emerald-400 font-bold text-sm">${formatRp(totalIn)}</p>
               </div>
-              <div class="px-4 py-3 text-center border-r border-slate-200">
+              <div class="px-4 py-3 text-center border-r border-slate-700">
                 <p class="text-xs text-slate-400 mb-1">Pengeluaran</p>
-                <p class="text-red-600 font-bold text-sm">${formatRp(totalOut)}</p>
+                <p class="text-red-400 font-bold text-sm">${formatRp(totalOut)}</p>
               </div>
               <div class="px-4 py-3 text-center">
                 <p class="text-xs text-slate-400 mb-1">Net</p>
-                <p class="${net >= 0 ? 'text-emerald-600' : 'text-red-600'} font-bold text-sm">${net >= 0 ? '+' : ''}${formatRp(net)}</p>
+                <p class="${net >= 0 ? 'text-emerald-400' : 'text-red-400'} font-bold text-sm">${net >= 0 ? '+' : ''}${formatRp(net)}</p>
               </div>
             </div>
 
@@ -1222,6 +1295,7 @@
         <div style="width: 100%; max-width: 100%; margin: 0 auto; background: #fff; color: #000; box-sizing: border-box;">
 
           <div style="text-align: center; border-bottom: 2pt solid #0f172a; padding-bottom: 12px; margin-bottom: 20px;">
+            <img src="logocuanmabarv3.png" alt="Logo" style="width:42px;height:42px;object-fit:contain;margin-bottom:4px;" onerror="this.style.display='none'">
             <h1 style="font-family: 'norwester', sans-serif; font-size: 24pt; margin: 0; color: #0f172a; line-height:1.1;">CUANMABAR</h1>
             <p style="font-size: 10pt; color: #475569; margin: 5px 0 0 0; font-weight: 700; uppercase; tracking-wider">
               LAPORAN KEUANGAN & MUTASI INVENTORI KOMUNITAS — HOSTMABAR.COM
@@ -1362,14 +1436,14 @@
 </script>
 
 <!-- LOGOUT MODAL -->
-<div id="logoutModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-5" style="background:rgba(15,23,42,.5);">
-  <div class="relative" style="background:#ffffff;border:1.5px solid #E2E8F0;border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(15,23,42,.2);">
+<div id="logoutModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-5" style="background:rgba(0,0,0,.75);">
+  <div class="relative" style="background:#1e1e28;border:1.5px solid #38384a;border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);">
     <div style="font-size:38px;margin-bottom:10px;">&#128682;</div>
-    <div style="font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;color:#1E293B;margin-bottom:6px;">Keluar dari CUANMABAR?</div>
-    <div style="font-size:13px;color:#64748b;margin-bottom:22px;line-height:1.5;">Sesi kamu akan diakhiri dan<br>kembali ke halaman login.</div>
+    <div style="font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;color:#f0f0f8;margin-bottom:6px;">Keluar dari CUANMABAR?</div>
+    <div style="font-size:13px;color:#9898b0;margin-bottom:22px;line-height:1.5;">Sesi kamu akan diakhiri dan<br>kembali ke halaman login.</div>
     <div style="display:flex;gap:10px;">
-      <button onclick="tutupLogoutModal()" style="flex:1;padding:11px;background:#F1F5F9;border:1.5px solid #E2E8F0;border-radius:10px;color:#1E293B;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Batal</button>
-      <button onclick="konfirmasiLogout()" style="flex:1;padding:11px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(239,68,68,.3);">Ya, Keluar</button>
+      <button onclick="tutupLogoutModal()" style="flex:1;padding:11px;background:#2a2a36;border:1.5px solid #38384a;border-radius:10px;color:#e0e0ee;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Batal</button>
+      <button onclick="konfirmasiLogout()" style="flex:1;padding:11px;background:linear-gradient(135deg,#E8174A,#c0102e);border:none;border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(232,23,74,.4);">Ya, Keluar</button>
     </div>
   </div>
 </div>
