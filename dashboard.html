@@ -146,7 +146,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
     <div class="stat"><b id="statMembers">0</b><span>Jumlah pemain di Data Member</span></div>
     <div class="stat"><b id="statMatches">0</b><span>Match tercatat (sesi berjalan)</span></div>
     <div class="stat"><b id="statSesi">0 / 4</b><span>Sesi aktif sekarang</span></div>
-    <div class="stat kas"><b><a href="loginpage.html#cuanmabar" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none">Akses CUANMABAR ↗</a></b><span>Kelola kas komunitas — buka di tab baru</span></div>
+    <div class="stat kas"><b><a id="cuanmabarLink" href="cuanmabar.html" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none">Akses CUANMABAR ↗</a></b><span id="cuanmabarSub">Kelola kas komunitas — buka di tab baru</span></div>
   </div>
 
   <!-- SPORT TABS -->
@@ -211,7 +211,45 @@ function getSession(){
     else if(paket.includes('trial')) badgeEl.textContent = '⚡ TRIAL';
     else badgeEl.textContent = '⚡ PRO';
   }
+
+  // CUANMABAR khusus Trial & Pro — Mabar Plus tetap lihat linknya (transparansi
+  // produk) tapi diarahkan ke notifikasi upgrade, bukan ke halaman login CUANMABAR.
+  const cmAllowed = paket.includes('trial') || paket.includes('pro') || paket.includes('admin') || paket.includes('cuanmabar');
+  const cmLink = document.getElementById('cuanmabarLink');
+  if(cmLink && !cmAllowed){
+    cmLink.removeAttribute('href');
+    cmLink.removeAttribute('target');
+    cmLink.style.opacity = '.55'; cmLink.style.cursor = 'not-allowed';
+    cmLink.onclick = (e)=>{ e.preventDefault(); showCuanmabarUpgradeModal(); };
+    const subEl = document.getElementById('cuanmabarSub');
+    if(subEl) subEl.textContent = 'Khusus paket Trial & Pro — upgrade untuk membuka';
+  }
 })();
+
+// ═══ Notifikasi upgrade — muncul saat paket Plus klik Akses CUANMABAR ═══
+function showCuanmabarUpgradeModal(){
+  let el = document.getElementById('cmUpgradeModal');
+  if(el) el.remove();
+  el = document.createElement('div');
+  el.id = 'cmUpgradeModal';
+  el.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(30,41,59,.45);display:flex;align-items:center;justify-content:center;padding:20px';
+  el.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:32px 26px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(30,41,59,.25)">
+      <div style="font-size:44px;margin-bottom:10px">💰</div>
+      <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:6px">CUANMABAR belum termasuk paket Plus</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6">
+        Upgrade ke <strong style="color:#B45309">Mabar Pro</strong> untuk kelola kas komunitas, iuran, dan inventori langsung dari CUANMABAR.
+      </div>
+      <a href="https://wa.me/62895704016969?text=Halo+Koben%2C+saya+mau+upgrade+ke+Mabar+Pro+untuk+akses+CUANMABAR"
+         target="_blank" rel="noopener"
+         style="display:block;padding:13px 20px;border-radius:12px;font-weight:800;font-size:14px;color:#fff;text-decoration:none;margin-bottom:10px;background:linear-gradient(90deg,var(--orange),var(--pink));box-shadow:0 4px 16px rgba(232,23,74,.3)">
+        💬 Upgrade via WhatsApp
+      </a>
+      <button onclick="document.getElementById('cmUpgradeModal').remove()" style="background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px 18px;border-radius:12px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;width:100%">Nanti saja</button>
+    </div>`;
+  el.addEventListener('click', (e)=>{ if(e.target === el) el.remove(); });
+  document.body.appendChild(el);
+}
 function logout(){
   if(!confirm('Keluar dari HOSTMABAR? Sesi kamu akan diakhiri dan kembali ke halaman login.')) return;
   localStorage.removeItem('hm_session');
