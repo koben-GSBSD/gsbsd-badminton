@@ -456,6 +456,13 @@
     }
 
     // ── SIMPAN KE SUPABASE (upsert) ──────────────────────────────────────────
+    // CATATAN PENTING: tabel `cuanmabar_data` punya CHECK constraint di kolom data_type yang
+    // membatasi nilai yang boleh masuk (awalnya cuma 'kas'/'members'/'inv'). Upsert multi-baris
+    // di Postgres itu satu statement — kalau SATU baris melanggar constraint, SELURUH baris
+    // dalam upsert itu gagal disimpan (termasuk kas/members/inv yang sah). 'importLog' (dipakai
+    // fitur Import Sesi) sengaja dipisah ke upsert TERSENDIRI di sini supaya kalau constraint-nya
+    // belum diupdate di sisi database, kas/members/inv tetap aman tersimpan — importLog saja yang
+    // gagal (dan gagalnya diam-diam, tidak menampilkan error ke host, karena bukan data krusial).
     async function saveCloud() {
       if (!_userId || _isSyncing) return;
       _isSyncing = true;
@@ -463,10 +470,9 @@
       try {
         const now = new Date().toISOString();
         const rows = [
-          { user_id: _userId, data_type: 'kas',       payload: transactions,     updated_at: now },
-          { user_id: _userId, data_type: 'members',   payload: members,          updated_at: now },
-          { user_id: _userId, data_type: 'inv',       payload: inventoryTxs,     updated_at: now },
-          { user_id: _userId, data_type: 'importLog', payload: importedSessions, updated_at: now },
+          { user_id: _userId, data_type: 'kas',     payload: transactions,  updated_at: now },
+          { user_id: _userId, data_type: 'members', payload: members,      updated_at: now },
+          { user_id: _userId, data_type: 'inv',     payload: inventoryTxs, updated_at: now },
         ];
         const { error } = await db
           .from('cuanmabar_data')
@@ -478,6 +484,15 @@
         showSyncStatus('⚠️ Gagal sync — ' + (e.message || 'cek koneksi'), '#ef4444');
       } finally {
         _isSyncing = false;
+      }
+      // Upsert terpisah, best-effort — lihat catatan di atas fungsi ini.
+      try {
+        await db.from('cuanmabar_data').upsert(
+          { user_id: _userId, data_type: 'importLog', payload: importedSessions, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id,data_type' }
+        );
+      } catch(e) {
+        console.warn('saveCloud (importLog) gagal — cek CHECK constraint cuanmabar_data_data_type_check:', e.message);
       }
     }
 
