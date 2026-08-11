@@ -186,15 +186,35 @@
     const defaultInv = [];
 
     // ── SUPABASE CLIENT ────────────────────────────────────────────────────
+    // Dibungkus try/catch: kalau CDN supabase-js gagal dimuat (sinyal lemah di GOR),
+    // window.supabase bisa undefined — tanpa guard ini, baris createClient() di bawah
+    // akan melempar error TOP-LEVEL yang menghentikan SELURUH script ini seketika
+    // (termasuk render UI dari data lokal) → halaman tampak blank total. Dengan guard
+    // ini, db jadi null dan loadCloudData()/saveCloud() sudah dicek untuk itu, jadi
+    // sisa halaman (nav, tab, dsb) tetap bisa jalan dalam mode degradasi.
     const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
     const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
-    const db = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: false
-      }
-    });
+    let db = null;
+    try {
+      db = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false
+        }
+      });
+    } catch(e) {
+      console.error('Gagal inisialisasi Supabase (CDN gagal dimuat?):', e.message);
+    }
+
+    // Race promise vs timeout — supaya pengecekan sesi yang menggantung (sinyal lemah,
+    // bukan benar-benar offline) tidak membuat UI menunggu tanpa batas.
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+      ]);
+    }
 
     // ── DATA STATE ──────────────────────────────────────────────────────────
     // localStorage key HARUS per-user agar data tidak tercampur antar komunitas
@@ -221,29 +241,44 @@
     }
 
     // ── LOAD DATA DARI SUPABASE + CEK LANGGANAN ────────────────────────────
+    // CATATAN PENTING (fix sinyal lemah GOR, Agustus 2026): dulu fungsi ini redirect
+    // paksa ke loginpage.html (dan MENGHAPUS hm_session!) kalau db.auth.getSession()/
+    // refreshSession() gagal dapat sesi — padahal kegagalan itu SERING cuma karena
+    // koneksi lambat/putus-nyambung di GOR, bukan user benar-benar logout. Halaman ini
+    // sudah punya session guard sendiri di <head> yang memvalidasi hm_session SECARA
+    // LOKAL (tanpa network) sebelum body ini sempat dirender — jadi kalau kita sampai
+    // di sini, hm_session SUDAH PASTI valid. Redirect paksa berdasar status Supabase
+    // yang ambigu (bisa jadi cuma sinyal lemah) itulah yang menyebabkan akun PRO
+    // "tidak bisa membuka CUANMABAR" padahal paketnya sah. Sekarang: kegagalan cek
+    // sesi cloud tidak lagi menghapus sesi lokal / redirect — cukup tampilkan data
+    // tersimpan terakhir (offline) + banner "Coba Lagi".
     async function loadCloudData() {
+      hideRetryBanner();
+      if (!db) { loadOfflineFallback('📶 Gagal terhubung — cek koneksi lalu coba lagi'); return; }
       try {
         showSyncStatus('⏳ Memuat...', '#f59e0b');
 
-        // Coba ambil session dari Supabase Auth
+        // Coba ambil session dari Supabase Auth (biasanya dari cache lokal supabase-js,
+        // tanpa network — kecuali access token sudah kedaluwarsa dan wajib di-refresh).
         let { data: { session } } = await db.auth.getSession();
 
-        // Fallback: jika session null, coba refresh token
+        // Fallback: kalau belum dapat session sama sekali, coba refresh (network call).
+        // Dibatasi timeout supaya tidak menggantung lama di sinyal lemah.
         if (!session) {
-          const { data: refreshed } = await db.auth.refreshSession();
-          session = refreshed?.session || null;
+          try {
+            const { data: refreshed } = await withTimeout(db.auth.refreshSession(), 8000);
+            session = refreshed?.session || null;
+          } catch(e) {
+            console.warn('refreshSession gagal/timeout (sinyal lemah?):', e.message);
+          }
         }
 
         if (!session) {
-          showSyncStatus('⚠️ Sesi habis — login ulang', '#ef4444');
-          setTimeout(() => {
-            localStorage.removeItem('hm_session');
-            localStorage.removeItem('hm_komunitas');
-            window.location.href = 'loginpage.html';
-          }, 2000);
+          loadOfflineFallback('📶 Sinyal lemah — gagal verifikasi sesi, pakai data tersimpan terakhir');
           return;
         }
         _userId = session.user.id;
+        localStorage.setItem('cm_last_uid', _userId); // cadangan untuk fallback offline berikutnya
 
         // ── Set localStorage key per-user (namespace isolation) ───────────
         // Setiap komunitas punya key sendiri → tidak bisa tercampur
@@ -325,21 +360,50 @@
         fetchClosedSessions().then(() => { if (activeTab === 'iuran') updateUI(); });
       } catch(e) {
         console.error('loadCloudData:', e.message);
-        // Offline — load dari localStorage user ini jika ada
-        if (_lsKey.kas !== 'cm_kas') { // userId sudah diketahui
-          const lsKas = localStorage.getItem(_lsKey.kas);
-          const lsMem = localStorage.getItem(_lsKey.mem);
-          const lsInv = localStorage.getItem(_lsKey.inv);
-          const lsImp = localStorage.getItem(_lsKey.imp);
-          if (lsKas) transactions      = JSON.parse(lsKas);
-          if (lsMem) members           = JSON.parse(lsMem);
-          if (lsInv) inventoryTxs      = JSON.parse(lsInv);
-          if (lsImp) importedSessions  = JSON.parse(lsImp);
-        }
-        showSyncStatus('📶 Offline — data lokal', '#f59e0b');
-        updateUI();
+        loadOfflineFallback('📶 Offline — data lokal');
       }
     }
+
+    // ── FALLBACK OFFLINE (sinyal lemah / gagal konek) ────────────────────────
+    // Dipakai setiap kali loadCloudData() gagal memastikan sesi cloud. TIDAK PERNAH
+    // menghapus hm_session atau redirect — hanya menampilkan data localStorage
+    // terakhir (kalau ada) plus banner retry. _userId diambil dari 'cm_last_uid'
+    // (disimpan setiap kali login cloud berhasil) supaya cache per-user tetap bisa
+    // dibaca walau kali ini gagal dapat session dari Supabase sama sekali.
+    function loadOfflineFallback(statusMsg) {
+      const uid = _userId || localStorage.getItem('cm_last_uid');
+      if (uid) {
+        _userId = uid;
+        _lsKey = { kas:'cm_kas_'+uid, mem:'cm_mem_'+uid, inv:'cm_inv_'+uid, imp:'cm_imp_'+uid };
+        const lsKas = localStorage.getItem(_lsKey.kas);
+        const lsMem = localStorage.getItem(_lsKey.mem);
+        const lsInv = localStorage.getItem(_lsKey.inv);
+        const lsImp = localStorage.getItem(_lsKey.imp);
+        if (lsKas) transactions      = JSON.parse(lsKas);
+        if (lsMem) members           = JSON.parse(lsMem);
+        if (lsInv) inventoryTxs      = JSON.parse(lsInv);
+        if (lsImp) importedSessions  = JSON.parse(lsImp);
+      }
+      showSyncStatus(statusMsg, '#f59e0b');
+      showRetryBanner();
+      updateUI();
+    }
+
+    function showRetryBanner() {
+      if (document.getElementById('cmRetryBanner')) return;
+      const b = document.createElement('div');
+      b.id = 'cmRetryBanner';
+      b.style.cssText = 'position:sticky;top:0;z-index:30;background:#78350f;color:#fef3c7;font-size:11px;font-weight:700;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:Nunito,sans-serif;';
+      b.innerHTML = `<span>📶 Sinyal lemah — data yang tampil adalah data tersimpan terakhir.</span>
+        <button onclick="retryLoadCloudData()" style="background:#f59e0b;color:#1e1e28;border:none;border-radius:6px;padding:4px 10px;font-weight:800;font-size:11px;white-space:nowrap;flex-shrink:0;">🔄 Coba Lagi</button>`;
+      const main = document.getElementById('app-content');
+      if (main && main.parentNode) main.parentNode.insertBefore(b, main);
+    }
+    function hideRetryBanner() {
+      const b = document.getElementById('cmRetryBanner');
+      if (b) b.remove();
+    }
+    function retryLoadCloudData() { hideRetryBanner(); loadCloudData(); }
 
     // ── BADGE LANGGANAN DI HEADER ────────────────────────────────────────────
     function renderSubscriptionBadge(prof) {
