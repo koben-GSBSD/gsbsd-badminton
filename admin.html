@@ -45,7 +45,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .admin-badge{font-size:11px;font-weight:800;background:rgba(15,118,110,.1);color:var(--teal);padding:6px 12px;border-radius:99px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .btn-logout{padding:8px 16px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--text)}
 
-.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.sortable-th{cursor:pointer;user-select:none;white-space:nowrap}
+.sortable-th:hover{color:var(--orange)}
+.sort-ind{font-size:10px;color:var(--orange)}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center}
 .stat-val{font-size:24px;font-weight:800}
 .stat-label{font-size:11.5px;color:var(--muted);font-weight:600}
@@ -140,7 +143,6 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
     <div class="stat-card"><div class="stat-val" id="s-aktif">—</div><div class="stat-label">Aktif</div></div>
     <div class="stat-card"><div class="stat-val" id="s-expired">—</div><div class="stat-label">Expired</div></div>
     <div class="stat-card"><div class="stat-val" id="s-expiring">—</div><div class="stat-label">Exp &lt; 30 hari</div></div>
-    <div class="stat-card"><div class="stat-val" id="s-cuanmabar">—</div><div class="stat-label">CUANMABAR</div></div>
   </div>
 
   <div class="tabs">
@@ -176,8 +178,13 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
       <div style="overflow-x:auto;">
         <table class="tbl">
           <thead><tr>
-            <th>Komunitas</th><th>Paket</th><th>Redirect</th>
-            <th>Aktif Sejak</th><th>Kadaluarsa</th><th>Status</th><th>Aksi</th>
+            <th class="sortable-th" onclick="sortTable('username_komunitas')">Komunitas <span class="sort-ind" id="sort-username_komunitas"></span></th>
+            <th class="sortable-th" onclick="sortTable('paket_langganan')">Paket <span class="sort-ind" id="sort-paket_langganan"></span></th>
+            <th class="sortable-th" onclick="sortTable('redirect_url')">Redirect <span class="sort-ind" id="sort-redirect_url"></span></th>
+            <th class="sortable-th" onclick="sortTable('tanggal_aktif')">Aktif Sejak <span class="sort-ind" id="sort-tanggal_aktif"></span></th>
+            <th class="sortable-th" onclick="sortTable('tanggal_kedaluarsa')">Kadaluarsa <span class="sort-ind" id="sort-tanggal_kedaluarsa"></span></th>
+            <th class="sortable-th" onclick="sortTable('status')">Status <span class="sort-ind" id="sort-status"></span></th>
+            <th>Aksi</th>
           </tr></thead>
           <tbody id="userTableBody"></tbody>
         </table>
@@ -198,7 +205,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
         <div class="kpi"><div class="kpi-val" id="i-growth">—</div><div class="kpi-label">Vs Bulan Lalu</div></div>
         <div class="kpi"><div class="kpi-val" id="i-retention">—</div><div class="kpi-label">Retensi &gt;30 Hari</div></div>
       </div>
-      <div class="insight-note">Retensi = persentase komunitas yang sudah aktif lebih dari 30 hari sejak <code>tanggal_aktif</code> dan belum kedaluwarsa — sinyal pelanggan yang bertahan, bukan sekadar coba-coba.</div>
+      <div class="insight-note">Retensi = persentase komunitas yang sudah aktif lebih dari 30 hari sejak <code>tanggal_aktif</code> dan belum kedaluwarsa — sinyal pelanggan yang bertahan, bukan sekadar coba-coba. Seluruh angka di tab Insight dihitung khusus dari pengguna HOSTMABAR (Trial/Plus/Pro) — akun CUANMABAR &amp; superadmin tidak dihitung.</div>
     </div>
 
     <div class="insight-grid">
@@ -208,6 +215,9 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
       </div>
       <div class="card">
         <div class="card-title">📦 Distribusi Paket</div>
+        <select class="field-input" id="paket-period" style="max-width:220px;margin-bottom:12px;" onchange="renderInsight()">
+          <option value="all">Semua (saat ini)</option>
+        </select>
         <div id="i-paket"></div>
       </div>
     </div>
@@ -217,7 +227,6 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
       <div class="kpi-row">
         <div class="kpi"><div class="kpi-val" id="i-matches">—</div><div class="kpi-label">Pertandingan Tercatat</div></div>
         <div class="kpi"><div class="kpi-val" id="i-players">—</div><div class="kpi-label">Pemain Dikelola Lintas Komunitas</div></div>
-        <div class="kpi"><div class="kpi-val" id="i-trx">—</div><div class="kpi-label">Transaksi Kas CUANMABAR Tercatat</div></div>
       </div>
       <div class="insight-note">Angka ini menunjukkan aplikasi benar-benar dipakai rutin (bukan cuma akun terdaftar tidak aktif) — sering jadi bukti paling meyakinkan untuk investor dibanding jumlah signup saja.</div>
     </div>
@@ -330,10 +339,9 @@ function showLoginErr(msg) {
 // DATA LOAD
 // ═══════════════════════════════════════════════════════════════════
 let allProfiles = [];
-let allCuanData = [];
 let allTrackerData = [];
 
-async function loadAll() { await Promise.all([loadProfiles(), loadCuanData(), loadTrackerData()]); }
+async function loadAll() { await Promise.all([loadProfiles(), loadTrackerData()]); }
 
 async function loadProfiles() {
   const { data, error } = await db.from('profiles')
@@ -342,14 +350,6 @@ async function loadProfiles() {
   if (error) { showToast('❌ Gagal load profiles: ' + error.message); return; }
   allProfiles = data || [];
   renderStats(); renderUserTable(); renderExtSelect(); renderInsight();
-}
-
-async function loadCuanData() {
-  const { data, error } = await db.from('cuanmabar_data')
-    .select('user_id,data_type,payload,updated_at');
-  if (error) { showToast('❌ Gagal load cuanmabar_data: ' + error.message); return; }
-  allCuanData = data || [];
-  renderInsight();
 }
 
 async function loadTrackerData() {
@@ -385,17 +385,51 @@ function renderStats() {
     const diff = (new Date(p.tanggal_kedaluarsa) - today) / 86400000;
     return diff >= 0 && diff <= 30;
   }).length;
-  const cuanCount = allProfiles.filter(p => p.paket_langganan === 'cuanmabar').length;
   document.getElementById('s-total').textContent     = total;
   document.getElementById('s-aktif').textContent     = total - expired;
   document.getElementById('s-expired').textContent   = expired;
   document.getElementById('s-expiring').textContent  = expiring;
-  document.getElementById('s-cuanmabar').textContent = cuanCount;
+}
+
+// ── Sort state Kelola User ──
+let sortCol = null, sortDir = 1;
+function statusRank(p) {
+  if (!p.tanggal_kedaluarsa) return 999999; // No Expiry = paling tidak mendesak
+  const d = new Date(p.tanggal_kedaluarsa); d.setHours(23,59,59);
+  return Math.ceil((d - Date.now()) / 86400000);
+}
+function sortTable(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  renderUserTable();
+}
+function updateSortIndicators() {
+  ['username_komunitas','paket_langganan','redirect_url','tanggal_aktif','tanggal_kedaluarsa','status'].forEach(c => {
+    const el = document.getElementById('sort-' + c);
+    if (!el) return;
+    el.textContent = (c === sortCol) ? (sortDir === 1 ? '▲' : '▼') : '';
+  });
 }
 
 function renderUserTable() {
   const q = (document.getElementById('searchUser').value || '').toLowerCase();
-  const rows = allProfiles.filter(p => !q || (p.username_komunitas || '').toLowerCase().includes(q));
+  let rows = allProfiles.filter(p => !q || (p.username_komunitas || '').toLowerCase().includes(q));
+  if (sortCol) {
+    rows = [...rows].sort((a, b) => {
+      let va, vb;
+      if (sortCol === 'status') { va = statusRank(a); vb = statusRank(b); }
+      else if (sortCol === 'tanggal_aktif' || sortCol === 'tanggal_kedaluarsa') {
+        va = a[sortCol] ? new Date(a[sortCol]).getTime() : -Infinity;
+        vb = b[sortCol] ? new Date(b[sortCol]).getTime() : -Infinity;
+      } else {
+        va = (a[sortCol] || '').toString().toLowerCase();
+        vb = (b[sortCol] || '').toString().toLowerCase();
+      }
+      if (va < vb) return -1 * sortDir;
+      if (va > vb) return 1 * sortDir;
+      return 0;
+    });
+  }
+  updateSortIndicators();
   const tbody = document.getElementById('userTableBody');
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Tidak ada data</td></tr>';
@@ -435,11 +469,36 @@ function monthLabel(key) {
   const names = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   return names[parseInt(m) - 1] + ' ' + y.slice(2);
 }
+function monthLabelFull(key) {
+  const [y, m] = key.split('-');
+  const names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  return names[parseInt(m) - 1] + ' ' + y;
+}
+
+// Fokus insight = pengguna HOSTMABAR saja (Trial/Plus/Pro). Akun CUANMABAR
+// (produk terpisah) & superadmin dikeluarkan supaya angka investor akurat.
+function isHostmabarUser(p) { return p.paket_langganan !== 'cuanmabar' && p.paket_langganan !== 'admin'; }
+function paketBucket(raw) {
+  if (raw === 'trial') return 'Trial';
+  if (raw === 'planbasic') return 'Plus';
+  if (raw === 'mabarpro' || raw === 'pro') return 'Pro';
+  return null;
+}
+
+function populatePaketPeriodSelect(withDate) {
+  const sel = document.getElementById('paket-period');
+  const prevVal = sel.value || 'all';
+  const keys = Array.from(new Set(withDate.map(p => monthKey(new Date(p.tanggal_aktif))))).sort().reverse();
+  sel.innerHTML = '<option value="all">Semua (saat ini)</option>' +
+    keys.map(k => `<option value="${k}">Pendaftar ${monthLabelFull(k)}</option>`).join('');
+  if ([...sel.options].some(o => o.value === prevVal)) sel.value = prevVal;
+}
 
 function renderInsight() {
   if (!allProfiles.length) return;
   const now = new Date();
-  const withDate = allProfiles.filter(p => p.tanggal_aktif);
+  const hostmabarProfiles = allProfiles.filter(isHostmabarUser);
+  const withDate = hostmabarProfiles.filter(p => p.tanggal_aktif);
 
   // ── Ringkasan pertumbuhan ──
   const curKey = monthKey(now);
@@ -451,7 +510,7 @@ function renderInsight() {
     ? (newThisMonth > 0 ? '+∞' : '0%')
     : (((newThisMonth - newPrevMonth) / newPrevMonth) * 100).toFixed(0) + '%';
 
-  document.getElementById('i-total').textContent = allProfiles.length;
+  document.getElementById('i-total').textContent = hostmabarProfiles.length;
   document.getElementById('i-newmonth').textContent = newThisMonth;
   const gEl = document.getElementById('i-growth');
   gEl.textContent = (newThisMonth >= newPrevMonth ? '↑ ' : '↓ ') + growthPct;
@@ -480,34 +539,35 @@ function renderInsight() {
       <div class="bar-val">${counts[idx]}</div>
     </div>`).join('');
 
-  // ── Distribusi paket ──
-  const paketCounts = {};
-  allProfiles.forEach(p => { const k = p.paket_langganan || '—'; paketCounts[k] = (paketCounts[k] || 0) + 1; });
-  const maxPaket = Math.max(1, ...Object.values(paketCounts));
-  document.getElementById('i-paket').innerHTML = Object.entries(paketCounts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, count]) => `
+  // ── Distribusi paket: hanya 3 — Trial, Plus, Pro. Bisa difilter per
+  // bulan-tahun pendaftaran lewat dropdown, atau "Semua" untuk kondisi saat ini.
+  populatePaketPeriodSelect(withDate);
+  const period = document.getElementById('paket-period').value || 'all';
+  const basePool = period === 'all' ? hostmabarProfiles : withDate.filter(p => monthKey(new Date(p.tanggal_aktif)) === period);
+  const bucketOrder = ['Trial', 'Plus', 'Pro'];
+  const bucketCounts = { Trial: 0, Plus: 0, Pro: 0 };
+  basePool.forEach(p => { const b = paketBucket(p.paket_langganan); if (b) bucketCounts[b]++; });
+  const maxPaket = Math.max(1, ...Object.values(bucketCounts));
+  document.getElementById('i-paket').innerHTML = bucketOrder.map(label => `
     <div class="bar-row">
-      <div class="bar-label" style="text-transform:capitalize">${esc(label)}</div>
-      <div class="bar-track"><div class="bar-fill teal" style="width:${(count / maxPaket) * 100}%"></div></div>
-      <div class="bar-val">${count}</div>
+      <div class="bar-label">${label}</div>
+      <div class="bar-track"><div class="bar-fill teal" style="width:${(bucketCounts[label] / maxPaket) * 100}%"></div></div>
+      <div class="bar-val">${bucketCounts[label]}</div>
     </div>`).join('');
 
   // ── Bukti pemakaian nyata ──
+  const hostmabarIds = new Set(hostmabarProfiles.map(p => p.id));
   let totalMatches = 0, totalPlayers = 0;
   allTrackerData.forEach(row => {
+    if (!hostmabarIds.has(row.user_id)) return;
     const payload = row.payload || {};
     const stateBySport = payload.stateBySport || {};
     Object.values(stateBySport).forEach(s => { totalMatches += (s && s.matches ? s.matches.length : 0); });
     totalPlayers += Array.isArray(payload.members) ? payload.members.length : 0;
   });
-  const totalTrx = allCuanData
-    .filter(d => d.data_type === 'kas')
-    .reduce((sum, d) => sum + (Array.isArray(d.payload) ? d.payload.length : 0), 0);
 
   document.getElementById('i-matches').textContent = totalMatches.toLocaleString('id-ID');
   document.getElementById('i-players').textContent = totalPlayers.toLocaleString('id-ID');
-  document.getElementById('i-trx').textContent = totalTrx.toLocaleString('id-ID');
 }
 
 // ═══════════════════════════════════════════════════════════════════
