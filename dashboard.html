@@ -478,6 +478,69 @@ async function loadDashboardData(){
 }
 
 loadDashboardData();
+
+// ═══════════════════════════════════════════════════════════════════
+// BANNER AJAKAN INSTALL PWA — muncul sekali setelah login berhasil,
+// khusus device yang belum pasang HOSTMABAR ke layar utama.
+// Android/Chrome: pakai event beforeinstallprompt → 1 tap langsung
+// keluar kotak konfirmasi instal asli dari browser.
+// iPhone/Safari: tidak ada API untuk memicu instal otomatis (dibatasi
+// Apple) — jadi cuma bisa tampilkan panduan singkat "Share → Add to
+// Home Screen", tidak bisa auto-trigger.
+// ═══════════════════════════════════════════════════════════════════
+(function pwaInstallBanner(){
+  // Sudah dibuka sebagai app terpasang (mode standalone) → tidak perlu ajak lagi
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) return;
+  // User sudah pernah menutup banner ini → jangan ganggu lagi tiap login
+  if (localStorage.getItem('hm_install_dismissed')) return;
+
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS/.test(ua);
+
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner('android');
+  });
+
+  // iOS Safari tidak trigger event apapun — tampilkan panduan manual langsung
+  if (isIOS && isSafari) {
+    setTimeout(() => showInstallBanner('ios'), 900);
+  }
+
+  function showInstallBanner(kind){
+    if (document.getElementById('pwaInstallBanner')) return;
+    const b = document.createElement('div');
+    b.id = 'pwaInstallBanner';
+    b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9998;max-width:460px;margin:0 auto;background:#fff;border:1.5px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 28px rgba(30,41,59,.15);font-family:"Plus Jakarta Sans",system-ui,sans-serif';
+    const text = kind === 'ios'
+      ? '<b style="font-size:13px">📲 Pasang HOSTMABAR di layar utama</b><div style="font-size:12px;color:var(--muted);margin-top:2px">Tap <b>Share</b> (kotak panah ke atas) di Safari → <b>Add to Home Screen</b></div>'
+      : '<b style="font-size:13px">📲 Pasang HOSTMABAR sebagai aplikasi</b><div style="font-size:12px;color:var(--muted);margin-top:2px">Akses lebih cepat, tanpa address bar</div>';
+    b.innerHTML = `
+      <div style="flex:1">${text}</div>
+      ${kind === 'android' ? '<button id="pwaInstallBtn" style="background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff;border:none;border-radius:10px;padding:9px 14px;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">Pasang</button>' : ''}
+      <button id="pwaInstallClose" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0">✕</button>
+    `;
+    document.body.appendChild(b);
+    document.getElementById('pwaInstallClose').onclick = () => {
+      localStorage.setItem('hm_install_dismissed', '1');
+      b.remove();
+    };
+    if (kind === 'android') {
+      document.getElementById('pwaInstallBtn').onclick = async () => {
+        b.remove();
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') localStorage.setItem('hm_install_dismissed', '1');
+        deferredPrompt = null;
+      };
+    }
+  }
+})();
 </script>
 </body>
 </html>
