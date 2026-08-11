@@ -1,0 +1,25 @@
+{
+  "name": "HOSTMABAR",
+  "short_name": "HOSTMABAR",
+  "description": "Platform manajemen sesi mabar untuk komunitas olahraga",
+  "start_url": "/mabarpro.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F8FAFC",
+  "theme_color": "#F7941D",
+  "icons": [
+    {
+      "src": "/Logohostmabarv3.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/Logohostmabarv3.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
