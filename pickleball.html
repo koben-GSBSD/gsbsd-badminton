@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pickleball — HOSTMABAR</title>
 <meta name="description" content="Queue engine untuk paddle stacking, skoring tradisional & rally scoring, plus leaderboard komunitas.">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F7941D">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="/pwa-register.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -12,7 +17,7 @@
 --orange:#F7941D;--pink:#E8174A;--accent:#E11D48;--radius:16px;--shadow:0 4px 24px rgba(30,41,59,.06)}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overscroll-behavior-y:contain}
 .container{max-width:1120px;margin:0 auto;padding:0 24px}
 section{padding:72px 0}
 h2{font-size:clamp(24px,3.5vw,32px);font-weight:800;letter-spacing:-.02em}
@@ -108,9 +113,9 @@ footer a{color:var(--muted)}
       <h2>Dirancang untuk cara pickleball dimainkan</h2>
     </div>
     <div class="feature-grid">
-      <div class="feature-card"><div class="icon">🔁</div><h3>Queue Engine Open Play</h3><p>Membuat antrian game otomatis dan adil — Host mengatur semuanya secara adil.</p></div>
-      <div class="feature-card"><div class="icon">🎯</div><h3>Skoring Flexibel</h3><p>Pencatatan skor/poin Host bebas menentukan, tinggal dicatat tanpa ribet!</p></div>
-      <div class="feature-card"><div class="icon">⚡</div><h3>Mexicano or Americano</h3><p>Host memilih dan pemain bermain tanpa ragu</p></div>
+      <div class="feature-card"><div class="icon">🔁</div><h3>Queue Engine Open Play</h3><p>Antrean paddle otomatis dan adil — pain point terbesar host open play, beres.</p></div>
+      <div class="feature-card"><div class="icon">🎯</div><h3>Skoring Tradisional</h3><p>Game ke-11 menang selisih 2 (opsi 15/21 untuk final). Hanya tim serve yang dapat poin.</p></div>
+      <div class="feature-card"><div class="icon">⚡</div><h3>Rally Scoring</h3><p>Format provisional rulebook USA Pickleball 2026 — siapa pun pemenang rally dapat poin.</p></div>
       <div class="feature-card"><div class="icon">🏆</div><h3>Leaderboard & Skill Tier</h3><p>Peringkat dan level pemain komunitas, sama seperti modul badminton.</p></div>
     </div>
   </div>
@@ -137,8 +142,8 @@ footer a{color:var(--muted)}
       <h2>Format yang didukung</h2>
     </div>
     <div class="fmt-list">
-      <div class="fmt"><div class="dot"></div><div><b>Ganda / Double</b><span>Format mabar standar — mayoritas ganda.</span></div></div>
-      <div class="fmt"><div class="dot"></div><div><b>Rally scoring 11/15/21</b><span>Pilihan format sistem poin menyesuaikan setiap komunitas.</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Tradisional ke-11</b><span>Menang selisih 2; validasi skor akhir otomatis.</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Rally scoring 11/15/21</b><span>Pilihan format saat buka sesi, sesuai aturan resmi 2026.</span></div></div>
       <div class="fmt"><div class="dot"></div><div><b>Mode Turnamen Knock-out</b><span>Bagan gugur untuk event komunitas (Mabar Pro).</span></div></div>
     </div>
   </div>
