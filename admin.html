@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>HOSTMABAR — Admin Panel v2</title>
+<title>HOSTMABAR — Superadmin Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -21,8 +21,8 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 /* ── LOGIN ── */
 .login-gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
 .login-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(30,41,59,.08);text-align:center}
-.login-box .logo{font-weight:800;font-size:22px;margin-bottom:4px}
-.login-box .logo span{background:linear-gradient(90deg,var(--orange),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.login-box .logo{display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px}
+.login-box .logo img{height:38px;width:auto;display:block}
 .login-box h2{font-size:17px;font-weight:800;margin:14px 0 2px}
 .login-box p{font-size:13px;color:var(--muted);margin-bottom:20px}
 .login-err{display:none;background:#FEF2F2;color:var(--red);border:1px solid #FECACA;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600;margin-bottom:14px}
@@ -37,8 +37,8 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 /* ── APP ── */
 .app{max-width:1120px;margin:0 auto;padding:24px}
 .header{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
-.header .logo{font-weight:800;font-size:20px}
-.header .logo span{background:linear-gradient(90deg,var(--orange),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.header .logo{display:inline-flex;align-items:center}
+.header .logo img{height:32px;width:auto;display:block}
 .header-text h1{font-size:17px;font-weight:800}
 .header-text p{font-size:12px;color:var(--muted)}
 .header-right{margin-left:auto;display:flex;gap:10px;align-items:center}
@@ -66,7 +66,6 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .badge-cuanmabar{background:rgba(8,145,178,.1);color:var(--cyan)}
 .badge-trial{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
 
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
 .field-label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}
 .form-actions{display:flex;gap:10px}
 .btn{padding:11px 20px;border:none;border-radius:11px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
@@ -85,7 +84,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:#fff;padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;transition:transform .25s;z-index:110;max-width:90vw}
 .toast.show{transform:translateX(-50%) translateY(0)}
-@media(max-width:700px){.stats-bar{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.stats-bar{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -93,25 +92,25 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 <!-- ── LOGIN (Supabase Auth — tanpa password hardcoded) ── -->
 <div class="login-gate" id="loginGate">
   <div class="login-box">
-    <div class="logo">HOST<span>MABAR</span></div>
-    <h2>🔐 ADMIN PANEL v2</h2>
-    <p>Login dengan akun admin Supabase</p>
+    <div class="logo"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
+    <h2>🔐 SUPERADMIN PANEL</h2>
+    <p>Login dengan akun superadmin</p>
     <div class="login-err" id="loginErr"></div>
     <input type="email" class="field-input" id="adminEmail" placeholder="Email admin" autocomplete="username">
     <input type="password" class="field-input" id="adminPass" placeholder="Password" autocomplete="current-password"
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn-enter" id="btnLogin" onclick="doLogin()">Masuk</button>
-    <div class="login-note">Akses data dijaga RLS di server — bukan gate di browser.</div>
+    <div class="login-note">Akses data dijaga RLS di server, dikunci ke satu akun superadmin — bukan gate di browser.</div>
   </div>
 </div>
 
 <!-- ── MAIN APP ── -->
 <div class="app" id="mainApp" style="display:none;">
   <div class="header">
-    <div class="logo">HOST<span>MABAR</span></div>
+    <div class="logo"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
     <div class="header-text">
-      <h1>ADMIN PANEL v2</h1>
-      <p>HOSTMABAR Management System</p>
+      <h1>SUPERADMIN PANEL</h1>
+      <p>HOSTMABAR Monitoring &amp; Manajemen Kedaluwarsa</p>
     </div>
     <div class="header-right">
       <div class="admin-badge" id="adminWho">🔑 ADMIN</div>
@@ -129,76 +128,11 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('users',this)">👥 Kelola User</button>
-    <button class="tab" onclick="switchTab('add',this)">➕ Tambah User</button>
     <button class="tab" onclick="switchTab('cuandata',this)">💰 Data CUANMABAR</button>
   </div>
 
   <!-- TAB: USERS -->
   <div id="tab-users" class="section active">
-    <div class="card">
-      <div class="card-title">👥 Semua User Komunitas</div>
-      <input class="field-input search-box" id="searchUser" placeholder="🔍 Cari komunitas..." oninput="renderUserTable()">
-      <div style="overflow-x:auto;">
-        <table class="tbl">
-          <thead><tr>
-            <th>Komunitas</th><th>Paket</th><th>Redirect</th>
-            <th>Aktif Sejak</th><th>Kadaluarsa</th><th>Status</th><th>Aksi</th>
-          </tr></thead>
-          <tbody id="userTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: TAMBAH USER -->
-  <div id="tab-add" class="section">
-    <div class="card">
-      <div class="card-title">➕ Tambah / Update User</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
-        Buat akun baru di Supabase Auth (Studio → Authentication → Add user), lalu isi form ini untuk set profil komunitas.
-      </p>
-      <div class="form-grid">
-        <div>
-          <label class="field-label">User ID (dari Supabase Auth)</label>
-          <input class="field-input" id="f-uid" placeholder="uuid dari Auth → Users">
-        </div>
-        <div>
-          <label class="field-label">Nama Komunitas</label>
-          <input class="field-input" id="f-nama" placeholder="GSBSD BSD City">
-        </div>
-        <div>
-          <label class="field-label">Paket Langganan</label>
-          <select class="field-input" id="f-paket">
-            <option value="trial">Trial</option>
-            <option value="planbasic">Mabar Basic/Plus</option>
-            <option value="mabarpro">Mabar Pro</option>
-            <option value="cuanmabar">CUANMABAR</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Redirect URL</label>
-          <select class="field-input" id="f-redirect">
-            <option value="trialversion.html">trialversion.html</option>
-            <option value="planbasic.html">planbasic.html</option>
-            <option value="mabarpro.html">mabarpro.html</option>
-            <option value="cuanmabar.html">cuanmabar.html</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Tanggal Aktif</label>
-          <input class="field-input" id="f-aktif" type="date">
-        </div>
-        <div>
-          <label class="field-label">Tanggal Kadaluarsa</label>
-          <input class="field-input" id="f-exp" type="date">
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" onclick="upsertUser()">💾 Simpan Profil</button>
-        <button class="btn btn-secondary" onclick="clearForm()">🗑 Kosongkan</button>
-      </div>
-    </div>
-
     <div class="card">
       <div class="card-title">⚡ Perpanjang Cepat</div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
@@ -217,6 +151,23 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
         </div>
         <button class="btn btn-primary" onclick="extendUser()">⚡ Perpanjang</button>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👥 Semua User Komunitas</div>
+      <input class="field-input search-box" id="searchUser" placeholder="🔍 Cari komunitas..." oninput="renderUserTable()">
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th>Komunitas</th><th>Paket</th><th>Redirect</th>
+            <th>Aktif Sejak</th><th>Kadaluarsa</th><th>Status</th><th>Aksi</th>
+          </tr></thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px;">
+        Panel ini khusus monitoring &amp; ubah tanggal kedaluwarsa. Pembuatan akun baru tetap lewat Supabase Studio → Authentication → Add user, lalu isi barisnya lewat Studio → Table Editor → profiles.
+      </p>
     </div>
   </div>
 
@@ -252,10 +203,13 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
     </select>
     <label class="field-label">Redirect URL</label>
     <select class="field-input" id="edit-redirect">
-      <option value="trialversion.html">trialversion.html</option>
-      <option value="planbasic.html">planbasic.html</option>
-      <option value="mabarpro.html">mabarpro.html</option>
+      <option value="dashboard.html">dashboard.html (Halaman pertama V3 — Rekomendasi)</option>
+      <option value="tracker.html">tracker.html (langsung ke tracker, lewati dashboard)</option>
       <option value="cuanmabar.html">cuanmabar.html</option>
+      <option value="trialversion.html">trialversion.html (lama)</option>
+      <option value="planbasic.html">planbasic.html (lama)</option>
+      <option value="mabarpro.html">mabarpro.html (lama)</option>
+      <option value="mabarprov2.html">mabarprov2.html (lama)</option>
     </select>
     <label class="field-label">Tanggal Kadaluarsa</label>
     <input class="field-input" id="edit-exp" type="date">
@@ -271,8 +225,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // CONFIG — publishable key AMAN diletakkan di sini.
-// Keamanan sesungguhnya = RLS policy di server (lihat admin-v2-policies.sql).
-// TIDAK ADA password hardcoded di file ini.
+// Keamanan sesungguhnya = RLS policy di server, dikunci ke SATU UID
+// superadmin (lihat migration remove_self_update_on_profiles +
+// migrate_admin_policies_to_new_superadmin). TIDAK ADA password
+// hardcoded di file ini.
 // ═══════════════════════════════════════════════════════════════════
 const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
 const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
@@ -299,12 +255,16 @@ async function doLogin() {
 }
 
 async function enterApp(user) {
-  // Uji akses admin: kalau RLS menolak / hasil kosong padahal bukan admin,
-  // tampilkan pesan yang jelas alih-alih dashboard kosong.
-  const { data, error } = await db.from('profiles').select('id').limit(1);
-  if (error) {
+  // Uji akses admin YANG BENAR: coba baca baris milik AKUN LAIN (bukan diri
+  // sendiri). Akun komunitas biasa cuma boleh baca barisnya sendiri (RLS),
+  // jadi query ini akan kosong (tanpa error) untuk mereka. Hanya UID
+  // superadmin yang punya policy admin_select_all_profiles untuk melihat
+  // baris siapa pun — jadi query ini cuma berhasil MENGEMBALIKAN DATA untuk
+  // superadmin yang sesungguhnya, bukan cuma "berhasil tanpa error".
+  const { data, error } = await db.from('profiles').select('id').neq('id', user.id).limit(1);
+  if (error || !data || data.length === 0) {
     await db.auth.signOut();
-    showLoginErr('Akun ini tidak punya akses admin (RLS menolak). Pastikan policy admin sudah dipasang untuk UID akun ini.');
+    showLoginErr('Akun ini bukan superadmin — akses ditolak.');
     return;
   }
   document.getElementById('adminWho').textContent = '🔑 ' + (user.email || 'ADMIN');
@@ -443,33 +403,8 @@ function renderCuanTable() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// CRUD
+// CRUD (khusus monitoring + ubah tanggal kedaluwarsa — bukan tambah user)
 // ═══════════════════════════════════════════════════════════════════
-async function upsertUser() {
-  const uid   = document.getElementById('f-uid').value.trim();
-  const nama  = document.getElementById('f-nama').value.trim();
-  const paket = document.getElementById('f-paket').value;
-  const redir = document.getElementById('f-redirect').value;
-  const aktif = document.getElementById('f-aktif').value;
-  const exp   = document.getElementById('f-exp').value;
-
-  if (!uid || !nama) { showToast('⚠️ User ID dan Nama wajib diisi'); return; }
-
-  const { error } = await db.from('profiles').upsert({
-    id: uid,
-    username_komunitas: nama,
-    paket_langganan: paket,
-    redirect_url: redir,
-    tanggal_aktif: aktif || null,
-    tanggal_kedaluarsa: exp || null
-  }, { onConflict: 'id' });
-
-  if (error) { showToast('❌ Gagal: ' + error.message); return; }
-  showToast('✅ Profil berhasil disimpan!');
-  clearForm();
-  await loadProfiles();
-}
-
 async function extendUser() {
   const uid    = document.getElementById('ext-uid').value;
   const months = parseInt(document.getElementById('ext-dur').value);
@@ -527,21 +462,12 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
-  if (name === 'add') loadAll();
-}
-function clearForm() {
-  ['f-uid','f-nama','f-aktif','f-exp'].forEach(id => document.getElementById(id).value = '');
 }
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3200);
 }
-
-// Init date fields
-document.getElementById('f-aktif').value = new Date().toISOString().split('T')[0];
-const exp1yr = new Date(); exp1yr.setFullYear(exp1yr.getFullYear() + 1);
-document.getElementById('f-exp').value = exp1yr.toISOString().split('T')[0];
 </script>
 </body>
 </html>
