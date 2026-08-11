@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Masuk — HOSTMABAR</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F7941D">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="/pwa-register.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Supabase SDK -->
@@ -17,7 +22,7 @@
   --badminton:#0F766E; --padel:#9333EA; --pickleball:#E11D48; --tennis:#84754E;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:grid;grid-template-columns:1fr 1fr;overscroll-behavior-y:contain}
 
 /* ===== Panel kiri (brand) ===== */
 .brand-panel{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:48px;background:
@@ -165,10 +170,20 @@ input:focus{outline:none;border-color:var(--accent,var(--pink));background:#fff}
 // ════════════════════════════════════════════════════════════════════
 const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
 const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
-const { createClient } = window.supabase;
-const db = createClient(SUPA_URL, SUPA_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
-});
+// Dibungkus try/catch: kalau CDN supabase-js gagal dimuat (sinyal lemah), jangan
+// sampai createClient() melempar error top-level yang menghentikan sisa script ini
+// (termasuk semua handler tombol) — halaman login jadi benar-benar tidak responsif
+// tanpa pesan apapun. Dengan db = null, doLogin() (sudah try/catch) akan menampilkan
+// pesan error yang jelas ke user alih-alih halaman diam saja.
+let db = null;
+try {
+  const { createClient } = window.supabase;
+  db = createClient(SUPA_URL, SUPA_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  });
+} catch(e) {
+  console.error('Gagal inisialisasi Supabase (CDN gagal dimuat?):', e.message);
+}
 
 // ════════════════════════════════════════════════════════════════════
 // HELPER UI — per-tab (hm/cm)
@@ -241,6 +256,10 @@ async function doLogin(which){
 
   if (!email || !password) {
     showError(which, 'Email dan password harus diisi.');
+    return;
+  }
+  if (!db) {
+    showError(which, '📶 Gagal terhubung ke server — cek koneksi internet lalu muat ulang halaman.');
     return;
   }
 
