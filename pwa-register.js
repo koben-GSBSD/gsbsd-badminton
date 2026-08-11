@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════
 // HOSTMABAR — Registrasi Service Worker + banner "Versi baru tersedia".
 // Sengaja file terpisah, dipanggil dengan satu baris di tiap halaman:
-//   <script src="pwa-register.js"></script>
+//   <script src="/pwa-register.js" defer></script>
 // supaya tidak perlu duplikasi kode ini di 9 file HTML.
 // ═══════════════════════════════════════════════════════════════════
 (function () {
