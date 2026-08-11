@@ -22,7 +22,7 @@
 // di GitHub. Ini yang memicu service worker membuang cache lama dan
 // mengambil versi baru — kalau lupa dinaikkan, user bisa terus melihat
 // versi lama walau filenya sudah diganti di server.
-const CACHE_VERSION = 'hostmabar-v1';
+const CACHE_VERSION = 'hostmabar-v2';
 
 const APP_SHELL = [
   '/tracker.html',
@@ -34,7 +34,6 @@ const APP_SHELL = [
   '/padel.html',
   '/pickleball.html',
   '/tennis.html',
-  '/pwa-demo.html', // ← HAPUS baris ini saat rollout final; hanya untuk tes dummy Koben
 ];
 
 // ── INSTALL: simpan salinan awal semua halaman ke cache ──────────────────
