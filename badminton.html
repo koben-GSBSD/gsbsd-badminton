@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Badminton — HOSTMABAR</title>
 <meta name="description" content="Match tracker, skill tier 5 level, play counter, dan leaderboard — dipakai komunitas badminton di berbagai kota setiap minggu.">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F7941D">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="/pwa-register.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -12,7 +17,7 @@
 --orange:#F7941D;--pink:#E8174A;--accent:#0F766E;--radius:16px;--shadow:0 4px 24px rgba(30,41,59,.06)}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overscroll-behavior-y:contain}
 .container{max-width:1120px;margin:0 auto;padding:0 24px}
 section{padding:72px 0}
 h2{font-size:clamp(24px,3.5vw,32px);font-weight:800;letter-spacing:-.02em}
@@ -137,9 +142,9 @@ footer a{color:var(--muted)}
       <h2>Format yang didukung</h2>
     </div>
     <div class="fmt-list">
-      <div class="fmt"><div class="dot"></div><div><b>Ganda / Double</b><span>Format mabar standar — mayoritas ganda, sistem poin menyesuaikan setiap komunitas.</span></div></div>
-      <div class="fmt"><div class="dot"></div><div><b>Praktis & Ringkas </b><span>Membuat antrian game sangat mudah dan tercatat langsung ke leaderboard.</span></div></div>
-      <div class="fmt"><div class="dot"></div><div><b>Mode Turnamen Knock-out</b><span>Bagan gugur dari sesi mabar — jumlah tim & pemain sudah tersistem (Mabar Pro).</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Ganda & tunggal</b><span>Format mabar standar — mayoritas ganda, tunggal tetap didukung.</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Skor akhir 21</b><span>Validasi otomatis: menang selisih 2, maksimal 30. Salah input langsung ketahuan.</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Mode Turnamen Knock-out</b><span>Bagan gugur dari sesi mabar — jumlah tim & pemain bisa diatur (Mabar Pro).</span></div></div>
     </div>
   </div>
 </section>
