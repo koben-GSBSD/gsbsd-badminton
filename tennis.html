@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tennis — HOSTMABAR</title>
-<meta name="description" content="Pilihan Rotasi Pemain — format pendek supaya rotasi pemain tetap jalan dalam sesi 2-3 jam.">
+<meta name="description" content="Pro set dan match tiebreak — format pendek supaya rotasi pemain tetap jalan dalam sesi 2-3 jam.">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F7941D">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="/pwa-register.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -12,7 +17,7 @@
 --orange:#F7941D;--pink:#E8174A;--accent:#84754E;--radius:16px;--shadow:0 4px 24px rgba(30,41,59,.06)}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overscroll-behavior-y:contain}
 .container{max-width:1120px;margin:0 auto;padding:0 24px}
 section{padding:72px 0}
 h2{font-size:clamp(24px,3.5vw,32px);font-weight:800;letter-spacing:-.02em}
@@ -108,8 +113,8 @@ footer a{color:var(--muted)}
       <h2>Dirancang untuk cara tennis dimainkan</h2>
     </div>
     <div class="feature-grid">
-      <div class="feature-card"><div class="icon">⏱️</div><h3>Generator Americano</h3><p>Pasangan berganti tiap ronde, skor kumulatif individu ke 16/21/24/32 poin — otomatis.</p></div>
-      <div class="feature-card"><div class="icon">🎯</div><h3>Skoring Flexibel</h3><p>Pencatatan skor/poin Host bebas menentukan, tinggal dicatat tanpa ribet!</p></div>
+      <div class="feature-card"><div class="icon">⏱️</div><h3>Pro Set 8 Game</h3><p>Match selesai lebih cepat dari format 3 set — pas untuk sesi komunitas.</p></div>
+      <div class="feature-card"><div class="icon">🎯</div><h3>Match Tiebreak ke-10</h3><p>Alternatif tercepat: satu tiebreak panjang menentukan pemenang.</p></div>
       <div class="feature-card"><div class="icon">🔢</div><h3>Play Counter & Rotasi</h3><p>Jumlah main terpantau, giliran adil untuk semua peserta.</p></div>
       <div class="feature-card"><div class="icon">🏆</div><h3>Leaderboard & Rekap</h3><p>Peringkat otomatis + ekspor PDF (Mabar Pro).</p></div>
     </div>
@@ -137,8 +142,8 @@ footer a{color:var(--muted)}
       <h2>Format yang didukung</h2>
     </div>
     <div class="fmt-list">
-      <div class="fmt"><div class="dot"></div><div><b>Ganda / Double</b><span>Format mabar standar — mayoritas ganda.</span></div></div>
-      <div class="fmt"><div class="dot"></div><div><b>Rally Scoring Flexibel</b><span>Pilihan format sistem poin menyesuaikan setiap komunitas.</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Pro set 8 game</b><span>Menang selisih 2, tiebreak di 8-8.</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Match tiebreak ke-10</b><span>Format tercepat untuk rotasi ramai.</span></div></div>
       <div class="fmt"><div class="dot"></div><div><b>Mode Turnamen Knock-out</b><span>Bagan gugur untuk event komunitas (Mabar Pro).</span></div></div>
     </div>
   </div>
