@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Padel — HOSTMABAR</title>
 <meta name="description" content="Generator turnamen sosial paling populer di padel + pencatatan skor set yang praktis untuk mabar.">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F7941D">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="/pwa-register.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -12,7 +17,7 @@
 --orange:#F7941D;--pink:#E8174A;--accent:#9333EA;--radius:16px;--shadow:0 4px 24px rgba(30,41,59,.06)}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overscroll-behavior-y:contain}
 .container{max-width:1120px;margin:0 auto;padding:0 24px}
 section{padding:72px 0}
 h2{font-size:clamp(24px,3.5vw,32px);font-weight:800;letter-spacing:-.02em}
@@ -108,9 +113,9 @@ footer a{color:var(--muted)}
       <h2>Dirancang untuk cara padel dimainkan</h2>
     </div>
     <div class="feature-grid">
-      <div class="feature-card"><div class="icon">🎲</div><h3>Generator Americano</h3><p>Pasangan berganti tiap ronde, merata dan tanpa takut ada pemain tertinggal.</p></div>
+      <div class="feature-card"><div class="icon">🎲</div><h3>Generator Americano</h3><p>Pasangan berganti tiap ronde, skor kumulatif individu ke 16/21/24/32 poin — otomatis.</p></div>
       <div class="feature-card"><div class="icon">🔀</div><h3>Mexicano</h3><p>Ronde berikutnya disusun dari peringkat sementara — makin seimbang makin seru.</p></div>
-      <div class="feature-card"><div class="icon">🥅</div><h3>Skor Set</h3><p>Pencatatan skor/poin Host bebas menentukan, tinggal dicatat tanpa ribet!</p></div>
+      <div class="feature-card"><div class="icon">🥅</div><h3>Skor Set & Golden Point</h3><p>Set 6 game dengan golden point default — rotasi pemain lancar untuk sesi mabar.</p></div>
       <div class="feature-card"><div class="icon">🏆</div><h3>Leaderboard & Skill Tier</h3><p>Peringkat dan level pemain komunitas, terintegrasi lintas sesi.</p></div>
     </div>
   </div>
@@ -137,8 +142,8 @@ footer a{color:var(--muted)}
       <h2>Format yang didukung</h2>
     </div>
     <div class="fmt-list">
-      <div class="fmt"><div class="dot"></div><div><b>Pilihan Rotasi Pemain</b><span>Tersedia Manual - Mexicano - Americano, permainan menjadi lebih seru.</span></div></div>
-      <div class="fmt"><div class="dot"></div><div><b>Pencatatan Skor/Point</b><span>Skor set standar (mis. 6-3, 7-6) atau mode hitung game sederhana.</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Golden point + 1 set</b><span>Default paling praktis untuk mabar — cepat dan tegas di 40-40.</span></div></div>
+      <div class="fmt"><div class="dot"></div><div><b>Set 6 game / games won</b><span>Skor set standar (mis. 6-3, 7-6) atau mode hitung game sederhana.</span></div></div>
       <div class="fmt"><div class="dot"></div><div><b>Mode Turnamen Knock-out</b><span>Bagan gugur untuk event komunitas (Mabar Pro).</span></div></div>
     </div>
   </div>
