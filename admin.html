@@ -84,7 +84,24 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:#fff;padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;transition:transform .25s;z-index:110;max-width:90vw}
 .toast.show{transform:translateX(-50%) translateY(0)}
-@media(max-width:700px){.stats-bar{grid-template-columns:repeat(2,1fr)}}
+
+/* ── Insight ── */
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.insight-grid .card{margin-bottom:0}
+.kpi-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.kpi{flex:1;min-width:130px}
+.kpi-val{font-size:26px;font-weight:800}
+.kpi-val.up{color:var(--teal)}
+.kpi-val.down{color:var(--red)}
+.kpi-label{font-size:11.5px;color:var(--muted);font-weight:600}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bar-label{width:74px;flex-shrink:0;font-size:12px;color:var(--muted);font-weight:700}
+.bar-track{flex:1;height:20px;background:var(--bg);border-radius:6px;overflow:hidden;position:relative}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--pink));border-radius:6px;transition:width .4s ease}
+.bar-fill.teal{background:var(--teal)}
+.bar-val{width:56px;flex-shrink:0;text-align:right;font-size:12px;font-weight:800}
+.insight-note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6}
+@media(max-width:700px){.stats-bar{grid-template-columns:repeat(2,1fr)}.insight-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -128,7 +145,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('users',this)">👥 Kelola User</button>
-    <button class="tab" onclick="switchTab('cuandata',this)">💰 Data CUANMABAR</button>
+    <button class="tab" onclick="switchTab('insight',this)">📊 Insight</button>
   </div>
 
   <!-- TAB: USERS -->
@@ -171,18 +188,38 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
     </div>
   </div>
 
-  <!-- TAB: CUANMABAR -->
-  <div id="tab-cuandata" class="section">
+  <!-- TAB: INSIGHT -->
+  <div id="tab-insight" class="section">
     <div class="card">
-      <div class="card-title">💰 Monitoring Data CUANMABAR</div>
-      <div style="overflow-x:auto;">
-        <table class="tbl">
-          <thead><tr>
-            <th>Komunitas</th><th>Transaksi Kas</th><th>Member</th><th>Inventori</th><th>Update Terakhir</th>
-          </tr></thead>
-          <tbody id="cuanTableBody"></tbody>
-        </table>
+      <div class="card-title">📈 Ringkasan Pertumbuhan</div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-val" id="i-total">—</div><div class="kpi-label">Total Komunitas</div></div>
+        <div class="kpi"><div class="kpi-val" id="i-newmonth">—</div><div class="kpi-label">Baru Bulan Ini</div></div>
+        <div class="kpi"><div class="kpi-val" id="i-growth">—</div><div class="kpi-label">Vs Bulan Lalu</div></div>
+        <div class="kpi"><div class="kpi-val" id="i-retention">—</div><div class="kpi-label">Retensi &gt;30 Hari</div></div>
       </div>
+      <div class="insight-note">Retensi = persentase komunitas yang sudah aktif lebih dari 30 hari sejak <code>tanggal_aktif</code> dan belum kedaluwarsa — sinyal pelanggan yang bertahan, bukan sekadar coba-coba.</div>
+    </div>
+
+    <div class="insight-grid">
+      <div class="card">
+        <div class="card-title">🗓️ Pendaftaran 6 Bulan Terakhir</div>
+        <div id="i-monthly"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📦 Distribusi Paket</div>
+        <div id="i-paket"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✅ Bukti Pemakaian Nyata (Engagement)</div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-val" id="i-matches">—</div><div class="kpi-label">Pertandingan Tercatat</div></div>
+        <div class="kpi"><div class="kpi-val" id="i-players">—</div><div class="kpi-label">Pemain Dikelola Lintas Komunitas</div></div>
+        <div class="kpi"><div class="kpi-val" id="i-trx">—</div><div class="kpi-label">Transaksi Kas CUANMABAR Tercatat</div></div>
+      </div>
+      <div class="insight-note">Angka ini menunjukkan aplikasi benar-benar dipakai rutin (bukan cuma akun terdaftar tidak aktif) — sering jadi bukti paling meyakinkan untuk investor dibanding jumlah signup saja.</div>
     </div>
   </div>
 </div>
@@ -294,8 +331,9 @@ function showLoginErr(msg) {
 // ═══════════════════════════════════════════════════════════════════
 let allProfiles = [];
 let allCuanData = [];
+let allTrackerData = [];
 
-async function loadAll() { await Promise.all([loadProfiles(), loadCuanData()]); }
+async function loadAll() { await Promise.all([loadProfiles(), loadCuanData(), loadTrackerData()]); }
 
 async function loadProfiles() {
   const { data, error } = await db.from('profiles')
@@ -303,7 +341,7 @@ async function loadProfiles() {
     .order('paket_langganan');
   if (error) { showToast('❌ Gagal load profiles: ' + error.message); return; }
   allProfiles = data || [];
-  renderStats(); renderUserTable(); renderExtSelect();
+  renderStats(); renderUserTable(); renderExtSelect(); renderInsight();
 }
 
 async function loadCuanData() {
@@ -311,7 +349,14 @@ async function loadCuanData() {
     .select('user_id,data_type,payload,updated_at');
   if (error) { showToast('❌ Gagal load cuanmabar_data: ' + error.message); return; }
   allCuanData = data || [];
-  renderCuanTable();
+  renderInsight();
+}
+
+async function loadTrackerData() {
+  const { data, error } = await db.from('tracker_data').select('user_id,payload');
+  if (error) { showToast('❌ Gagal load tracker_data: ' + error.message); return; }
+  allTrackerData = data || [];
+  renderInsight();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -379,27 +424,90 @@ function renderExtSelect() {
   ).join('');
 }
 
-function renderCuanTable() {
-  const tbody = document.getElementById('cuanTableBody');
-  const cuanProfiles = allProfiles.filter(p => p.paket_langganan === 'cuanmabar');
-  if (!cuanProfiles.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Belum ada user CUANMABAR</td></tr>';
-    return;
+// ═══════════════════════════════════════════════════════════════════
+// INSIGHT — ringkasan yang bisa dipakai untuk pitch investor: pertumbuhan,
+// retensi, distribusi paket, dan bukti pemakaian nyata (bukan sekadar
+// jumlah akun terdaftar).
+// ═══════════════════════════════════════════════════════════════════
+function monthKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function monthLabel(key) {
+  const [y, m] = key.split('-');
+  const names = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return names[parseInt(m) - 1] + ' ' + y.slice(2);
+}
+
+function renderInsight() {
+  if (!allProfiles.length) return;
+  const now = new Date();
+  const withDate = allProfiles.filter(p => p.tanggal_aktif);
+
+  // ── Ringkasan pertumbuhan ──
+  const curKey = monthKey(now);
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevKey = monthKey(prevDate);
+  const newThisMonth = withDate.filter(p => monthKey(new Date(p.tanggal_aktif)) === curKey).length;
+  const newPrevMonth = withDate.filter(p => monthKey(new Date(p.tanggal_aktif)) === prevKey).length;
+  const growthPct = newPrevMonth === 0
+    ? (newThisMonth > 0 ? '+∞' : '0%')
+    : (((newThisMonth - newPrevMonth) / newPrevMonth) * 100).toFixed(0) + '%';
+
+  document.getElementById('i-total').textContent = allProfiles.length;
+  document.getElementById('i-newmonth').textContent = newThisMonth;
+  const gEl = document.getElementById('i-growth');
+  gEl.textContent = (newThisMonth >= newPrevMonth ? '↑ ' : '↓ ') + growthPct;
+  gEl.className = 'kpi-val ' + (newThisMonth >= newPrevMonth ? 'up' : 'down');
+
+  const retained = withDate.filter(p => {
+    const ageDays = (now - new Date(p.tanggal_aktif)) / 86400000;
+    const notExpired = !p.tanggal_kedaluarsa || new Date(p.tanggal_kedaluarsa) >= now;
+    return ageDays > 30 && notExpired;
+  }).length;
+  document.getElementById('i-retention').textContent =
+    withDate.length ? Math.round((retained / withDate.length) * 100) + '%' : '—';
+
+  // ── Pendaftaran 6 bulan terakhir ──
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(monthKey(d));
   }
-  tbody.innerHTML = cuanProfiles.map(p => {
-    const rows = allCuanData.filter(d => d.user_id === p.id);
-    const kas = rows.find(r => r.data_type === 'kas');
-    const mem = rows.find(r => r.data_type === 'members');
-    const inv = rows.find(r => r.data_type === 'inv');
-    const lastUp = rows.length ? new Date(Math.max(...rows.map(r => new Date(r.updated_at)))).toLocaleString('id-ID') : '—';
-    return `<tr>
-      <td style="font-weight:700;">${esc(p.username_komunitas)}</td>
-      <td style="text-align:center;">${kas ? kas.payload.length : 0} transaksi</td>
-      <td style="text-align:center;">${mem ? mem.payload.length : 0} member</td>
-      <td style="text-align:center;">${inv ? inv.payload.length : 0} item</td>
-      <td style="font-size:12px;color:var(--muted)">${lastUp}</td>
-    </tr>`;
-  }).join('');
+  const counts = months.map(k => withDate.filter(p => monthKey(new Date(p.tanggal_aktif)) === k).length);
+  const maxCount = Math.max(1, ...counts);
+  document.getElementById('i-monthly').innerHTML = months.map((k, idx) => `
+    <div class="bar-row">
+      <div class="bar-label">${monthLabel(k)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(counts[idx] / maxCount) * 100}%"></div></div>
+      <div class="bar-val">${counts[idx]}</div>
+    </div>`).join('');
+
+  // ── Distribusi paket ──
+  const paketCounts = {};
+  allProfiles.forEach(p => { const k = p.paket_langganan || '—'; paketCounts[k] = (paketCounts[k] || 0) + 1; });
+  const maxPaket = Math.max(1, ...Object.values(paketCounts));
+  document.getElementById('i-paket').innerHTML = Object.entries(paketCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, count]) => `
+    <div class="bar-row">
+      <div class="bar-label" style="text-transform:capitalize">${esc(label)}</div>
+      <div class="bar-track"><div class="bar-fill teal" style="width:${(count / maxPaket) * 100}%"></div></div>
+      <div class="bar-val">${count}</div>
+    </div>`).join('');
+
+  // ── Bukti pemakaian nyata ──
+  let totalMatches = 0, totalPlayers = 0;
+  allTrackerData.forEach(row => {
+    const payload = row.payload || {};
+    const stateBySport = payload.stateBySport || {};
+    Object.values(stateBySport).forEach(s => { totalMatches += (s && s.matches ? s.matches.length : 0); });
+    totalPlayers += Array.isArray(payload.members) ? payload.members.length : 0;
+  });
+  const totalTrx = allCuanData
+    .filter(d => d.data_type === 'kas')
+    .reduce((sum, d) => sum + (Array.isArray(d.payload) ? d.payload.length : 0), 0);
+
+  document.getElementById('i-matches').textContent = totalMatches.toLocaleString('id-ID');
+  document.getElementById('i-players').textContent = totalPlayers.toLocaleString('id-ID');
+  document.getElementById('i-trx').textContent = totalTrx.toLocaleString('id-ID');
 }
 
 // ═══════════════════════════════════════════════════════════════════
