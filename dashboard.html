@@ -16,7 +16,7 @@
   --accent:var(--badminton);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:60px}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:60px;overscroll-behavior-y:contain}
 .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
 
 /* ── Top bar ── */
@@ -183,10 +183,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 // ═══ Metadata statis per cabang (label/ikon/format) — BUKAN data pemain ═══
 const SPORT_META = {
-  badminton:  { nama:'Badminton',  icon:'logobadminton.png',  accent:'var(--badminton)',  formats:['Ganda','Manual','Leaderboard'] },
-  pickleball: { nama:'Pickleball', icon:'logopickleball.png', accent:'var(--pickleball)', formats:['Ganda','Americano','Queue open play'] },
-  padel:      { nama:'Padel',      icon:'logopadel.png',      accent:'var(--padel)',      formats:['Ganda','Americano','Leaderboard'] },
-  tennis:     { nama:'Tennis',     icon:'logotennis.png',     accent:'var(--tennis)',     formats:['Ganda','Americano','Queue open play'] }
+  badminton:  { nama:'Badminton',  icon:'logobadminton.png',  accent:'var(--badminton)',  formats:['Ganda','Tunggal','Skor 21 (selisih 2)'] },
+  pickleball: { nama:'Pickleball', icon:'logopickleball.png', accent:'var(--pickleball)', formats:['Tradisional ke-11','Rally scoring 11/15/21','Queue open play'] },
+  padel:      { nama:'Padel',      icon:'logopadel.png',      accent:'var(--padel)',      formats:['Golden point + 1 set','Americano','Mexicano'] },
+  tennis:     { nama:'Tennis',     icon:'logotennis.png',     accent:'var(--tennis)',     formats:['Pro set 8 game','Match tiebreak ke-10'] }
 };
 let SPORTS = {};
 let current = 'badminton';
@@ -430,9 +430,18 @@ function bukaTracker(){ location.href = 'tracker.html?sport=' + current; }
 // ═══════════════════════════════════════════════════════════════════
 const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
 const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
-const dbData = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
-  auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:false }
-});
+// Dibungkus try/catch: kalau CDN supabase-js gagal dimuat (sinyal lemah), jangan
+// sampai createClient() melempar error top-level yang menghentikan sisa script ini —
+// loadDashboardData() di bawah sudah try/catch dan aman jalan dengan dbData = null
+// (tetap menampilkan state kosong yang sudah dirender duluan, lihat komentarnya).
+let dbData = null;
+try {
+  dbData = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+    auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:false }
+  });
+} catch(e) {
+  console.error('Gagal inisialisasi Supabase (CDN gagal dimuat?):', e.message);
+}
 
 async function loadDashboardData(){
   // Render dulu dengan state kosong supaya UI langsung tampil (tidak nge-blank).
