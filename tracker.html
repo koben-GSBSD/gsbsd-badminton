@@ -17,7 +17,7 @@
   --green:#16A34A; --red:#DC2626; --accent:var(--badminton);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:70px}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:70px;overscroll-behavior-y:contain}
 .wrap{max-width:860px;margin:0 auto;padding:0 16px}
 
 /* ── Strip navigasi cabang ── */
@@ -578,6 +578,14 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <div style="font-size:13px;font-weight:800;margin-bottom:8px">📇 Peserta Turnamen (pasangan)</div>
       <div style="margin-bottom:8px"><label>Pemain 1</label><select id="tP1" onchange="cekTambahPasangan()"><option value="">— Pilih Pemain —</option></select></div>
       <div><label>Pemain 2</label><select id="tP2" onchange="cekTambahPasangan()"><option value="">— Pilih Pemain —</option></select></div>
+      <div id="tPasanganConfirm" style="display:none;margin-top:12px;padding:12px;border:1.5px dashed var(--orange);border-radius:12px;background:rgba(247,148,29,.06)">
+        <div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:4px">PASANGAN DIPILIH</div>
+        <div id="tPasanganPreviewText" style="font-size:14px;font-weight:800;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn btn-secondary btn-sm" style="flex:1" onclick="batalPasangan()">✕ Batal</button>
+          <button type="button" class="btn btn-primary btn-sm" style="flex:1" onclick="submitPasangan()">✅ Submit Pemain</button>
+        </div>
+      </div>
       <div id="tEntriesList" style="margin-top:14px"></div>
     </div>
 
@@ -769,9 +777,22 @@ function saveAppData(){
 // ═══════════════════════════════════════════════════════════════════
 const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
 const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
-const dbSync = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
-});
+// PENTING (fix blank page sinyal lemah GOR, Agustus 2026): dibungkus try/catch.
+// Kalau CDN supabase-js gagal dimuat (sinyal lemah), window.supabase bisa undefined —
+// tanpa guard ini, createClient() melempar error TOP-LEVEL di sini yang menghentikan
+// SELURUH script tracker.html seketika, PADAHAL baris ini dieksekusi SEBELUM
+// loadAppData()/render awal dari localStorage di bawah — jadi crash di sini berarti
+// halaman gagal render sama sekali (blank), bukan cuma gagal sync online. Dengan
+// dbSync = null, syncToCloud()/initCloudSync() (sudah try/catch) otomatis jatuh ke
+// mode "Offline — data lokal" seperti biasa, dan render lokal tetap jalan normal.
+let dbSync = null;
+try {
+  dbSync = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  });
+} catch(e) {
+  console.error('Gagal inisialisasi Supabase (CDN gagal dimuat?):', e.message);
+}
 let _cloudUserId = null;
 let _cloudSyncing = false;
 let _cloudSaveTimer = null;
@@ -810,14 +831,24 @@ function syncToCloud(){
   }, 600);
 }
 
+// Race promise vs timeout — supaya cek sesi yang menggantung (sinyal lemah, bukan
+// benar-benar offline) tidak membuat badge "Sinkronisasi…" macet tanpa batas waktu.
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+  ]);
+}
+
 // Dipanggil setelah render awal (dari data lokal) supaya UI langsung tampil cepat —
 // begitu sesi cloud & data server dapat dipastikan, UI di-refresh ulang dengan data cloud.
 async function initCloudSync(){
   try{
+    if(!dbSync){ showSyncBadge('📶 Offline — data lokal', 'var(--muted)'); return; }
     showSyncBadge('⏳ Sinkronisasi…', '#F59E0B');
-    let { data:{ session } } = await dbSync.auth.getSession();
+    let { data:{ session } } = await withTimeout(dbSync.auth.getSession(), 8000);
     if(!session){
-      const { data: refreshed } = await dbSync.auth.refreshSession();
+      const { data: refreshed } = await withTimeout(dbSync.auth.refreshSession(), 8000);
       session = refreshed?.session || null;
     }
     if(!session){ showSyncBadge('📶 Offline — data lokal', 'var(--muted)'); return; }
@@ -1292,14 +1323,37 @@ function populateTPesertaSelects(){
     sel.innerHTML=html;
   });
 }
+// Sebelum (lama): begitu Pemain 2 dipilih, pasangan LANGSUNG masuk ke Peserta Terdaftar
+// tanpa konfirmasi — Koben laporkan ini bikin bingung ("pasangan langsung muncul").
+// Sekarang: memilih Pemain 1 & 2 cuma menampilkan PREVIEW + tombol "Submit Pemain" —
+// pasangan baru benar-benar ditambahkan setelah host klik submit (lihat submitPasangan()).
 function cekTambahPasangan(){
   const a=document.getElementById('tP1').value, b=document.getElementById('tP2').value;
-  if(!a||!b) return;
-  if(a===b){ showToast('⚠️ Pemain tidak boleh sama'); document.getElementById('tP2').value=''; return; }
+  const confirmBox = document.getElementById('tPasanganConfirm');
+  if(!a||!b){ confirmBox.style.display='none'; return; }
+  if(a===b){
+    showToast('⚠️ Pemain tidak boleh sama');
+    document.getElementById('tP2').value='';
+    confirmBox.style.display='none';
+    return;
+  }
+  document.getElementById('tPasanganPreviewText').textContent = a+' & '+b;
+  confirmBox.style.display='block';
+}
+function submitPasangan(){
+  const a=document.getElementById('tP1').value, b=document.getElementById('tP2').value;
+  if(!a||!b||a===b) return; // jaga-jaga kalau state sempat berubah sebelum diklik
   tournament.entries.push({id:Date.now()+Math.random(), name:a+' & '+b, members:[a,b]});
   showToast('✅ Pasangan '+a+' & '+b+' ditambahkan');
+  document.getElementById('tPasanganConfirm').style.display='none';
   renderTPeserta(); // reset & repopulate select (member yang sudah dipakai otomatis hilang dari pilihan)
   saveAppData();
+}
+function batalPasangan(){
+  document.getElementById('tP1').value='';
+  document.getElementById('tP2').value='';
+  document.getElementById('tPasanganConfirm').style.display='none';
+  populateTPesertaSelects();
 }
 function removeTEntry(id){
   tournament.entries = tournament.entries.filter(e=>e.id!==id);
