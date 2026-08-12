@@ -195,6 +195,9 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 .round-label{position:absolute;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center}
 .match-card{position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-sizing:border-box;z-index:1}
 .match-card.bye-card{background:rgba(22,163,74,.05);border-style:dashed;border-color:rgba(22,163,74,.35)}
+.t3-wrap{margin-top:20px;padding-top:16px;border-top:1.5px dashed var(--border)}
+.t3-label{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+.t3-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;max-width:300px}
 @media(max-width:480px){
   .match-card{padding:9px 11px}
   .match-slot{font-size:13px}
@@ -559,11 +562,17 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <button class="modal-close" onclick="closeShare()">✕</button>
     </div>
     <canvas id="shareCanvas" style="width:100%;border-radius:14px;border:1px solid var(--border);display:block"></canvas>
+    <div id="shareNav" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin-top:12px">
+      <button class="btn btn-secondary btn-sm" onclick="shareNavGo(-1)">← Sebelumnya</button>
+      <span id="shareNavLabel" style="font-size:11.5px;font-weight:800;color:var(--muted);text-align:center"></span>
+      <button class="btn btn-secondary btn-sm" onclick="shareNavGo(1)">Berikutnya →</button>
+    </div>
     <div class="modal-actions" style="margin-top:14px">
       <button class="btn btn-secondary" onclick="closeShare()">Tutup</button>
       <button class="btn btn-primary" onclick="downloadShare()">⬇️ Download PNG</button>
     </div>
-    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">1080×1350 (4:5) — pas untuk feed & story Instagram</p>
+    <button id="shareDownloadAllBtn" class="btn btn-secondary btn-sm" style="display:none;width:100%;margin-top:8px" onclick="downloadAllShareSlides()">⬇️ Download Semua Halaman</button>
+    <p id="shareRatioNote" style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">1080×1350 (4:5) — pas untuk feed &amp; story Instagram</p>
   </div>
 </div>
 
@@ -609,6 +618,10 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
         </div>
         <div id="tManualGroupList" style="display:none;margin-top:12px"></div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;cursor:pointer;margin:14px 0;padding:10px 12px;border:1.5px dashed var(--border);border-radius:12px">
+        <input type="checkbox" id="tThirdPlace" onchange="tournament.thirdPlace=this.checked" style="width:16px;height:16px;accent-color:var(--orange);flex-shrink:0">
+        <span>🥉 Sertakan perebutan Juara 3 <span style="font-weight:600;color:var(--muted)">— dua yang kalah di semifinal saling bertanding</span></span>
+      </label>
       <button class="btn btn-primary mt" style="width:100%" onclick="bikinBagan()">🎲 Buat Bagan Turnamen</button>
       <p style="font-size:11.5px;color:var(--muted);margin-top:10px" id="tMinNote"></p>
     </div>
@@ -618,6 +631,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       <div id="tBracketContent"></div>
       <div class="mt" style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-pdf btn-sm" style="flex:1;min-width:160px" onclick="printTurnamen()">🖨️ Print / Download PDF</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1;min-width:160px" onclick="shareTurnamen()">📸 Share ke Instagram</button>
         <button class="btn btn-secondary btn-sm" style="color:var(--red);border-color:rgba(220,38,38,.3)" onclick="resetTurnamen()">🗑️ Reset Turnamen & Buat Baru</button>
       </div>
     </div>
@@ -926,7 +940,8 @@ const TFORMATS = {
 function freshTournament(){
   return { format:null, entries:[], numGroups:2, qualifyPerGroup:2, groupMode:'random', manualAssign:{},
     groups:[], bracket:[], hasPrelim:false,
-    qualPrelimCount:0, qualDirectEntries:[], editing:null, editingGrup:null, stage:'setup' };
+    qualPrelimCount:0, qualDirectEntries:[], editing:null, editingGrup:null, stage:'setup',
+    thirdPlace:false, thirdPlaceMatch:null, editingT3:false };
 }
 const tournamentBySport = __appData.tournamentBySport;
 
@@ -1522,7 +1537,29 @@ function buatKnockout(entries, opts){
   tournament.qualPrelimCount = extra;
   tournament.qualDirectEntries = directEntries;
   tournament.editing = null;
+  tournament.thirdPlaceMatch = null; // reset — dihitung ulang begitu semifinal selesai
+  tournament.editingT3 = false;
   tournament.stage = 'knockout';
+}
+// Indeks babak SEMIFINAL (selalu 2 match tepat sebelum FINAL, apa pun ada/tidaknya
+// Babak Kualifikasi di depan) — dipakai untuk memicu match Juara 3. -1 kalau belum
+// ada semifinal (bagan terlalu kecil, langsung final).
+function semifinalRIdx(){ return tournament.bracket.length - 2; }
+// Begitu KEDUA match semifinal sudah ada pemenangnya, siapkan match Juara 3 dari
+// pihak yang KALAH. Kalau pesertanya tidak berubah (semifinal cuma diedit ulang tapi
+// hasil kalah/menang tetap sama), skor Juara 3 yang sudah diisi TIDAK direset.
+function updateThirdPlaceMatch(){
+  const r = semifinalRIdx();
+  if(r<0 || !tournament.bracket[r] || tournament.bracket[r].length!==2) return;
+  const [m0,m1] = tournament.bracket[r];
+  if(!m0.winner || !m1.winner){ tournament.thirdPlaceMatch=null; return; }
+  const loser0 = m0.winner.name===m0.a.name ? m0.b : m0.a;
+  const loser1 = m1.winner.name===m1.a.name ? m1.b : m1.a;
+  const existing = tournament.thirdPlaceMatch;
+  const samePeserta = existing && existing.a && existing.b &&
+    ((existing.a.name===loser0.name && existing.b.name===loser1.name) ||
+     (existing.a.name===loser1.name && existing.b.name===loser0.name));
+  if(!samePeserta) tournament.thirdPlaceMatch = { a:loser0, b:loser1, scoreA:null, scoreB:null, winner:null };
 }
 function roundName(total, idx, hasPrelim){
   if(hasPrelim && idx===0) return 'BABAK KUALIFIKASI';
@@ -1566,10 +1603,57 @@ function simpanSkorBagan(r,i){
     slot[pos]=m.winner;
     if(winnerChanged) invalidateForward(r+1,nextIdx);
   }
+  // Kalau babak ini SEMIFINAL dan opsi Juara 3 aktif, siapkan/perbarui match
+  // perebutan tempat ketiga dari pihak yang kalah (lihat updateThirdPlaceMatch()).
+  if(tournament.thirdPlace && r===semifinalRIdx()) updateThirdPlaceMatch();
   tournament.editing = null;
   renderBracket();
   saveAppData();
   showToast('✅ Hasil tersimpan, pemenang maju ke babak berikutnya!');
+}
+// ── Perebutan Juara 3 (opsional) — ditampilkan terpisah di luar bagan utama, bukan
+// bagian dari sistem posisi-absolut/garis SVG supaya tidak mengganggu layoutBracket().
+function editSkorJuara3(){ tournament.editingT3=true; renderBracket(); }
+function batalEditJuara3(){ tournament.editingT3=false; renderBracket(); }
+function simpanSkorJuara3(){
+  const sA=parseInt(document.getElementById('t3-A').value), sB=parseInt(document.getElementById('t3-B').value);
+  if(isNaN(sA)||isNaN(sB)){ showToast('⚠️ Masukkan skor kedua peserta'); return; }
+  const err = SPORT_CONFIG[sport].validate(sA,sB);
+  if(err){ showToast('❌ '+err); return; }
+  const m = tournament.thirdPlaceMatch;
+  if(!m) return;
+  m.scoreA=sA; m.scoreB=sB; m.winner = sA>sB ? m.a : m.b;
+  tournament.editingT3 = false;
+  renderBracket();
+  saveAppData();
+  showToast('✅ Hasil Juara 3 tersimpan!');
+}
+function thirdPlaceHtml(){
+  if(!tournament.thirdPlace) return '';
+  const m = tournament.thirdPlaceMatch;
+  if(!m){
+    if(semifinalRIdx()<0) return ''; // bagan terlalu kecil, tidak ada semifinal sama sekali
+    return `<div class="t3-wrap"><div class="t3-label">🥉 Perebutan Juara 3</div>
+      <div class="alert" style="text-align:left">Menunggu kedua match semifinal selesai dulu.</div></div>`;
+  }
+  const aWin = m.winner && m.winner.name===m.a.name;
+  const bWin = m.winner && m.winner.name===m.b.name;
+  let body;
+  if(m.winner && !tournament.editingT3){
+    body = `<div class="match-slot ${aWin?'winner':''}">${m.a.name}${aWin?' 🥉':''} <b>${m.scoreA}</b></div>
+            <div class="match-slot ${bWin?'winner':''}">${m.b.name}${bWin?' 🥉':''} <b>${m.scoreB}</b></div>
+            <div style="text-align:right;margin-top:6px"><button class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:10.5px" onclick="editSkorJuara3()">✏️ Edit Skor</button></div>`;
+  } else {
+    body = `<div class="match-slot">${m.a.name}</div><div class="match-slot">${m.b.name}</div>
+      <div class="match-score-row">
+        <input type="number" id="t3-A" placeholder="0" min="0" value="${tournament.editingT3&&m.scoreA!=null?m.scoreA:''}">
+        <span style="color:var(--muted)">—</span>
+        <input type="number" id="t3-B" placeholder="0" min="0" value="${tournament.editingT3&&m.scoreB!=null?m.scoreB:''}">
+        <button class="btn btn-primary btn-sm" onclick="simpanSkorJuara3()">${tournament.editingT3?'💾':'✅'}</button>
+        ${tournament.editingT3?`<button class="btn btn-secondary btn-sm" onclick="batalEditJuara3()">✕</button>`:''}
+      </div>`;
+  }
+  return `<div class="t3-wrap"><div class="t3-label">🥉 Perebutan Juara 3</div><div class="t3-card">${body}</div></div>`;
 }
 // ── Garis penghubung bagan (SVG, mengikuti posisi kartu apa adanya — tahan variasi tinggi kartu) ──
 // ── Layout bagan: posisi kartu dihitung manual (bukan flexbox) supaya garis ──
@@ -1722,8 +1806,11 @@ function renderBracket(){
   const finalMatch = tournament.bracket[totalRounds-1] ? tournament.bracket[totalRounds-1][0] : null;
   if(finalMatch && finalMatch.winner){
     tournament.stage='done';
-    el.innerHTML += `<div class="alert" style="margin-top:14px;text-align:center;font-size:15px">🏆 <b>${finalMatch.winner.name}</b> Juara ${SPORT_CONFIG[sport].label}!</div>`;
+    const j3 = (tournament.thirdPlace && tournament.thirdPlaceMatch && tournament.thirdPlaceMatch.winner)
+      ? `<div style="margin-top:6px;font-size:12.5px">🥉 Juara 3: <b>${tournament.thirdPlaceMatch.winner.name}</b></div>` : '';
+    el.innerHTML += `<div class="alert" style="margin-top:14px;text-align:center;font-size:15px">🏆 <b>${finalMatch.winner.name}</b> Juara ${SPORT_CONFIG[sport].label}!${j3}</div>`;
   }
+  el.innerHTML += thirdPlaceHtml();
   requestAnimationFrame(layoutBracket);
 }
 
@@ -1919,36 +2006,108 @@ function resetTurnamen(){
   saveAppData();
   showToast('🗑️ Turnamen direset');
 }
-// ── Print / Download PDF hasil turnamen (bagan atau fase grup yang sedang tampil) ──
+// ── Print / Download PDF — pakai iframe tersembunyi, BUKAN window.open(). ──
+// window.open('', '_blank') tidak bisa diandalkan di PWA standalone mode (aplikasi
+// HOSTMABAR yang sudah di-install ke home screen HP) — Android sering salah-rute jadi
+// "buka browser luar" atau malah keluar ke home screen (dilaporkan Koben, HP Android).
+// Iframe tersembunyi tetap ada DI DALAM window aplikasi yang sama, jadi dialog print /
+// simpan-PDF berfungsi konsisten baik di browser biasa maupun PWA yang sudah terpasang.
+function cetakHtml(fullHtml){
+  let frame = document.getElementById('printFrame');
+  if(frame) frame.remove(); // buang sisa frame print sebelumnya kalau ada
+  frame = document.createElement('iframe');
+  frame.id = 'printFrame';
+  frame.setAttribute('aria-hidden','true');
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(frame);
+  const doc = frame.contentWindow.document;
+  doc.open();
+  doc.write(fullHtml);
+  doc.close();
+  let fired = false;
+  const jalankanPrint = () => {
+    if(fired) return; fired = true;
+    try{ frame.contentWindow.focus(); frame.contentWindow.print(); }
+    catch(e){ showToast('⚠️ Gagal membuka dialog print di perangkat ini'); }
+  };
+  // beberapa browser mobile tidak selalu memicu onload dari document.write — kombinasikan
+  // onload + fallback timer supaya tombol print tetap jalan di semua kondisi.
+  frame.onload = jalankanPrint;
+  setTimeout(jalankanPrint, 500);
+}
+// ── Bagan versi PRINT — dibangun ULANG dari data tournament.bracket, BUKAN dari
+// snapshot tampilan live. Tampilan live memakai position:absolute + garis SVG yang
+// koordinatnya dihitung JS (layoutBracket()) khusus untuk lebar layar aslinya — kalau
+// snapshot innerHTML itu ditempel apa adanya ke dokumen print yang layoutnya beda,
+// kartu-kartunya jadi tumpang tindih/berantakan (itu sebabnya bagan print sebelumnya
+// terlihat tidak rapi). Di sini dipakai kolom per babak (flexbox) + jarak funnel
+// matematis dari jumlah match tiap babak — tidak butuh koordinat pixel dari JS sama sekali.
+function bracketPrintHtml(){
+  const rounds = tournament.bracket;
+  const totalRounds = rounds.length;
+  const baseR = tournament.hasPrelim ? 1 : 0; // babak pertama yang ukurannya "penuh" (bukan Babak Kualifikasi)
+  const CARD_UNIT = 3.6; // tinggi 1 kartu + jarak dasar, dalam em
+  const cardBody = (m)=>{
+    const aLbl = m.a ? m.a.name : 'Menunggu';
+    const bLbl = m.b ? m.b.name : 'Menunggu';
+    const aWin = m.winner && m.a && m.winner.name===m.a.name;
+    const bWin = m.winner && m.b && m.winner.name===m.b.name;
+    return `<div class="p-slot ${aWin?'p-win':''}">${aLbl}${m.winner?` <b>${m.scoreA}</b>`:''}${aWin?' 🏆':''}</div>
+            <div class="p-slot ${bWin?'p-win':''}">${bLbl}${m.winner?` <b>${m.scoreB}</b>`:''}${bWin?' 🏆':''}</div>`;
+  };
+  const cols = rounds.map((round,r)=>{
+    const rel = Math.max(0, r-baseR);
+    const gapUnits = (Math.pow(2,rel)-1) * CARD_UNIT;
+    const cardsHtml = round.map((m,i)=>
+      `<div class="p-card" style="margin-top:${i===0?gapUnits/2:gapUnits}em">${cardBody(m)}</div>`).join('');
+    let byeHtml = '';
+    if(r===0 && tournament.hasPrelim){
+      byeHtml = tournament.qualDirectEntries.map(e=>
+        `<div class="p-card p-bye">🎫 ${e.name}<div class="p-byenote">Bye — langsung lolos</div></div>`).join('');
+    }
+    return `<div class="p-col"><div class="p-roundlabel">${roundName(totalRounds,r,tournament.hasPrelim)}</div>${cardsHtml}${byeHtml}</div>`;
+  }).join('');
+  let t3Html = '';
+  if(tournament.thirdPlace && tournament.thirdPlaceMatch){
+    t3Html = `<div class="p-t3"><div class="p-roundlabel">🥉 Perebutan Juara 3</div><div class="p-card">${cardBody(tournament.thirdPlaceMatch)}</div></div>`;
+  }
+  return `<div class="p-bracket">${cols}</div>${t3Html}`;
+}
 function printTurnamen(){
-  const content = document.getElementById('tBracketContent').innerHTML;
   const title = document.getElementById('tBracketTitle').textContent;
-  const w = window.open('', '_blank');
-  if(!w){ showToast('⚠️ Pop-up diblokir browser — izinkan pop-up untuk print'); return; }
-  w.document.write(`<html><head><title>${title}</title><style>
+  const isBracketStage = tournament.stage==='knockout' || tournament.stage==='done';
+  // Fase grup sudah berupa tabel (bukan posisi-absolut) jadi snapshot innerHTML aman
+  // dipakai apa adanya. Fase bagan gugur dibangun ulang dari data — lihat bracketPrintHtml().
+  const content = isBracketStage ? bracketPrintHtml() : document.getElementById('tBracketContent').innerHTML;
+  const bracketCss = !isBracketStage ? '' : `
+    .p-bracket{display:flex;gap:20px;align-items:flex-start}
+    .p-col{display:flex;flex-direction:column;min-width:172px;flex-shrink:0}
+    .p-roundlabel{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748B;text-align:center;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #E2E8F0}
+    .p-card{border:1.3px solid #CBD5E1;border-radius:9px;padding:7px 9px;background:#fff;font-size:11.5px}
+    .p-slot{display:flex;justify-content:space-between;gap:6px;padding:2px 0}
+    .p-win{font-weight:800;color:#16A34A}
+    .p-bye{color:#94A3B8;font-style:italic;margin-top:10px}
+    .p-byenote{font-size:9.5px;color:#94A3B8;font-style:normal;margin-top:2px}
+    .p-t3{margin-top:24px;padding-top:14px;border-top:1.5px dashed #E2E8F0;max-width:220px}
+  `;
+  cetakHtml(`<html><head><title>${title}</title><style>
     body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;padding:28px;color:#1E293B}
     h1{font-size:19px;margin-bottom:2px}
     .sub{font-size:12px;color:#64748B;margin-bottom:22px}
     table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px}
     th,td{padding:6px 8px;border-bottom:1px solid #E2E8F0;text-align:left}
-    .bracket-wrap{display:flex;flex-wrap:wrap;gap:14px}
-    .bracket-round{min-width:200px}
-    .round-label{font-size:11px;font-weight:800;text-transform:uppercase;color:#64748B;margin-bottom:6px}
-    .match-card{border:1px solid #E2E8F0;border-radius:10px;padding:8px 10px;margin-bottom:10px}
     .match-slot{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
     .group-block{border:1px solid #E2E8F0;border-radius:10px;padding:14px;margin-bottom:16px;break-inside:avoid}
     .stat-chip{padding:2px 7px;border-radius:6px;background:#F1F5F9;font-weight:700}
     .lb-note{font-size:10.5px;color:#64748B;margin-top:6px}
     .match-score-row input, .match-score-row button{display:none}
+    ${bracketCss}
     @media print{ body{padding:10px} }
   </style></head><body>
     <h1>${commProfile.name} — ${title}</h1>
     <div class="sub">${state.session.name||'Sesi Turnamen'} · ${state.session.date||''}</div>
     ${content}
   </body></html>`);
-  w.document.close();
-  w.focus();
-  setTimeout(()=>w.print(), 400);
 }
 function renderTurnamenTab(){
   const formatLocked = tournament.format && tournament.entries.length > 0;
@@ -1965,6 +2124,7 @@ function renderTurnamenTab(){
   document.getElementById('tSetupCard').style.display = (tournament.format && tournament.stage==='setup') ? 'block' : 'none';
   document.getElementById('tGroupConfig').style.display = tournament.format==='groupknockout' ? 'block' : 'none';
   if(tournament.format==='groupknockout') renderGroupModeUI();
+  const t3box = document.getElementById('tThirdPlace'); if(t3box) t3box.checked = !!tournament.thirdPlace;
   document.getElementById('tBracketCard').style.display = (tournament.stage==='groups'||tournament.stage==='knockout'||tournament.stage==='done') ? 'block' : 'none';
 
   const minNote = document.getElementById('tMinNote');
@@ -2213,10 +2373,8 @@ function __historyTableHtml(){
   return `<table><tbody>${rows}</tbody></table>`;
 }
 function __printReportWindow(title, sectionsHtml){
-  const w = window.open('', '_blank');
-  if(!w){ showToast('⚠️ Pop-up diblokir browser — izinkan pop-up untuk print'); return; }
   const accentHex = SPORT_CONFIG[sport].hex;
-  w.document.write(`<html><head><title>${title}</title><style>
+  cetakHtml(`<html><head><title>${title}</title><style>
     :root{--accent:${accentHex}}
     *{box-sizing:border-box}
     body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;padding:0;margin:0;color:#1E293B;background:#fff}
@@ -2266,9 +2424,6 @@ function __printReportWindow(title, sectionsHtml){
       <div class="footnote">Dibuat otomatis oleh HOSTMABAR · hostmabar.com</div>
     </div>
   </body></html>`);
-  w.document.close();
-  w.focus();
-  setTimeout(()=>w.print(), 500);
 }
 function printMatchReport(){
   if(!state.matches.length){ showToast('⚠️ Belum ada pertandingan untuk dicetak'); return; }
@@ -2505,20 +2660,49 @@ function shareBoard(){
 
   _shareKind = 'leaderboard';
   document.getElementById('shareModalTitle').textContent = '📸 Share Leaderboard';
+  document.getElementById('shareNav').style.display = 'none';
+  document.getElementById('shareDownloadAllBtn').style.display = 'none';
+  document.getElementById('shareRatioNote').textContent = '1080×1350 (4:5) — pas untuk feed & story Instagram';
   document.getElementById('shareModalOverlay').classList.add('open');
 }
 let _shareKind = 'leaderboard';
 function downloadShare(){
   const cv = document.getElementById('shareCanvas');
   const a = document.createElement('a');
-  a.download = _shareKind+'-'+sport+'-'+(state.session.date||'sesi')+'.png';
+  let label = _shareKind;
+  if(_shareKind==='turnamen' && _shareSlides[_shareSlideIdx]) label = 'turnamen-'+(_shareSlideIdx+1)+'-'+_shareSlides[_shareSlideIdx].title.toLowerCase().replace(/\s+/g,'-');
+  a.download = label+'-'+sport+'-'+(state.session.date||'sesi')+'.png';
   a.href = cv.toDataURL('image/png');
   a.click();
   showToast('⬇️ Gambar tersimpan — siap post ke Instagram!');
 }
+// Unduh SEMUA halaman turnamen berurutan (bukan ZIP — cukup beberapa file PNG lewat
+// klik <a download> berantai, dengan jeda kecil supaya browser tidak menganggapnya spam).
+function downloadAllShareSlides(){
+  if(!_shareSlides.length) return;
+  let i = 0;
+  const cv = document.getElementById('shareCanvas');
+  const step = () => {
+    if(i>=_shareSlides.length){ showToast('⬇️ Semua halaman tersimpan — siap post carousel Instagram!'); return; }
+    _shareSlideIdx = i;
+    renderShareSlide();
+    setTimeout(()=>{
+      const a = document.createElement('a');
+      const label = 'turnamen-'+(i+1)+'-'+_shareSlides[i].title.toLowerCase().replace(/\s+/g,'-');
+      a.download = label+'-'+sport+'-'+(state.session.date||'sesi')+'.png';
+      a.href = cv.toDataURL('image/png');
+      a.click();
+      i++;
+      setTimeout(step, 400);
+    }, 80);
+  };
+  step();
+}
 function closeShare(e){
   if(e && e.target!==document.getElementById('shareModalOverlay')) return;
   document.getElementById('shareModalOverlay').classList.remove('open');
+  document.getElementById('shareNav').style.display = 'none';
+  document.getElementById('shareDownloadAllBtn').style.display = 'none';
 }
 
 // ── SHARE / POST MEDALIST — sama gaya dengan shareBoard(), peringkat 1-7, kolom medali ──
@@ -2624,7 +2808,255 @@ function shareMedalist(){
 
   _shareKind = 'medalist';
   document.getElementById('shareModalTitle').textContent = '🏅 Share Medalist';
+  document.getElementById('shareNav').style.display = 'none';
+  document.getElementById('shareDownloadAllBtn').style.display = 'none';
+  document.getElementById('shareRatioNote').textContent = '1080×1350 (4:5) — pas untuk feed & story Instagram';
   document.getElementById('shareModalOverlay').classList.add('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SHARE TURNAMEN — kumpulan slide 1080×1080 (persegi, pas untuk feed IG) yang
+// merangkum PERJALANAN turnamen: Fase Grup → tiap babak gugur → Final (+Juara 3).
+// Beda dari Share Leaderboard/Medalist (1 gambar rasio 4:5) — ini banyak gambar
+// sekaligus (carousel), pakai kanvas & modal share yang SAMA + navigasi halaman.
+// ═══════════════════════════════════════════════════════════════════
+let _shareSlides = [];
+let _shareSlideIdx = 0;
+
+function buildShareSlides(){
+  const slides = [];
+  if(tournament.groups && tournament.groups.length) slides.push({ kind:'groups', title:'Fase Grup' });
+  if(tournament.bracket && tournament.bracket.length){
+    const total = tournament.bracket.length;
+    tournament.bracket.forEach((round,r)=>{
+      // Ronde FINAL digabung dengan Juara 3 (jika ada) jadi 1 slide 'final' —
+      // lihat drawSlideFinal(). Bukan lagi 2 slide terpisah.
+      const isFinal = r === total-1;
+      slides.push({ kind: isFinal?'final':'round', title: roundName(total,r,tournament.hasPrelim), r });
+    });
+    const finalRound = tournament.bracket[total-1];
+    const finalMatch = finalRound && finalRound[0];
+    // Slide penutup podium Juara 1/2/3 — hanya muncul setelah Final punya pemenang.
+    if(finalMatch && finalMatch.winner){
+      slides.push({ kind:'podium', title:'Juara Turnamen' });
+    }
+  }
+  return slides;
+}
+function shareTurnamen(){
+  const slides = buildShareSlides();
+  if(!slides.length){ showToast('⚠️ Belum ada data turnamen untuk dibagikan'); return; }
+  _shareSlides = slides;
+  _shareSlideIdx = 0;
+  _shareKind = 'turnamen';
+  document.getElementById('shareModalTitle').textContent = '📸 Share Hasil Turnamen';
+  document.getElementById('shareNav').style.display = slides.length>1 ? 'flex' : 'none';
+  document.getElementById('shareDownloadAllBtn').style.display = slides.length>1 ? 'block' : 'none';
+  document.getElementById('shareRatioNote').textContent = '1080×1080 (1:1) — pas untuk feed Instagram, tiap babak jadi 1 halaman, ditutup halaman podium Juara';
+  document.getElementById('shareModalOverlay').classList.add('open');
+  renderShareSlide();
+}
+function shareNavGo(delta){
+  _shareSlideIdx = Math.max(0, Math.min(_shareSlides.length-1, _shareSlideIdx+delta));
+  renderShareSlide();
+}
+function renderShareSlide(){
+  const slide = _shareSlides[_shareSlideIdx];
+  if(!slide) return;
+  document.getElementById('shareNavLabel').textContent = (_shareSlideIdx+1)+' / '+_shareSlides.length+' — '+slide.title;
+  if(slide.kind==='groups') drawSlideGroups();
+  else if(slide.kind==='round') drawSlideRound(slide.r, slide.title);
+  else if(slide.kind==='final') drawSlideFinal(slide.r, slide.title);
+  else if(slide.kind==='podium') drawSlidePodium();
+}
+// ── Header/footer bersama untuk semua slide turnamen (logo komunitas + brand HOSTMABAR).
+// V2 (Agustus 2026): header horizontal (logo+nama sejajar, bukan ditumpuk) + bingkai
+// gradasi mengelilingi seluruh kartu — sesuai contoh desain yang disetujui Koben. ──
+function drawShareHeader(x, subtitle){
+  const c = SPORT_CONFIG[sport];
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const grad = x.createLinearGradient(0,0,1080,1080);
+  grad.addColorStop(0,'#F7941D'); grad.addColorStop(1,'#E8174A');
+  const bw = 14;
+  x.fillStyle = grad; x.fillRect(0,0,1080,1080);
+  x.fillStyle = '#F8FAFC'; x.fillRect(bw,bw,1080-bw*2,1080-bw*2);
+
+  const logoCx = 134, logoCy = 104, logoR = 54;
+  if(commProfile.logoImg){
+    x.save(); x.beginPath(); x.arc(logoCx, logoCy, logoR, 0, Math.PI*2); x.clip();
+    drawImageCover(x, commProfile.logoImg, logoCx-logoR, logoCy-logoR, logoR*2, logoR*2); x.restore();
+    x.beginPath(); x.arc(logoCx, logoCy, logoR, 0, Math.PI*2);
+    x.lineWidth = 4; x.strokeStyle = c.hex; x.stroke();
+  } else {
+    x.beginPath(); x.arc(logoCx, logoCy, logoR, 0, Math.PI*2);
+    x.fillStyle = c.hex; x.fill();
+  }
+  const textX = logoCx + logoR + 28;
+  const maxTextW = 1080-bw-40-textX;
+  const nameSize = fitFont(x, commProfile.name||'Komunitas', F, '800', maxTextW, 38, 22);
+  x.textAlign = 'left'; x.font = '800 '+nameSize+'px '+F; x.fillStyle = '#1E293B';
+  x.fillText(commProfile.name||'Komunitas', textX, logoCy-4);
+  x.font = '600 19px '+F; x.fillStyle = '#64748B';
+  x.fillText((state.session.name||'Turnamen')+' · '+(state.session.date||''), textX, logoCy+26);
+
+  let y = logoCy + logoR + 44;
+  x.textAlign = 'center'; x.font = '800 19px '+F;
+  const chipTxt = subtitle.toUpperCase();
+  const cw = x.measureText(chipTxt).width + 46;
+  rr(540-cw/2, y, cw, 40, 20, x); x.fillStyle = c.hex; x.fill();
+  x.fillStyle = '#FFFFFF'; x.fillText(chipTxt, 540, y+27);
+  y += 66;
+  return y;
+}
+function drawShareFooter(x){
+  const fy = 1012;
+  const F = '"Plus Jakarta Sans",sans-serif';
+  x.textAlign = 'center';
+  if(__hmBrandLogo.complete && __hmBrandLogo.naturalWidth>0){
+    const lh = 46, lw = lh*(__hmBrandLogo.naturalWidth/__hmBrandLogo.naturalHeight);
+    x.drawImage(__hmBrandLogo, 540-lw/2, fy-36, lw, lh);
+  }
+  x.font = '600 16px '+F; x.fillStyle = '#94A3B8';
+  x.fillText('hostmabar.com', 540, fy+26);
+}
+// ── Kartu-kartu match (dipakai slide babak gugur & Juara 3) — mengembalikan Y
+// setelah kartu terakhir supaya elemen berikutnya (mis. banner JUARA) bisa disusun. ──
+function drawMatchCards(x, y, matches, opts){
+  opts = opts || {};
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const c = SPORT_CONFIG[sport];
+  const cardH = opts.big ? 148 : 108, gap = 16, L = 80, W = 920;
+  matches.forEach((m,i)=>{
+    const ry = y + i*(cardH+gap);
+    rr(L, ry, W, cardH, 20, x); x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = opts.big ? 3 : 2; x.strokeStyle = m.winner ? c.hex : '#E2E8F0'; x.stroke();
+    const aLbl = m.a ? m.a.name : 'Menunggu', bLbl = m.b ? m.b.name : 'Menunggu';
+    const aWin = m.winner && m.a && m.winner.name===m.a.name;
+    const bWin = m.winner && m.b && m.winner.name===m.b.name;
+    const rowH = cardH/2;
+    [[aLbl,m.scoreA,aWin],[bLbl,m.scoreB,bWin]].forEach(([lbl,score,win],ri)=>{
+      const cy = ry + rowH*ri + rowH/2 + (opts.big?10:8);
+      x.textAlign = 'left'; x.font = (win?'800 ':'700 ')+(opts.big?29:23)+'px '+F;
+      x.fillStyle = win ? '#16A34A' : '#1E293B';
+      x.fillText((win?'🏆 ':'')+lbl, L+28, cy);
+      x.textAlign = 'right'; x.font = '800 '+(opts.big?31:25)+'px '+F;
+      x.fillStyle = win ? c.hex : '#94A3B8';
+      x.fillText(score!=null ? String(score) : '—', L+W-28, cy);
+    });
+  });
+  return y + matches.length*(cardH+gap);
+}
+function drawSlideGroups(){
+  const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
+  const x = cv.getContext('2d');
+  let y = drawShareHeader(x, 'Fase Grup');
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const groups = tournament.groups;
+  const gGap = 16, avail = 990 - y;
+  const gH = Math.max(120, Math.min(220, Math.floor((avail-(groups.length-1)*gGap)/groups.length)));
+  groups.forEach((g,gi)=>{
+    const st = groupStandings(g);
+    const gy = y + gi*(gH+gGap);
+    rr(60, gy, 960, gH, 18, x); x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = 1.5; x.strokeStyle = '#E2E8F0'; x.stroke();
+    x.textAlign = 'left'; x.font = '800 25px '+F; x.fillStyle = '#1E293B';
+    x.fillText(g.name, 84, gy+38);
+    const shown = st.slice(0, Math.min(st.length, 4));
+    const rowH = (gH-54) / Math.max(1,shown.length);
+    shown.forEach((s,i)=>{
+      const ry = gy+54+i*rowH+rowH/2;
+      const lolos = i < tournament.qualifyPerGroup;
+      x.textAlign = 'left'; x.font = '800 21px '+F;
+      x.fillStyle = lolos ? '#16A34A' : '#64748B';
+      const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
+      x.fillText(rank+' '+s.name, 84, ry+6);
+      x.textAlign = 'right'; x.font = '800 21px '+F; x.fillStyle = '#1E293B';
+      x.fillText(s.points+' pts', 1000, ry+6);
+    });
+  });
+  drawShareFooter(x);
+}
+function drawSlideRound(r, title){
+  const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
+  const x = cv.getContext('2d');
+  let y = drawShareHeader(x, title);
+  const round = tournament.bracket[r];
+  let ny = drawMatchCards(x, y, round, {big:false});
+  if(r===0 && tournament.hasPrelim && tournament.qualDirectEntries.length){
+    const F = '"Plus Jakarta Sans",sans-serif';
+    x.textAlign='center'; x.font='700 18px '+F; x.fillStyle='#94A3B8';
+    x.fillText('🎫 Bye langsung lolos: '+tournament.qualDirectEntries.map(e=>e.name).join(', '), 540, ny+30);
+  }
+  drawShareFooter(x);
+}
+// ── Slide Final digabung dengan Perebutan Juara 3 (kalau opsi Juara 3 aktif & sudah
+// selesai) jadi SATU kartu — sesuai permintaan Koben, bukan 2 halaman terpisah lagi. ──
+function drawSlideFinal(r, title){
+  const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
+  const x = cv.getContext('2d');
+  const hasT3 = !!(tournament.thirdPlace && tournament.thirdPlaceMatch && tournament.thirdPlaceMatch.winner);
+  let y = drawShareHeader(x, hasT3 ? 'Final & Juara 3' : title);
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const round = tournament.bracket[r];
+
+  x.textAlign='left'; x.font='800 20px '+F; x.fillStyle='#94A3B8';
+  x.fillText('FINAL', 80, y);
+  let ny = drawMatchCards(x, y+16, round, {big:true});
+
+  const fm = round[0];
+  if(fm && fm.winner){
+    x.textAlign = 'center'; x.font = '800 30px '+F; x.fillStyle = SPORT_CONFIG[sport].hex;
+    x.fillText('🏆 JUARA: '+fm.winner.name, 540, ny+42);
+    ny += 74;
+  } else {
+    ny += 24;
+  }
+
+  if(hasT3){
+    x.textAlign='left'; x.font='800 20px '+F; x.fillStyle='#94A3B8';
+    x.fillText('PEREBUTAN JUARA 3', 80, ny);
+    drawMatchCards(x, ny+16, [tournament.thirdPlaceMatch], {big:false});
+  }
+  drawShareFooter(x);
+}
+// ── Slide penutup turnamen: podium Juara 1/2/3 dalam satu kartu — hasil akhir yang
+// tinggal di-save/post, bukan bagan pertandingan lagi. Turun ke 2 kolom (Juara 1/2) kalau
+// opsi Juara 3 tidak diaktifkan atau pertandingan perebutannya belum selesai. ──
+function drawSlidePodium(){
+  const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
+  const x = cv.getContext('2d');
+  let y = drawShareHeader(x, '🏆 Juara Turnamen');
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const finalRound = tournament.bracket[tournament.bracket.length-1];
+  const fm = finalRound[0];
+  const champion = fm.winner;
+  const runnerUp = fm.winner.name===fm.a.name ? fm.b : fm.a;
+  const third = (tournament.thirdPlace && tournament.thirdPlaceMatch && tournament.thirdPlaceMatch.winner)
+    ? tournament.thirdPlaceMatch.winner : null;
+
+  const podium = third
+    ? [ {rank:2, name:runnerUp.name, h:150, bg:'#E2E8F0', txt:'#475569'},
+        {rank:1, name:champion.name, h:220, bg:'#FBBF24', txt:'#78350F'},
+        {rank:3, name:third.name, h:105, bg:'#F0C4A0', txt:'#7C4A24'} ]
+    : [ {rank:2, name:runnerUp.name, h:150, bg:'#E2E8F0', txt:'#475569'},
+        {rank:1, name:champion.name, h:220, bg:'#FBBF24', txt:'#78350F'} ];
+
+  const totalW = 880, gap = 24;
+  const colW = (totalW - gap*(podium.length-1)) / podium.length;
+  const startX = 540 - totalW/2;
+  const baseY = 900;
+  podium.forEach((p,i)=>{
+    const colX = startX + i*(colW+gap);
+    const cx = colX + colW/2;
+    x.textAlign = 'center'; x.font = '800 22px '+F; x.fillStyle = '#1E293B';
+    String(p.name).split(' & ').forEach((ln,li,arr)=>{
+      x.fillText(ln, cx, baseY-p.h-28-(arr.length-1-li)*26);
+    });
+    rr(colX, baseY-p.h, colW, p.h, 14, x); x.fillStyle = p.bg; x.fill();
+    x.textAlign = 'center'; x.font = '800 48px '+F; x.fillStyle = p.txt;
+    x.fillText(String(p.rank), cx, baseY-p.h/2+17);
+  });
+  drawShareFooter(x);
 }
 
 document.getElementById('commName').value = commProfile.name;
