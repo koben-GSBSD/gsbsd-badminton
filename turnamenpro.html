@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Turnamen Pro — HOSTMABAR</title>
+<meta name="description" content="Kelola turnamen multi-kategori dalam satu event — HOSTMABAR Turnamen Pro.">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F7941D">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="/pwa-register.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Supabase SDK (dipakai untuk logout, sama seperti mabarpro.html/badminton.html) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#F8FAFC; --surface:#FFFFFF; --border:#E2E8F0;
+  --text:#1E293B; --muted:#64748B;
+  --orange:#F7941D; --pink:#E8174A;
+  --badminton:#0F766E; --padel:#9333EA; --pickleball:#E11D48; --tennis:#84754E;
+  --green:#16A34A; --red:#DC2626; --accent:var(--badminton);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:calc(60px + env(safe-area-inset-bottom));overscroll-behavior-y:contain}
+body.modal-lock{overflow:hidden}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* ── Top bar ── */
+/* position:-webkit-sticky untuk Safari lama + padding-top aman buat notch/dynamic island iPhone */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);position:-webkit-sticky;position:sticky;top:0;z-index:40;padding-top:env(safe-area-inset-top)}
+.topbar-inner{display:flex;align-items:center;gap:12px;height:64px}
+.logo{display:inline-flex;align-items:center}
+.logo img{height:28px;width:auto;display:block}
+.header-sub{font-size:11.5px;color:var(--muted);font-weight:600}
+.badge-khusus{font-size:10px;font-weight:800;letter-spacing:.05em;background:linear-gradient(135deg,rgba(247,148,29,.12),rgba(232,23,74,.12));border:1.5px solid rgba(247,148,29,.5);color:#B45309;padding:5px 11px;border-radius:20px;text-transform:uppercase;white-space:nowrap}
+.top-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:11px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;text-decoration:none;transition:transform .12s,background-color .2s,border-color .2s,color .2s;touch-action:manipulation;min-height:44px}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:scale(.97)}
+.btn-ghost{background:var(--surface);border:1.5px solid var(--border);color:var(--text)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-brand{background:linear-gradient(90deg,var(--orange),var(--pink));color:#fff}
+.btn-danger{color:var(--red);border:1.5px solid rgba(220,38,38,.3);background:rgba(220,38,38,.06)}
+.btn-sm{padding:7px 12px;font-size:12px;min-height:38px}
+.btn-lg{padding:12px 22px;font-size:14px;border-radius:12px}
+
+/* ── Sport pills ── */
+.sport-pills{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 4px}
+.pill{font-size:12.5px;font-weight:800;padding:8px 15px;border-radius:99px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;transition:all .18s;touch-action:manipulation;min-height:40px}
+.pill:active{transform:scale(.96)}
+.pill img{width:15px;height:15px;object-fit:contain}
+.pill.on{background:var(--pill-accent,var(--accent));border-color:var(--pill-accent,var(--accent));color:#fff}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;transition:border-color .2s}
+.card-title{font-size:14.5px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:5px}
+/* font-size 16px WAJIB di iOS Safari — kalau input di bawah 16px, Safari auto-zoom
+   tiap field difokus (bikin layout "melompat" & mesti di-pinch-zoom-out manual). */
+input,select{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:16px;background:var(--bg);color:var(--text);transition:border-color .15s;min-height:44px}
+input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff}
+
+.event-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px}
+.event-note{margin-top:14px;font-size:12px;color:var(--muted);background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:11px 14px}
+.event-note b{color:var(--text)}
+
+/* ── Kategori bar ── */
+.kategori-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.kat-chip{position:relative;font-size:13px;font-weight:800;padding:9px 16px;padding-right:30px;border-radius:12px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--text);transition:all .18s;touch-action:manipulation;min-height:40px}
+.kat-chip.on{background:color-mix(in srgb,var(--accent) 9%,white);border-color:var(--accent);color:var(--accent)}
+/* Tombol × visualnya 18px, tapi area tap sungguhannya diperlebar via ::before (≈32px)
+   supaya nyaman disentuh jari di HP tanpa mengubah tampilan — standar Apple/Android
+   minimal ±40px target sentuh. */
+.kat-chip .hapus{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:rgba(220,38,38,.12);color:var(--red);border:none;font-size:11px;font-weight:800;cursor:pointer;display:grid;place-items:center;line-height:1;touch-action:manipulation}
+.kat-chip .hapus::before{content:'';position:absolute;inset:-9px}
+.kat-add{font-size:13px;font-weight:800;padding:9px 16px;border-radius:12px;border:1.5px dashed var(--border);background:transparent;cursor:pointer;font-family:inherit;color:var(--muted);touch-action:manipulation;min-height:40px}
+.kat-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Panel kategori aktif ── */
+.kat-panel{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+.peserta-table{width:100%;border-collapse:collapse}
+.peserta-table td{padding:9px 4px;border-bottom:1px solid var(--border);font-size:13.5px}
+.peserta-table td.no{color:var(--muted);width:24px;font-weight:700}
+.peserta-table .remove{position:relative;width:22px;height:22px;background:rgba(220,38,38,.1);color:var(--red);border:none;border-radius:50%;cursor:pointer;font-size:12px;font-weight:800;touch-action:manipulation}
+/* inset lebih kecil dari kat-chip .hapus supaya area tap antar-baris tabel yang rapat
+   tidak saling tumpang tindih — tetap perbesar dari 22px jadi ±36px. */
+.peserta-table .remove::before{content:'';position:absolute;inset:-7px}
+.peserta-table tr{height:44px}
+.add-row{display:flex;gap:8px;margin-top:12px}
+.add-row input{flex:1}
+
+.fmt-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.fmt-opt{flex:1;min-width:160px;text-align:left;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;font-family:inherit;transition:all .15s;touch-action:manipulation;min-height:44px}
+.fmt-opt:active{transform:scale(.98)}
+.fmt-opt b{display:block;font-size:13px;margin-bottom:3px}
+.fmt-opt span{font-size:11.5px;color:var(--muted);display:block}
+.fmt-opt.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,white)}
+.fmt-opt.on b{color:var(--accent)}
+
+/* ── Bagan (bracket) ── */
+/* -webkit-overflow-scrolling:touch = momentum/inertia scroll di Safari iOS lama saat
+   geser bagan ke samping (versi baru sudah otomatis, tapi ini aman ditambahkan). */
+.bracket-wrap{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.bracket{display:flex;gap:40px;min-width:min-content}
+.bracket-round{display:flex;flex-direction:column;justify-content:space-around;gap:14px;min-width:180px}
+.round-label{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-bottom:6px}
+.b-match{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;font-size:12.5px}
+.b-side{display:flex;justify-content:space-between;align-items:center;padding:4px 0;gap:8px}
+.b-side.win{font-weight:800;color:var(--accent)}
+.b-side .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-side .sc{font-weight:800;flex-shrink:0}
+.b-match .divider{height:1px;background:var(--border);margin:2px 0}
+.champion-note{margin-top:14px;text-align:center;font-size:13px;font-weight:700;background:color-mix(in srgb,var(--accent) 8%,white);border:1px solid color-mix(in srgb,var(--accent) 25%,white);border-radius:12px;padding:12px;color:var(--accent)}
+
+/* ── Group stage ── */
+.group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.group-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px}
+.group-card h4{font-size:12.5px;font-weight:800;margin-bottom:8px;color:var(--accent)}
+.group-card table{width:100%;border-collapse:collapse;font-size:12px}
+.group-card td{padding:5px 3px;border-bottom:1px solid var(--border)}
+.group-card td.rk{width:18px;color:var(--muted);font-weight:700}
+.group-card td.pt{text-align:right;font-weight:800}
+.group-note{margin-top:12px;font-size:11.5px;color:var(--muted)}
+
+.aksi-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.rule-note{margin-top:18px;font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:13px 16px}
+.rule-note b{color:var(--text)}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;opacity:0;transition:opacity .18s}
+.modal-overlay.open{display:flex}
+.modal-overlay.show{opacity:1}
+.modal-box{background:var(--surface);border-radius:16px;padding:24px;max-width:380px;width:100%;transform:translateY(8px);transition:transform .18s}
+.modal-overlay.show .modal-box{transform:translateY(0)}
+.modal-box h3{font-size:15px;font-weight:800;margin-bottom:14px}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.modal-actions .btn{flex:1;justify-content:center}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#1E293B;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:200;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:900px){
+  .event-grid{grid-template-columns:1fr}
+  .kat-panel{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .wrap{padding:0 14px}
+  .topbar-inner{height:56px}
+  .logo img{height:23px}
+  .header-sub{display:none}
+  .card{padding:15px}
+  .aksi-row .btn{flex:1;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="logo"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
+    <div><div class="header-sub" id="namaKomunitas">Komunitas</div></div>
+    <div class="top-right">
+      <div class="badge-khusus">🔒 Turnamen Pro · Akses Khusus</div>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">🚪 <span class="bl">Keluar</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- EVENT INFO -->
+  <div class="card" style="margin-top:18px">
+    <div class="card-title">🏆 Info Event Turnamen</div>
+    <div class="event-grid">
+      <div><label>Nama Turnamen</label><input id="fNama" oninput="ubahEvent('nama',this.value)"></div>
+      <div><label>Tanggal</label><input id="fTanggal" type="date" oninput="ubahEvent('tanggal',this.value)"></div>
+      <div><label>Lokasi</label><input id="fLokasi" oninput="ubahEvent('lokasi',this.value)"></div>
+    </div>
+    <div class="sport-pills" id="sportPills"></div>
+    <div class="event-note">ℹ️ <b>Multi-kategori dalam 1 event</b> — beda dari mode turnamen di tracker.html yang cuma 1 kategori per sesi. Tiap kategori (mis. Ganda Putra, Ganda Putri, Campuran) punya peserta &amp; bagan sendiri, jalan paralel di event yang sama.</div>
+  </div>
+
+  <!-- KATEGORI -->
+  <div class="card">
+    <div class="card-title">📂 Kategori</div>
+    <div class="kategori-bar" id="kategoriBar"></div>
+
+    <div class="kat-panel" id="katPanel"></div>
+
+    <div class="aksi-row">
+      <button class="btn btn-accent" onclick="cetakKategori()">🖨️ Cetak Bagan Kategori Ini</button>
+      <button class="btn btn-brand" onclick="shareStub()">📸 Share ke Instagram</button>
+      <button class="btn btn-ghost" onclick="dummyAlert('Simpan ke Cloud')">☁️ Simpan ke Cloud</button>
+    </div>
+  </div>
+
+  <div class="rule-note">
+    ℹ️ <b>Tahap dummy:</b> navigasi (ganti cabang, ganti kategori, tambah peserta, pilih format, cetak) sudah aktif. Bagan yang tampil pakai <b>data contoh</b> untuk demo tampilan — algoritma penyusunan asli (anti-rematch sesama grup, generate bagan dari peserta sungguhan) &amp; simpan-ke-cloud baru aktif di tahap berikutnya. Halaman ini <b>khusus/by request</b> — akses lewat akun HOSTMABAR yang sama (redirect dari halaman login), bukan link publik terbuka.
+  </div>
+
+</div>
+
+<!-- MODAL (tambah kategori / peserta) -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
+  <div class="modal-box">
+    <h3 id="modalTitle">Tambah</h3>
+    <label id="modalLabel">Nama</label>
+    <input id="modalInput" onkeydown="if(event.key==='Enter') simpanModal()">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      <button class="btn btn-accent" onclick="simpanModal()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══ Meta 4 cabang (sama seperti tracker.html / mabarpro.html) ═══
+const SPORT_META = {
+  badminton:{label:'Badminton', accentVar:'--badminton', icon:'logobadminton.png'},
+  padel:{label:'Padel', accentVar:'--padel', icon:'logopadel.png'},
+  pickleball:{label:'Pickleball', accentVar:'--pickleball', icon:'logopickleball.png'},
+  tennis:{label:'Tennis', accentVar:'--tennis', icon:'logotennis.png'}
+};
+
+// ═══ Data contoh per event (in-memory saja — belum tersambung Supabase, bukan data asli) ═══
+const EVENTS = {
+  badminton:{
+    nama:'Turnamen Kemerdekaan HOSTMABAR', tanggal:'2026-08-24', lokasi:'GOR Sutera Utama',
+    active:'gp',
+    categories:[
+      {id:'gp', nama:'Ganda Putra', format:'knockout', peserta:['Andri/Bimo','Dedi/Farel','Guntur/Hadi','Irfan/Joko','Kevin/Lutfi','Made/Naufal','Oscar/Putra','Qori/Rizky'], numGroups:2, groupMode:'random', manualAssign:{}},
+      {id:'gpi', nama:'Ganda Putri', format:'groupknockout', peserta:['Sasha/Rina','Tia/Umi','Vina/Wulan','Xena/Yuni','Zara/Aisyah','Bela/Citra'], numGroups:2, groupMode:'manual', manualAssign:{'Sasha/Rina':0,'Tia/Umi':0,'Vina/Wulan':0,'Xena/Yuni':1,'Zara/Aisyah':1,'Bela/Citra':1}},
+      {id:'camp', nama:'Ganda Campuran', format:'knockout', peserta:['Andri/Sasha','Bimo/Tia','Dedi/Vina','Farel/Xena'], numGroups:2, groupMode:'random', manualAssign:{}}
+    ]
+  },
+  padel:{
+    nama:'Padel Sunday Cup', tanggal:'2026-08-30', lokasi:'Padel House Kemang', active:'duo',
+    categories:[{id:'duo', nama:'Duo Open', format:'knockout', peserta:['Raka/Bayu','Dimas/Elang','Fajar/Gilang','Hendra/Iqbal'], numGroups:2, groupMode:'random', manualAssign:{}}]
+  },
+  pickleball:{
+    nama:'Pickleball Community Mix', tanggal:'2026-09-06', lokasi:'GOR Cempaka', active:'mix',
+    categories:[{id:'mix', nama:'Mixed Doubles', format:'knockout', peserta:['Nadia/Oki','Putri/Qomar','Rani/Sena','Tara/Umar'], numGroups:2, groupMode:'random', manualAssign:{}}]
+  },
+  tennis:{
+    nama:'Tennis Open Club', tanggal:'2026-09-13', lokasi:'Lapangan Tenis Senayan', active:'tunggal',
+    categories:[{id:'tunggal', nama:'Tunggal Putra', format:'knockout', peserta:['Vino','Wahyu','Xander','Yoga'], numGroups:2, groupMode:'random', manualAssign:{}}]
+  }
+};
+const TFORMATS = {
+  knockout:{ nama:'🏆 Knock-out', info:'Sekali kalah langsung tersingkir — cepat, cocok waktu terbatas.' },
+  groupknockout:{ nama:'🥇 Group Knock-out', info:'Fase grup round-robin dulu, juara/runner-up grup lanjut ke babak gugur — lebih adil, tiap peserta pasti main beberapa kali.' }
+};
+
+let sport = 'badminton';
+let modalMode = null; // 'kategori' | 'peserta'
+let katIdSeq = 100;
+
+function esc(s){ return String(s).replace(/</g,'&lt;'); }
+
+// ═══ Sesi login (hm_session) — pola sama dengan mabarpro.html/badminton.html ═══
+function getSession(){
+  try{ return JSON.parse(localStorage.getItem('hm_session')) || {}; }
+  catch(e){ return {}; }
+}
+function initHeaderFromSession(){
+  const sess = getSession();
+  const namaEl = document.getElementById('namaKomunitas');
+  if(namaEl && sess.username) namaEl.textContent = sess.username;
+}
+function logout(){
+  if(!confirm('Keluar dari Turnamen Pro? Sesi kamu akan diakhiri dan kembali ke halaman login.')) return;
+  localStorage.removeItem('hm_session');
+  try{
+    const { createClient } = window.supabase;
+    const dbAuth = createClient('https://pxfpskzwkfpxslsvqbpz.supabase.co','sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp');
+    dbAuth.auth.signOut().finally(()=>{ window.location.href = 'loginpage.html'; });
+  }catch(e){ window.location.href = 'loginpage.html'; }
+}
+
+// ═══ Toast & dummy stub ═══
+let toastTimer=null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function dummyAlert(fitur){
+  showToast('⏳ "'+fitur+'" aktif setelah tersambung Supabase — tahap berikutnya.');
+}
+function shareStub(){
+  showToast('📸 Share Instagram multi-slide mengikuti pola tracker.html — aktif tahap berikutnya.');
+}
+
+// ═══ Ganti cabang ═══
+function gantiSport(k){
+  sport = k;
+  renderAll();
+}
+function renderSportPills(){
+  document.getElementById('sportPills').innerHTML = Object.entries(SPORT_META).map(([k,m])=>
+    `<button class="pill ${k===sport?'on':''}" style="--pill-accent:var(${m.accentVar})" onclick="gantiSport('${k}')"><img src="${m.icon}" alt="">${m.label}</button>`
+  ).join('');
+}
+
+// ═══ Event info fields ═══
+function ubahEvent(field,val){ EVENTS[sport][field] = val; }
+function fillEventFields(){
+  const ev = EVENTS[sport];
+  document.getElementById('fNama').value = ev.nama;
+  document.getElementById('fTanggal').value = ev.tanggal;
+  document.getElementById('fLokasi').value = ev.lokasi;
+}
+
+// ═══ Kategori ═══
+function kategoriAktif(){
+  const ev = EVENTS[sport];
+  return ev.categories.find(c=>c.id===ev.active) || ev.categories[0];
+}
+function pilihKategori(id){ EVENTS[sport].active = id; renderKategoriBar(); renderKatPanel(); }
+function renderKategoriBar(){
+  const ev = EVENTS[sport];
+  const bar = document.getElementById('kategoriBar');
+  bar.innerHTML = ev.categories.map(c=>
+    `<button class="kat-chip ${c.id===ev.active?'on':''}" onclick="pilihKategori('${c.id}')">${esc(c.nama)}
+       <span class="hapus" onclick="event.stopPropagation();hapusKategori('${c.id}')" title="Hapus kategori">×</span>
+     </button>`
+  ).join('') + `<button class="kat-add" onclick="openModal('kategori')">+ Tambah Kategori</button>`;
+}
+function hapusKategori(id){
+  const ev = EVENTS[sport];
+  if(ev.categories.length<=1){ showToast('⚠️ Minimal 1 kategori harus ada'); return; }
+  if(!confirm('Hapus kategori ini beserta data pesertanya?')) return;
+  ev.categories = ev.categories.filter(c=>c.id!==id);
+  if(ev.active===id) ev.active = ev.categories[0].id;
+  renderKategoriBar(); renderKatPanel();
+}
+
+// ═══ Peserta ═══
+function tambahPesertaInline(){ openModal('peserta'); }
+function hapusPeserta(idx){
+  const cat = kategoriAktif();
+  cat.peserta.splice(idx,1);
+  renderKatPanel();
+}
+
+// ═══ Format ═══
+function pilihFormat(fmt){
+  kategoriAktif().format = fmt;
+  renderKatPanel();
+}
+
+// ═══ Sample bracket generator — demo tampilan, BUKAN algoritma turnamen asli ═══
+function buildSampleBracket(pesertaAsli){
+  let names = pesertaAsli.slice();
+  if(names.length<2) return [];
+  let size=1; while(size<names.length) size*=2;
+  while(names.length<size) names.push('BYE');
+  const rounds=[]; let current=names; let seed=0;
+  while(current.length>1){
+    const round=[]; const winners=[];
+    for(let i=0;i<current.length;i+=2){
+      const a=current[i], b=current[i+1]; seed++;
+      if(b==='BYE'){ round.push({a,b,scoreA:null,scoreB:null,winner:a}); winners.push(a); continue; }
+      if(a==='BYE'){ round.push({a,b,scoreA:null,scoreB:null,winner:b}); winners.push(b); continue; }
+      const aWin = seed%3!==0;
+      const scoreA = aWin?21:15+(seed%5), scoreB = aWin?14+(seed%6):21;
+      const winner = aWin?a:b;
+      round.push({a,b,scoreA,scoreB,winner}); winners.push(winner);
+    }
+    rounds.push(round); current=winners;
+  }
+  return rounds;
+}
+function roundLabel(total,idx){
+  const remaining = total-idx;
+  if(remaining===1) return 'Final';
+  if(remaining===2) return 'Semifinal';
+  if(remaining===3) return 'Perempat Final';
+  return 'Babak '+(idx+1);
+}
+function shuffleArr(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// Pola sama dengan buatGroupStage()/setGroupMode() di tracker.html: dua cara bagi grup —
+// 'random' (sistem acak & bagi rata) atau 'manual' (host tentukan sendiri lewat manualAssign,
+// key-nya nama/pasangan karena peserta di sini murni string, bukan objek ber-id).
+function buildSampleGroups(cat){
+  const peserta = cat.peserta;
+  const numGroups = Math.max(2, Math.min(cat.numGroups||2, Math.max(2, Math.floor(peserta.length/2)||2)));
+  const groups = Array.from({length:numGroups},()=>[]);
+  let belumDitugaskan = 0;
+  if(cat.groupMode==='manual'){
+    peserta.forEach(p=>{
+      const gi = cat.manualAssign ? cat.manualAssign[p] : undefined;
+      if(gi!==undefined && gi<numGroups) groups[gi].push(p);
+      else belumDitugaskan++;
+    });
+  } else {
+    shuffleArr(peserta).forEach((p,i)=>groups[i%numGroups].push(p));
+  }
+  const result = groups.map((g,gi)=>({
+    nama:'Grup '+String.fromCharCode(65+gi),
+    standings: g.map((nama,i)=>({nama, poin:(g.length-i)*3})).sort((a,b)=>b.poin-a.poin)
+  }));
+  return { groups: result, belumDitugaskan };
+}
+
+// ═══ Konfigurasi grup (Random by System / Manual) — sama seperti modul turnamen tracker.html ═══
+function setGroupMode(mode){
+  const cat = kategoriAktif();
+  cat.groupMode = mode;
+  if(!cat.manualAssign) cat.manualAssign = {};
+  renderKatPanel();
+}
+function ubahNumGroups(val){
+  const cat = kategoriAktif();
+  cat.numGroups = Math.max(2, Math.min(8, parseInt(val)||2));
+  if(cat.groupMode==='manual'){
+    Object.keys(cat.manualAssign).forEach(nama=>{
+      if(cat.manualAssign[nama] >= cat.numGroups) delete cat.manualAssign[nama];
+    });
+  }
+  renderKatPanel();
+}
+function assignManualGroup(nama, val){
+  const cat = kategoriAktif();
+  if(!cat.manualAssign) cat.manualAssign = {};
+  if(val==='') delete cat.manualAssign[nama];
+  else cat.manualAssign[nama] = parseInt(val);
+  // sengaja tidak render ulang seluruh panel di sini — supaya dropdown peserta lain
+  // yang sedang dipilih tidak ikut ke-reset tampilannya tiap satu peserta diatur.
+}
+function renderManualAssignList(cat){
+  if(!cat.peserta.length) return `<p style="font-size:11.5px;color:var(--muted)">Tambah peserta dulu, baru atur grupnya di sini.</p>`;
+  const opts = Array.from({length:cat.numGroups||2},(_,i)=>i);
+  const label = i=>'Grup '+String.fromCharCode(65+i);
+  return `<div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-bottom:8px">ATUR GRUP MANUAL</div>` +
+    cat.peserta.map(p=>{
+      const cur = cat.manualAssign ? cat.manualAssign[p] : undefined;
+      const optHtml = opts.map(i=>`<option value="${i}" ${cur===i?'selected':''}>${label(i)}</option>`).join('');
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="flex:1;font-size:12.5px;font-weight:700">${esc(p)}</span>
+        <select style="flex:0 0 130px" onchange="assignManualGroup('${p.replace(/'/g,"\\'")}',this.value)">
+          <option value="">— Pilih Grup —</option>${optHtml}
+        </select>
+      </div>`;
+    }).join('') +
+    `<p style="font-size:11px;color:var(--muted);margin-top:6px">Semua peserta sebaiknya dapat grup dulu sebelum babak gugur digenerate (aktif tahap berikutnya).</p>`;
+}
+function renderGroupConfigUi(cat){
+  if(cat.format!=='groupknockout') return '';
+  const isManual = cat.groupMode==='manual';
+  return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+    <label>Jumlah Grup</label>
+    <input type="number" min="2" max="8" value="${cat.numGroups||2}" style="max-width:120px;margin-bottom:12px" onchange="ubahNumGroups(this.value)">
+    <div class="fmt-row" style="margin-bottom:${isManual?'12px':'0'}">
+      <button class="fmt-opt ${!isManual?'on':''}" onclick="setGroupMode('random')"><b>🎲 Random by System</b><span>Sistem acak &amp; bagi rata otomatis</span></button>
+      <button class="fmt-opt ${isManual?'on':''}" onclick="setGroupMode('manual')"><b>✋ Manual</b><span>Koben atur sendiri tiap peserta masuk grup mana</span></button>
+    </div>
+    ${isManual ? renderManualAssignList(cat) : ''}
+  </div>`;
+}
+
+function renderBagan(cat){
+  if(cat.format==='groupknockout'){
+    const { groups, belumDitugaskan } = buildSampleGroups(cat);
+    return `<div class="group-grid">${groups.map(g=>`
+      <div class="group-card">
+        <h4>${esc(g.nama)}</h4>
+        <table>${g.standings.map((s,i)=>`
+          <tr><td class="rk">${i+1}</td><td>${esc(s.nama)}</td><td class="pt">${s.poin} pt</td></tr>
+        `).join('') || '<tr><td colspan="3" style="color:var(--muted)">Belum ada peserta di grup ini</td></tr>'}</table>
+      </div>`).join('')}</div>
+      ${belumDitugaskan>0?`<div class="group-note">⚠️ ${belumDitugaskan} peserta belum ditugaskan ke grup manapun — lengkapi di pengaturan grup manual di atas.</div>`:''}
+      <div class="group-note">Juara &amp; runner-up tiap grup lanjut ke babak gugur — penyusunan anti-rematch sesama grup aktif setelah algoritma tersambung.</div>`;
+  }
+  const rounds = buildSampleBracket(cat.peserta);
+  if(!rounds.length) return `<div class="group-note">Tambah minimal 2 peserta untuk melihat contoh bagan.</div>`;
+  const total = rounds.length;
+  const champion = rounds[total-1][0]?.winner;
+  return `<div class="bracket-wrap"><div class="bracket">
+    ${rounds.map((round,r)=>`
+      <div class="bracket-round">
+        <div class="round-label">${roundLabel(total,r)}</div>
+        ${round.map(m=>`
+          <div class="b-match">
+            <div class="b-side ${m.winner===m.a?'win':''}"><span class="nm">${esc(m.a)}</span>${m.scoreA!==null?`<span class="sc">${m.scoreA}</span>`:''}</div>
+            <div class="divider"></div>
+            <div class="b-side ${m.winner===m.b?'win':''}"><span class="nm">${esc(m.b)}</span>${m.scoreB!==null?`<span class="sc">${m.scoreB}</span>`:''}</div>
+          </div>`).join('')}
+      </div>`).join('')}
+  </div></div>
+  ${champion?`<div class="champion-note">🏆 Contoh juara: ${esc(champion)}</div>`:''}`;
+}
+
+function renderKatPanel(){
+  const cat = kategoriAktif();
+  const panel = document.getElementById('katPanel');
+  if(!cat){ panel.innerHTML=''; return; }
+  panel.innerHTML = `
+    <div>
+      <div class="card-title" style="font-size:13px;margin-bottom:10px">👥 Peserta — ${esc(cat.nama)} <span style="color:var(--muted);font-weight:600">(${cat.peserta.length})</span></div>
+      <table class="peserta-table">
+        ${cat.peserta.map((p,i)=>`
+          <tr><td class="no">${i+1}</td><td>${esc(p)}</td><td style="width:30px;text-align:right"><button class="remove" onclick="hapusPeserta(${i})">×</button></td></tr>
+        `).join('') || '<tr><td colspan="3" style="color:var(--muted);padding:14px 4px">Belum ada peserta.</td></tr>'}
+      </table>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:12px" onclick="tambahPesertaInline()">+ Tambah Peserta</button>
+    </div>
+    <div>
+      <div class="card-title" style="font-size:13px;margin-bottom:10px">⚙️ Format &amp; Bagan</div>
+      <div class="fmt-row">
+        ${Object.entries(TFORMATS).map(([k,f])=>`
+          <button class="fmt-opt ${cat.format===k?'on':''}" onclick="pilihFormat('${k}')"><b>${f.nama}</b><span>${f.info}</span></button>
+        `).join('')}
+      </div>
+      ${renderGroupConfigUi(cat)}
+      ${renderBagan(cat)}
+    </div>`;
+}
+
+// ═══ Modal tambah kategori/peserta ═══
+function openModal(mode){
+  modalMode = mode;
+  const overlay = document.getElementById('modalOverlay');
+  document.getElementById('modalTitle').textContent = mode==='kategori' ? 'Tambah Kategori' : 'Tambah Peserta';
+  document.getElementById('modalLabel').textContent = mode==='kategori' ? 'Nama kategori (mis. Ganda Putra)' : 'Nama peserta / pasangan';
+  const input = document.getElementById('modalInput');
+  input.value = '';
+  overlay.classList.add('open');
+  document.body.classList.add('modal-lock'); // kunci scroll body — di iOS Safari halaman
+  // di belakang modal bisa ikut ke-scroll (rubber-band) kalau tidak dikunci
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+  setTimeout(()=>input.focus(), 50);
+}
+function closeModal(){
+  const overlay = document.getElementById('modalOverlay');
+  overlay.classList.remove('show');
+  document.body.classList.remove('modal-lock');
+  setTimeout(()=>overlay.classList.remove('open'), 180);
+}
+function simpanModal(){
+  const val = document.getElementById('modalInput').value.trim();
+  if(!val){ showToast('⚠️ Isi dulu namanya'); return; }
+  const ev = EVENTS[sport];
+  if(modalMode==='kategori'){
+    const id = 'kat'+(katIdSeq++);
+    ev.categories.push({id, nama:val, format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}});
+    ev.active = id;
+    renderKategoriBar(); renderKatPanel();
+    showToast('✅ Kategori "'+val+'" ditambahkan');
+  } else if(modalMode==='peserta'){
+    kategoriAktif().peserta.push(val);
+    renderKatPanel();
+    showToast('✅ Peserta ditambahkan');
+  }
+  closeModal();
+}
+
+// ═══ Cetak — iframe tersembunyi, BUKAN window.open() ═══
+// Sama seperti cetakHtml() di tracker.html: window.open('', '_blank') tidak andal di PWA
+// Android standalone (sering ke-rute ke browser luar / keluar app). Iframe tersembunyi
+// tetap di dalam window aplikasi, jadi dialog print/simpan-PDF konsisten di semua mode.
+function cetakHtml(fullHtml){
+  const ifr = document.createElement('iframe');
+  ifr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(ifr);
+  const doc = ifr.contentWindow.document;
+  doc.open(); doc.write(fullHtml); doc.close();
+  ifr.onload = () => {
+    ifr.contentWindow.focus();
+    ifr.contentWindow.print();
+    setTimeout(()=>{ if(ifr.parentNode) document.body.removeChild(ifr); }, 1200);
+  };
+}
+function cetakKategori(){
+  const ev = EVENTS[sport], cat = kategoriAktif();
+  if(!cat){ showToast('⚠️ Tidak ada kategori untuk dicetak'); return; }
+  const bodyHtml = renderBagan(cat)
+    .replace(/onclick="[^"]*"/g,'')
+    .replace(/<button[^>]*class="remove"[^>]*>×<\/button>/g,'');
+  const html = `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">
+    <title>${esc(ev.nama)} — ${esc(cat.nama)}</title>
+    <style>
+      body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1E293B;padding:24px}
+      h1{font-size:18px;margin-bottom:2px} p{font-size:12.5px;color:#64748B;margin-bottom:18px}
+      .bracket{display:flex;gap:28px} .bracket-round{display:flex;flex-direction:column;justify-content:space-around;gap:12px;min-width:150px}
+      .round-label{font-size:10px;font-weight:800;color:#64748B;text-transform:uppercase;text-align:center;margin-bottom:5px}
+      .b-match{border:1.5px solid #E2E8F0;border-radius:10px;padding:8px 10px;font-size:12px}
+      .b-side{display:flex;justify-content:space-between;padding:3px 0} .b-side.win{font-weight:800}
+      .divider{height:1px;background:#E2E8F0;margin:2px 0}
+      .group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+      .group-card{border:1px solid #E2E8F0;border-radius:10px;padding:12px} table{width:100%;border-collapse:collapse;font-size:11.5px}
+      td{padding:4px 2px;border-bottom:1px solid #E2E8F0}
+      .champion-note{margin-top:14px;font-weight:700;font-size:13px}
+      .group-note{font-size:11px;color:#64748B;margin-top:10px}
+    </style></head><body>
+    <h1>${esc(ev.nama)} — ${esc(cat.nama)}</h1>
+    <p>${esc(ev.tanggal||'')} · ${esc(ev.lokasi||'')} · Dicetak dari Turnamen Pro (data contoh — tahap dummy)</p>
+    ${bodyHtml}
+    </body></html>`;
+  cetakHtml(html);
+  showToast('🖨️ Menyiapkan cetak…');
+}
+
+// ═══ Render semua ═══
+function renderAll(){
+  document.documentElement.style.setProperty('--accent', `var(${SPORT_META[sport].accentVar})`);
+  renderSportPills();
+  fillEventFields();
+  renderKategoriBar();
+  renderKatPanel();
+}
+
+initHeaderFromSession();
+renderAll();
+</script>
+</body>
+</html>
