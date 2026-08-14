@@ -24,7 +24,12 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:calc(60px + env(safe-area-inset-bottom));overscroll-behavior-y:contain}
+/* overflow-x:hidden di body = jaring pengaman terakhir — kalaupun ada elemen lain yang
+   suatu saat melebar tak terduga (di luar 2 titik yang sudah diperbaiki: .kat-panel &
+   .event-grid), halaman tidak akan pernah "offside"/geser ke samping lagi. Yang memang
+   sengaja bisa di-scroll ke samping (mis. .bracket-wrap) tetap jalan normal karena itu
+   scroll di dalam elemennya sendiri, bukan di level body. */
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:calc(60px + env(safe-area-inset-bottom));overscroll-behavior-y:contain;overflow-x:hidden}
 body.modal-lock{overflow:hidden}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
 
@@ -121,7 +126,7 @@ input[type="date"]{min-width:0}
    tracker.html — supaya scroll ke samping yang dibutuhkan tidak berlebihan di HP. */
 @media(max-width:640px){
   .bracket{gap:22px}
-  .bracket-round{min-width:148px}
+  .bracket-round{min-width:172px}
   .b-match{padding:8px 10px;font-size:11.5px}
 }
 .round-label{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-bottom:6px}
@@ -144,8 +149,12 @@ input[type="date"]{min-width:0}
 .group-note{margin-top:12px;font-size:11.5px;color:var(--muted)}
 
 .aksi-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
-.rule-note{margin-top:18px;font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:13px 16px}
-.rule-note b{color:var(--text)}
+
+/* ── Footer — pola sama seperti badminton.html/homepage.html (satu situs, satu identitas) ── */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:28px 0;font-size:13px;color:var(--muted);margin-top:24px}
+.footer-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--accent)}
 
 /* ── Modal ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;opacity:0;transition:opacity .18s}
@@ -221,11 +230,14 @@ input[type="date"]{min-width:0}
     <p style="font-size:11.5px;color:var(--muted);margin-top:10px">💡 Untuk saat ini penyimpanan hasil dilakukan lewat <b style="color:var(--text)">Cetak</b> (simpan/print PDF) atau <b style="color:var(--text)">Share ke Instagram</b> (simpan gambar PNG) — belum ada simpan otomatis ke cloud.</p>
   </div>
 
-  <div class="rule-note">
-    ℹ️ <b>Tahap dummy:</b> navigasi (ganti cabang, ganti kategori, tambah peserta, pilih format, cetak, share) sudah aktif dan siap diisi data asli. Bagan yang tampil begitu peserta ditambahkan adalah <b>pratinjau tampilan</b>, bukan hasil pertandingan resmi — algoritma penyusunan asli (anti-rematch sesama grup, generate bagan final) belum aktif. Karena belum tersambung cloud, hasil disimpan lewat <b>Cetak</b> atau <b>Share ke Instagram</b> dulu untuk saat ini. Halaman ini <b>khusus/by request</b> — akses lewat akun HOSTMABAR yang sama (redirect dari halaman login), bukan link publik terbuka.
-  </div>
-
 </div>
+
+<footer>
+  <div class="wrap footer-row">
+    <span>&copy; 2026 HOSTMABAR &middot; <a href="homepage.html">Beranda</a> &middot; <a href="homepage.html#harga">Harga</a></span>
+    <span><a href="https://instagram.com/koben.gsbsd" target="_blank" rel="noopener">Instagram @koben.gsbsd</a></span>
+  </div>
+</footer>
 
 <!-- MODAL (tambah kategori / peserta) -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
@@ -278,27 +290,37 @@ __hmLogo.src = 'Logohostmabarv3.png';
 // ═══ Data event per cabang — in-memory saja (belum tersambung Supabase). Nama kategori
 // dibiarkan sebagai contoh struktur umum (boleh diganti/dihapus Koben), TAPI tidak ada
 // lagi peserta contoh — kolom peserta kosong, siap diisi data asli. ═══
+// Bikin objek kategori baru dengan semua field default (dipakai di data awal & saat
+// tambah kategori lewat modal) — supaya field mesin turnamen asli (stage/bracket/groups/
+// dst) tidak pernah kelupaan ditambahkan cuma di salah satu tempat.
+function freshCategory(id, nama, format){
+  return {
+    id, nama, format, peserta:[], numGroups:2, groupMode:'random', manualAssign:{}, qualifyPerGroup:2,
+    stage:'setup', bracket:[], groups:[], hasPrelim:false, qualPrelimCount:0, qualDirectEntries:[],
+    editing:null, editingGrup:null
+  };
+}
 const EVENTS = {
   badminton:{
     nama:'', tanggal:'', lokasi:'',
     active:'gp',
     categories:[
-      {id:'gp', nama:'Ganda Putra', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}},
-      {id:'gpi', nama:'Ganda Putri', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}},
-      {id:'camp', nama:'Ganda Campuran', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}}
+      freshCategory('gp','Ganda Putra','knockout'),
+      freshCategory('gpi','Ganda Putri','knockout'),
+      freshCategory('camp','Ganda Campuran','knockout')
     ]
   },
   padel:{
     nama:'', tanggal:'', lokasi:'', active:'duo',
-    categories:[{id:'duo', nama:'Duo Open', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}}]
+    categories:[freshCategory('duo','Duo Open','knockout')]
   },
   pickleball:{
     nama:'', tanggal:'', lokasi:'', active:'mix',
-    categories:[{id:'mix', nama:'Mixed Doubles', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}}]
+    categories:[freshCategory('mix','Mixed Doubles','knockout')]
   },
   tennis:{
     nama:'', tanggal:'', lokasi:'', active:'tunggal',
-    categories:[{id:'tunggal', nama:'Tunggal Putra', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}}]
+    categories:[freshCategory('tunggal','Tunggal Putra','knockout')]
   }
 };
 const TFORMATS = {
@@ -392,75 +414,249 @@ function hapusKategori(id){
   renderKategoriBar(); renderKatPanel();
 }
 
-// ═══ Peserta ═══
-function tambahPesertaInline(){ openModal('peserta'); }
+// ═══ Peserta — dikunci begitu bagan/fase grup sudah dibuat (stage 'running'), supaya
+// daftar peserta tidak berubah di tengah turnamen yang sudah berjalan. Reset bagan dulu
+// kalau mau ubah peserta. ═══
+function tambahPesertaInline(){
+  if(kategoriAktif().stage==='running'){ showToast('🔒 Reset bagan dulu untuk tambah peserta'); return; }
+  openModal('peserta');
+}
 function hapusPeserta(idx){
   const cat = kategoriAktif();
+  if(cat.stage==='running'){ showToast('🔒 Reset bagan dulu untuk hapus peserta'); return; }
   cat.peserta.splice(idx,1);
   renderKatPanel();
 }
 
-// ═══ Format ═══
+// ═══ Format — juga dikunci saat bagan sudah jalan, sama alasannya. ═══
 function pilihFormat(fmt){
-  kategoriAktif().format = fmt;
+  const cat = kategoriAktif();
+  if(cat.stage==='running'){ showToast('🔒 Reset bagan dulu sebelum ganti format'); return; }
+  cat.format = fmt;
   renderKatPanel();
 }
 
-// ═══ Generator pratinjau bagan dari peserta yang diinput — sekadar bantu visualisasi
-// struktur & tata letak bagan, BUKAN algoritma turnamen asli (menang/kalah & skor di
-// bawah ini fiktif/acak, belum pakai anti-rematch — itu aktif di tahap berikutnya). ═══
-function buildSampleBracket(pesertaAsli){
-  let names = pesertaAsli.slice();
-  if(names.length<2) return [];
-  let size=1; while(size<names.length) size*=2;
-  while(names.length<size) names.push('BYE');
-  const rounds=[]; let current=names; let seed=0;
-  while(current.length>1){
-    const round=[]; const winners=[];
-    for(let i=0;i<current.length;i+=2){
-      const a=current[i], b=current[i+1]; seed++;
-      if(b==='BYE'){ round.push({a,b,scoreA:null,scoreB:null,winner:a}); winners.push(a); continue; }
-      if(a==='BYE'){ round.push({a,b,scoreA:null,scoreB:null,winner:b}); winners.push(b); continue; }
-      const aWin = seed%3!==0;
-      const scoreA = aWin?21:15+(seed%5), scoreB = aWin?14+(seed%6):21;
-      const winner = aWin?a:b;
-      round.push({a,b,scoreA,scoreB,winner}); winners.push(winner);
-    }
-    rounds.push(round); current=winners;
-  }
-  return rounds;
-}
-function roundLabel(total,idx){
-  const remaining = total-idx;
+function shuffleArr(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// Nama babak — sama seperti roundName() di tracker.html. hasPrelim=true berarti round
+// index 0 adalah Babak Kualifikasi (bukan bagian hitungan "Perempat Final dst" normal).
+function roundLabel(total, idx, hasPrelim){
+  if(hasPrelim && idx===0) return 'Babak Kualifikasi';
+  const effIdx = hasPrelim ? idx-1 : idx;
+  const effTotal = hasPrelim ? total-1 : total;
+  const remaining = effTotal-effIdx;
   if(remaining===1) return 'Final';
   if(remaining===2) return 'Semifinal';
   if(remaining===3) return 'Perempat Final';
-  return 'Babak '+(idx+1);
+  return 'Babak '+(effIdx+1);
 }
-function shuffleArr(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
-// Pola sama dengan buatGroupStage()/setGroupMode() di tracker.html: dua cara bagi grup —
-// 'random' (sistem acak & bagi rata) atau 'manual' (host tentukan sendiri lewat manualAssign,
-// key-nya nama/pasangan karena peserta di sini murni string, bukan objek ber-id).
-function buildSampleGroups(cat){
-  const peserta = cat.peserta;
-  const numGroups = Math.max(2, Math.min(cat.numGroups||2, Math.max(2, Math.floor(peserta.length/2)||2)));
-  const groups = Array.from({length:numGroups},()=>[]);
-  let belumDitugaskan = 0;
+// ═══════════════════════════════════════════════════════════════════
+// MESIN TURNAMEN ASLI — port dari susunAntiSesamaGrup()/buatKnockout()/buatGroupStage()/
+// groupStandings() di tracker.html, disesuaikan ke model data turnamenpro (peserta = string
+// nama langsung, bukan objek {id,name}). Bagan/fase grup di bawah ini MULAI KOSONG (skor
+// null, winner null) — diisi manual per match, bukan hasil simulasi/acak lagi. ═══════════════════════
+
+// Anti-rematch sesama grup: susun ulang urutan peserta lolos supaya 2 entry dari grup yang
+// sama tidak langsung berhadapan di babak pertama babak gugur. items = [{entry, groupIdx}].
+function susunAntiSesamaGrup(items){
+  const byGroup = {};
+  items.forEach(it=>{ (byGroup[it.groupIdx] = byGroup[it.groupIdx]||[]).push(it); });
+  const groupKeys = shuffleArr(Object.keys(byGroup));
+  groupKeys.forEach(k=> byGroup[k] = shuffleArr(byGroup[k]));
+  const result = [];
+  let remaining = groupKeys.slice();
+  while(remaining.length){
+    for(const k of remaining.slice()){
+      const arr = byGroup[k];
+      if(arr.length) result.push(arr.shift());
+      if(!arr.length) remaining = remaining.filter(x=>x!==k);
+    }
+  }
+  // Interleave supaya entry grup yang sama tidak bertetangga langsung di bagan.
+  const n = result.length;
+  const half = Math.ceil(n/2);
+  const A = result.slice(0, half), B = result.slice(half);
+  const final = [];
+  for(let i=0;i<half;i++){ final.push(A[i]); if(B[i]) final.push(B[i]); }
+  return final.map(x=>x.entry);
+}
+
+// Bagan knock-out asli — mendukung jumlah peserta bukan pangkat 2 lewat Babak Kualifikasi
+// (prelim): kelebihan peserta main dulu di babak kualifikasi, sisanya "bye" langsung ke
+// babak utama. Semua match dibuat KOSONG (menunggu skor diinput manual).
+function buatKnockoutReal(cat, entries, opts){
+  opts = opts || {};
+  const real = opts.preOrdered ? entries.slice() : shuffleArr(entries);
+  const n = real.length;
+  let P = 1; while(P*2<=n) P *= 2;
+  const extra = n-P;
+  const rounds = [];
+  let mainSlots, directEntries = [];
+  if(extra>0){
+    const prelimEntries = real.slice(0, extra*2);
+    directEntries = real.slice(extra*2);
+    const preRound = [];
+    for(let i=0;i<prelimEntries.length;i+=2) preRound.push({a:prelimEntries[i], b:prelimEntries[i+1], scoreA:null, scoreB:null, winner:null});
+    rounds.push(preRound);
+    mainSlots = new Array(P).fill(null);
+    directEntries.forEach((e,j)=>{ mainSlots[extra+j] = e; });
+  } else {
+    mainSlots = real;
+  }
+  const mainRound = [];
+  for(let i=0;i<mainSlots.length;i+=2) mainRound.push({a:mainSlots[i]||null, b:mainSlots[i+1]||null, scoreA:null, scoreB:null, winner:null});
+  rounds.push(mainRound);
+  let sz = mainRound.length;
+  while(sz>1){ sz/=2; rounds.push(Array.from({length:sz},()=>({a:null,b:null,scoreA:null,scoreB:null,winner:null}))); }
+  cat.bracket = rounds;
+  cat.hasPrelim = extra>0;
+  cat.qualPrelimCount = extra;
+  cat.qualDirectEntries = directEntries;
+  cat.editing = null;
+  cat.stage = 'running';
+}
+
+// Fase grup asli — round-robin di dalam tiap grup, mode random (acak & bagi rata) atau
+// manual (pakai cat.manualAssign yang sudah diatur host). Semua match dibuat KOSONG.
+function buatGroupStageReal(cat, entries, numGroups){
+  numGroups = Math.max(2, Math.min(numGroups, Math.max(2, Math.floor(entries.length/2))));
+  const groups = Array.from({length:numGroups}, (_,i)=>({nama:'Grup '+String.fromCharCode(65+i), entries:[], matches:[]}));
   if(cat.groupMode==='manual'){
-    peserta.forEach(p=>{
-      const gi = cat.manualAssign ? cat.manualAssign[p] : undefined;
-      if(gi!==undefined && gi<numGroups) groups[gi].push(p);
-      else belumDitugaskan++;
+    entries.forEach(e=>{
+      const gi = cat.manualAssign[e];
+      if(gi!==undefined && gi<numGroups) groups[gi].entries.push(e);
     });
   } else {
-    shuffleArr(peserta).forEach((p,i)=>groups[i%numGroups].push(p));
+    shuffleArr(entries).forEach((e,i)=> groups[i%numGroups].entries.push(e));
   }
-  const result = groups.map((g,gi)=>({
-    nama:'Grup '+String.fromCharCode(65+gi),
-    standings: g.map((nama,i)=>({nama, poin:(g.length-i)*3})).sort((a,b)=>b.poin-a.poin)
-  }));
-  return { groups: result, belumDitugaskan };
+  groups.forEach(g=>{
+    for(let i=0;i<g.entries.length;i++)
+      for(let j=i+1;j<g.entries.length;j++)
+        g.matches.push({a:g.entries[i], b:g.entries[j], scoreA:null, scoreB:null, winner:null});
+  });
+  cat.groups = groups;
+  cat.stage = 'running';
+}
+
+// Tombol utama "Buat Bagan"/"Buat Fase Grup" — validasi dulu sebelum generate.
+function mulaiBagan(){
+  const cat = kategoriAktif();
+  if(cat.peserta.length<2){ showToast('⚠️ Tambah minimal 2 peserta dulu'); return; }
+  if(cat.format==='groupknockout'){
+    const ng = cat.numGroups||2;
+    if(cat.peserta.length < ng*2){ showToast('⚠️ Peserta terlalu sedikit untuk '+ng+' grup (minimal 2/grup)'); return; }
+    if(cat.groupMode==='manual'){
+      const belum = cat.peserta.filter(p=> cat.manualAssign[p]===undefined);
+      if(belum.length){ showToast('⚠️ '+belum.length+' peserta belum dapat grup — lengkapi dulu di pengaturan manual'); return; }
+      const counts = Array(ng).fill(0);
+      cat.peserta.forEach(p=> counts[cat.manualAssign[p]]++);
+      const idxKurang = counts.findIndex(c=>c<2);
+      if(idxKurang!==-1){ showToast('⚠️ Grup '+String.fromCharCode(65+idxKurang)+' minimal butuh 2 peserta'); return; }
+    }
+    buatGroupStageReal(cat, cat.peserta, ng);
+    showToast('🎉 Fase grup dibuat — mulai input skor tiap match!');
+  } else {
+    buatKnockoutReal(cat, cat.peserta);
+    showToast('🎉 Bagan turnamen dibuat — mulai input skor tiap match!');
+  }
+  renderKatPanel();
+}
+function resetBaganKategori(){
+  const cat = kategoriAktif();
+  if(!confirm('Reset bagan/fase grup kategori "'+cat.nama+'"? Semua skor yang sudah diinput akan hilang (peserta tidak terhapus).')) return;
+  cat.stage='setup'; cat.bracket=[]; cat.groups=[]; cat.hasPrelim=false; cat.qualPrelimCount=0; cat.qualDirectEntries=[]; cat.editing=null; cat.editingGrup=null;
+  renderKatPanel();
+  showToast('🗑️ Bagan direset — atur ulang lalu buat lagi kapan saja');
+}
+
+// ── Skor fase grup — klik ✏️/✅ untuk edit inline, sama pola dengan editSkorGrup() dkk
+// di tracker.html. Tidak boleh seri (semua cabang di HOSTMABAR selalu ada pemenang). ──
+function editSkorGrupReal(gi,mi){ kategoriAktif().editingGrup = {gi,mi}; renderKatPanel(); }
+function batalEditGrupReal(){ kategoriAktif().editingGrup = null; renderKatPanel(); }
+function simpanSkorGrupReal(gi,mi){
+  const cat = kategoriAktif();
+  const sA = parseInt(document.getElementById(`gs-g${gi}-m${mi}-A`).value);
+  const sB = parseInt(document.getElementById(`gs-g${gi}-m${mi}-B`).value);
+  if(isNaN(sA)||isNaN(sB)){ showToast('⚠️ Masukkan skor kedua peserta'); return; }
+  if(sA<0||sB<0){ showToast('⚠️ Skor tidak boleh minus'); return; }
+  if(sA===sB){ showToast('❌ Tidak boleh seri — harus ada pemenang'); return; }
+  const m = cat.groups[gi].matches[mi];
+  m.scoreA=sA; m.scoreB=sB; m.winner = sA>sB ? m.a : m.b;
+  cat.editingGrup = null;
+  renderKatPanel();
+  showToast('✅ Hasil match grup tersimpan');
+}
+function groupStandingsReal(g){
+  const stats = {};
+  g.entries.forEach(e=>{ stats[e] = {nama:e, played:0, wins:0, losses:0, points:0, diff:0}; });
+  g.matches.forEach(m=>{
+    if(m.winner==null) return;
+    const w = m.winner, l = (w===m.a) ? m.b : m.a;
+    const ws = (w===m.a) ? m.scoreA : m.scoreB, ls = (w===m.a) ? m.scoreB : m.scoreA;
+    if(!stats[w] || !stats[l]) return;
+    stats[w].played++; stats[w].wins++; stats[w].points+=3; stats[w].diff += (ws-ls);
+    stats[l].played++; stats[l].losses++; stats[l].points+=1; stats[l].diff -= (ws-ls);
+  });
+  return Object.values(stats).sort((a,b)=> b.points-a.points || b.diff-a.diff || b.wins-a.wins);
+}
+function semuaMatchGrupSelesaiReal(cat){ return cat.groups.every(g=> g.matches.every(m=> m.winner!=null)); }
+
+// ── Skor bagan gugur — edit inline per match. Pemenang otomatis maju ke slot babak
+// berikutnya; kalau hasil match yang SUDAH ada pemenangnya diedit ulang & pemenangnya
+// berubah, semua match turunannya di babak-babak setelahnya ikut di-invalidate (sama
+// seperti invalidateForward() di tracker.html) supaya bagan tidak jadi tidak konsisten. ──
+function editSkorBaganReal(r,i){ kategoriAktif().editing = {r,i}; renderKatPanel(); }
+function batalEditBaganReal(){ kategoriAktif().editing = null; renderKatPanel(); }
+function invalidateForwardReal(cat, r, i){
+  if(!cat.bracket[r] || !cat.bracket[r][i]) return;
+  const m = cat.bracket[r][i];
+  const hadWinner = !!m.winner;
+  m.scoreA=null; m.scoreB=null; m.winner=null;
+  if(hadWinner && cat.bracket[r+1]){
+    const nextIdx = Math.floor(i/2), pos = i%2===0?'a':'b';
+    cat.bracket[r+1][nextIdx][pos] = null;
+    invalidateForwardReal(cat, r+1, nextIdx);
+  }
+}
+function simpanSkorBaganReal(r,i){
+  const cat = kategoriAktif();
+  const sA = parseInt(document.getElementById(`bs-r${r}-m${i}-A`).value);
+  const sB = parseInt(document.getElementById(`bs-r${r}-m${i}-B`).value);
+  if(isNaN(sA)||isNaN(sB)){ showToast('⚠️ Masukkan skor kedua peserta'); return; }
+  if(sA<0||sB<0){ showToast('⚠️ Skor tidak boleh minus'); return; }
+  if(sA===sB){ showToast('❌ Tidak boleh seri — harus ada pemenang'); return; }
+  const m = cat.bracket[r][i];
+  const oldWinner = m.winner;
+  m.scoreA=sA; m.scoreB=sB; m.winner = sA>sB ? m.a : m.b;
+  if(cat.bracket[r+1]){
+    const nextIdx = Math.floor(i/2), pos = i%2===0?'a':'b';
+    const winnerChanged = oldWinner!==m.winner;
+    cat.bracket[r+1][nextIdx][pos] = m.winner;
+    if(winnerChanged) invalidateForwardReal(cat, r+1, nextIdx);
+  }
+  cat.editing = null;
+  renderKatPanel();
+  showToast('✅ Hasil tersimpan — pemenang maju ke babak berikutnya!');
+}
+
+// Transisi fase grup → babak gugur: ambil N teratas tiap grup (qualifyPerGroup), susun
+// pakai anti-rematch (susunAntiSesamaGrup) supaya juara/runner-up grup yang sama tidak
+// langsung ketemu lagi di babak pertama babak gugur.
+function mulaiBabakGugurReal(){
+  const cat = kategoriAktif();
+  if(!semuaMatchGrupSelesaiReal(cat) && !confirm('Belum semua match fase grup selesai. Lanjut ke babak gugur dengan hasil yang ada sekarang?')) return;
+  const qualifiers = [];
+  cat.groups.forEach((g,gi)=>{
+    groupStandingsReal(g).slice(0, cat.qualifyPerGroup||2).forEach(s=>{
+      qualifiers.push({entry:s.nama, groupIdx:gi});
+    });
+  });
+  if(qualifiers.length<2){ showToast('⚠️ Peserta lolos belum cukup untuk babak gugur'); return; }
+  const susunan = susunAntiSesamaGrup(qualifiers);
+  buatKnockoutReal(cat, susunan, {preOrdered:true});
+  renderKatPanel();
+  showToast('🎉 Babak gugur dimulai — anti-rematch sesama grup aktif!');
 }
 
 // ═══ Konfigurasi grup (Random by System / Manual) — sama seperti modul turnamen tracker.html ═══
@@ -478,6 +674,11 @@ function ubahNumGroups(val){
       if(cat.manualAssign[nama] >= cat.numGroups) delete cat.manualAssign[nama];
     });
   }
+  renderKatPanel();
+}
+function ubahQualifyPerGroup(val){
+  const cat = kategoriAktif();
+  cat.qualifyPerGroup = Math.max(1, Math.min(4, parseInt(val)||2));
   renderKatPanel();
 }
 function assignManualGroup(nama, val){
@@ -503,14 +704,16 @@ function renderManualAssignList(cat){
         </select>
       </div>`;
     }).join('') +
-    `<p style="font-size:11px;color:var(--muted);margin-top:6px">Semua peserta sebaiknya dapat grup dulu sebelum babak gugur digenerate (aktif tahap berikutnya).</p>`;
+    `<p style="font-size:11px;color:var(--muted);margin-top:6px">Semua peserta sebaiknya dapat grup dulu sebelum fase grup dibuat.</p>`;
 }
 function renderGroupConfigUi(cat){
   if(cat.format!=='groupknockout') return '';
   const isManual = cat.groupMode==='manual';
   return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
-    <label>Jumlah Grup</label>
-    <input type="number" min="2" max="8" value="${cat.numGroups||2}" style="max-width:120px;margin-bottom:12px" onchange="ubahNumGroups(this.value)">
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div style="flex:1"><label>Jumlah Grup</label><input type="number" min="2" max="8" value="${cat.numGroups||2}" onchange="ubahNumGroups(this.value)"></div>
+      <div style="flex:1"><label>Lolos per Grup</label><input type="number" min="1" max="4" value="${cat.qualifyPerGroup||2}" onchange="ubahQualifyPerGroup(this.value)"></div>
+    </div>
     <div class="fmt-row" style="margin-bottom:${isManual?'12px':'0'}">
       <button class="fmt-opt ${!isManual?'on':''}" onclick="setGroupMode('random')"><b>🎲 Random by System</b><span>Sistem acak &amp; bagi rata otomatis</span></button>
       <button class="fmt-opt ${isManual?'on':''}" onclick="setGroupMode('manual')"><b>✋ Manual</b><span>Koben atur sendiri tiap peserta masuk grup mana</span></button>
@@ -519,60 +722,128 @@ function renderGroupConfigUi(cat){
   </div>`;
 }
 
-function renderBagan(cat){
-  if(cat.format==='groupknockout'){
-    const { groups, belumDitugaskan } = buildSampleGroups(cat);
-    return `<div class="group-grid">${groups.map(g=>`
-      <div class="group-card">
-        <h4>${esc(g.nama)}</h4>
-        <table>${g.standings.map((s,i)=>`
-          <tr><td class="rk">${i+1}</td><td>${esc(s.nama)}</td><td class="pt">${s.poin} pt</td></tr>
-        `).join('') || '<tr><td colspan="3" style="color:var(--muted)">Belum ada peserta di grup ini</td></tr>'}</table>
-      </div>`).join('')}</div>
-      ${belumDitugaskan>0?`<div class="group-note">⚠️ ${belumDitugaskan} peserta belum ditugaskan ke grup manapun — lengkapi di pengaturan grup manual di atas.</div>`:''}
-      <div class="group-note">Juara &amp; runner-up tiap grup lanjut ke babak gugur — penyusunan anti-rematch sesama grup aktif setelah algoritma tersambung.</div>`;
+// ═══ Render bagan/fase grup — cabang ke 2 kondisi: 'setup' (belum digenerate, tampil
+// tombol CTA) atau 'running' (bagan/grup asli sudah jalan, skor diinput manual). ═══
+function matchRowGrupHtml(cat,gi,mi,m){
+  const isEditing = cat.editingGrup && cat.editingGrup.gi===gi && cat.editingGrup.mi===mi;
+  if(m.winner!=null && !isEditing){
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;font-size:12.5px;border-bottom:1px solid var(--border)">
+      <span>${esc(m.a)} <span style="color:var(--muted)">vs</span> ${esc(m.b)}</span>
+      <span style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <b style="color:var(--accent)">${m.scoreA}—${m.scoreB}</b>
+        <button class="btn btn-ghost btn-sm" style="padding:4px 8px;min-height:30px" onclick="editSkorGrupReal(${gi},${mi})">✏️</button>
+      </span>
+    </div>`;
   }
-  const rounds = buildSampleBracket(cat.peserta);
-  if(!rounds.length) return `<div class="group-note">Tambah minimal 2 peserta untuk melihat contoh bagan.</div>`;
-  const total = rounds.length;
-  const champion = rounds[total-1][0]?.winner;
-  return `<div class="bracket-wrap"><div class="bracket">
-    ${rounds.map((round,r)=>`
-      <div class="bracket-round">
-        <div class="round-label">${roundLabel(total,r)}</div>
-        ${round.map(m=>`
-          <div class="b-match">
-            <div class="b-side ${m.winner===m.a?'win':''}"><span class="nm">${esc(m.a)}</span>${m.scoreA!==null?`<span class="sc">${m.scoreA}</span>`:''}</div>
-            <div class="divider"></div>
-            <div class="b-side ${m.winner===m.b?'win':''}"><span class="nm">${esc(m.b)}</span>${m.scoreB!==null?`<span class="sc">${m.scoreB}</span>`:''}</div>
-          </div>`).join('')}
-      </div>`).join('')}
-  </div></div>
-  ${champion?`<div class="champion-note">🏆 Pratinjau juara: ${esc(champion)} <span style="font-weight:600;opacity:.75">(simulasi, bukan hasil resmi)</span></div>`:''}`;
+  return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+    <span style="font-size:12.5px;font-weight:700">${esc(m.a)} <span style="color:var(--muted)">vs</span> ${esc(m.b)}</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <input type="number" id="gs-g${gi}-m${mi}-A" placeholder="0" min="0" style="width:54px;min-height:36px;padding:6px;text-align:center" value="${isEditing&&m.scoreA!=null?m.scoreA:''}">
+      <span style="color:var(--muted)">—</span>
+      <input type="number" id="gs-g${gi}-m${mi}-B" placeholder="0" min="0" style="width:54px;min-height:36px;padding:6px;text-align:center" value="${isEditing&&m.scoreB!=null?m.scoreB:''}">
+      <button class="btn btn-accent btn-sm" style="padding:6px 10px;min-height:36px" onclick="simpanSkorGrupReal(${gi},${mi})">${isEditing?'💾':'✅'}</button>
+      ${isEditing?`<button class="btn btn-ghost btn-sm" style="padding:6px 8px;min-height:36px" onclick="batalEditGrupReal()">✕</button>`:''}
+    </span>
+  </div>`;
+}
+function renderGroupStageHtml(cat){
+  const allDone = semuaMatchGrupSelesaiReal(cat);
+  const bracketAlready = cat.bracket && cat.bracket.length;
+  const groupsHtml = cat.groups.map((g,gi)=>{
+    const st = groupStandingsReal(g);
+    return `<div class="group-card" style="margin-bottom:12px">
+      <h4>${esc(g.nama)}</h4>
+      <table>${st.map((s,i)=>`
+        <tr><td class="rk">${i+1}</td><td>${esc(s.nama)}${i<(cat.qualifyPerGroup||2)?' <span style="color:var(--green);font-weight:800;font-size:10px">● LOLOS</span>':''}</td><td class="pt">${s.points} pt</td></tr>
+      `).join('') || '<tr><td colspan="3" style="color:var(--muted)">Belum ada peserta</td></tr>'}</table>
+      <div style="margin:10px 0 6px;font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.04em">MATCH GRUP</div>
+      ${g.matches.map((m,mi)=>matchRowGrupHtml(cat,gi,mi,m)).join('') || '<p style="font-size:11.5px;color:var(--muted)">Belum ada match (grup kurang dari 2 peserta).</p>'}
+    </div>`;
+  }).join('');
+  return `<div class="group-grid" style="grid-template-columns:1fr">${groupsHtml}</div>
+    ${bracketAlready ? '' : `<button class="btn btn-accent" style="width:100%;margin-top:6px" onclick="mulaiBabakGugurReal()">${allDone?'🏆 Mulai Babak Gugur':'⚠️ Mulai Babak Gugur (belum semua match selesai)'}</button>`}`;
+}
+function matchCardBaganHtml(cat,r,i,m){
+  const aLbl = m.a || 'Menunggu', bLbl = m.b || 'Menunggu';
+  const aWin = !!(m.winner && m.winner===m.a), bWin = !!(m.winner && m.winner===m.b);
+  const isEditing = cat.editing && cat.editing.r===r && cat.editing.i===i;
+  let body;
+  if(m.winner!=null && !isEditing){
+    body = `<div class="b-side ${aWin?'win':''}"><span class="nm">${esc(aLbl)}</span><span class="sc">${m.scoreA}</span></div>
+      <div class="divider"></div>
+      <div class="b-side ${bWin?'win':''}"><span class="nm">${esc(bLbl)}</span><span class="sc">${m.scoreB}</span></div>
+      <div style="text-align:right;margin-top:6px"><button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:10px;min-height:28px" onclick="editSkorBaganReal(${r},${i})">✏️ Edit</button></div>`;
+  } else if(m.a && m.b){
+    body = `<div class="b-side"><span class="nm">${esc(aLbl)}</span></div>
+      <div class="divider"></div>
+      <div class="b-side"><span class="nm">${esc(bLbl)}</span></div>
+      <div style="display:flex;gap:4px;align-items:center;margin-top:6px;flex-wrap:wrap">
+        <input type="number" id="bs-r${r}-m${i}-A" placeholder="0" min="0" value="${isEditing&&m.scoreA!=null?m.scoreA:''}" style="width:46px;min-height:36px;padding:4px;font-size:16px;text-align:center">
+        <span style="color:var(--muted)">—</span>
+        <input type="number" id="bs-r${r}-m${i}-B" placeholder="0" min="0" value="${isEditing&&m.scoreB!=null?m.scoreB:''}" style="width:46px;min-height:36px;padding:4px;font-size:16px;text-align:center">
+        <button class="btn btn-accent btn-sm" style="padding:5px 8px;min-height:34px" onclick="simpanSkorBaganReal(${r},${i})">${isEditing?'💾':'✅'}</button>
+      </div>`;
+  } else {
+    body = `<div class="b-side" style="color:var(--muted)"><span class="nm">${esc(aLbl)}</span></div>
+      <div class="divider"></div>
+      <div class="b-side" style="color:var(--muted)"><span class="nm">${esc(bLbl)}</span></div>`;
+  }
+  return `<div class="b-match">${body}</div>`;
+}
+function renderBracketHtml(cat){
+  const total = cat.bracket.length;
+  const roundsHtml = cat.bracket.map((round,r)=>`
+    <div class="bracket-round">
+      <div class="round-label">${roundLabel(total,r,cat.hasPrelim)}</div>
+      ${round.map((m,i)=>matchCardBaganHtml(cat,r,i,m)).join('')}
+    </div>`).join('');
+  const finalMatch = cat.bracket[total-1] && cat.bracket[total-1][0];
+  const champHtml = (finalMatch && finalMatch.winner) ? `<div class="champion-note">🏆 Juara: ${esc(finalMatch.winner)}</div>` : '';
+  return `<div class="bracket-wrap"><div class="bracket">${roundsHtml}</div></div>${champHtml}`;
+}
+function renderBagan(cat){
+  if(cat.stage==='setup'){
+    if(cat.peserta.length<2){
+      return `<div class="group-note">Tambah minimal 2 peserta dulu, baru bisa buat ${cat.format==='groupknockout'?'fase grup':'bagan'}.</div>`;
+    }
+    const label = cat.format==='groupknockout' ? '🎲 Buat Fase Grup' : '🏆 Buat Bagan Turnamen';
+    return `<div style="text-align:center;padding:22px 10px">
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">${cat.peserta.length} peserta terdaftar, format <b style="color:var(--text)">${TFORMATS[cat.format].nama.replace(/^\S+\s/,'')}</b> — siap dibuat. Anti-rematch sesama grup otomatis aktif untuk transisi ke babak gugur.</p>
+      <button class="btn btn-accent btn-lg" onclick="mulaiBagan()">${label}</button>
+    </div>`;
+  }
+  let html = '';
+  if(cat.format==='groupknockout' && cat.groups.length) html += renderGroupStageHtml(cat);
+  if(cat.bracket.length) html += renderBracketHtml(cat);
+  html += `<div style="text-align:center;margin-top:14px"><button class="btn btn-ghost btn-sm" onclick="resetBaganKategori()">🔄 Reset Bagan</button></div>`;
+  return html;
 }
 
 function renderKatPanel(){
   const cat = kategoriAktif();
   const panel = document.getElementById('katPanel');
   if(!cat){ panel.innerHTML=''; return; }
+  const locked = cat.stage==='running';
   panel.innerHTML = `
     <div>
       <div class="card-title" style="font-size:13px;margin-bottom:10px">👥 Peserta — ${esc(cat.nama)} <span style="color:var(--muted);font-weight:600">(${cat.peserta.length})</span></div>
       <table class="peserta-table">
         ${cat.peserta.map((p,i)=>`
-          <tr><td class="no">${i+1}</td><td>${esc(p)}</td><td style="width:30px;text-align:right"><button class="remove" onclick="hapusPeserta(${i})">×</button></td></tr>
+          <tr><td class="no">${i+1}</td><td>${esc(p)}</td><td style="width:30px;text-align:right">${locked?'':`<button class="remove" onclick="hapusPeserta(${i})">×</button>`}</td></tr>
         `).join('') || '<tr><td colspan="3" style="color:var(--muted);padding:14px 4px">Belum ada peserta.</td></tr>'}
       </table>
-      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:12px" onclick="tambahPesertaInline()">+ Tambah Peserta</button>
+      ${locked
+        ? `<p style="font-size:11px;color:var(--muted);margin-top:10px">🔒 Bagan sudah dibuat — reset bagan dulu untuk ubah peserta.</p>`
+        : `<button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:12px" onclick="tambahPesertaInline()">+ Tambah Peserta</button>`}
     </div>
     <div>
       <div class="card-title" style="font-size:13px;margin-bottom:10px">⚙️ Format &amp; Bagan</div>
       <div class="fmt-row">
         ${Object.entries(TFORMATS).map(([k,f])=>`
-          <button class="fmt-opt ${cat.format===k?'on':''}" onclick="pilihFormat('${k}')"><b>${f.nama}</b><span>${f.info}</span></button>
+          <button class="fmt-opt ${cat.format===k?'on':''}" ${locked?'style="opacity:.55;cursor:not-allowed"':''} onclick="pilihFormat('${k}')"><b>${f.nama}</b><span>${f.info}</span></button>
         `).join('')}
       </div>
-      ${renderGroupConfigUi(cat)}
+      ${locked ? '' : renderGroupConfigUi(cat)}
       ${renderBagan(cat)}
     </div>`;
 }
@@ -603,7 +874,7 @@ function simpanModal(){
   const ev = EVENTS[sport];
   if(modalMode==='kategori'){
     const id = 'kat'+(katIdSeq++);
-    ev.categories.push({id, nama:val, format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}});
+    ev.categories.push(freshCategory(id, val, 'knockout'));
     ev.active = id;
     renderKategoriBar(); renderKatPanel();
     showToast('✅ Kategori "'+val+'" ditambahkan');
@@ -631,12 +902,41 @@ function cetakHtml(fullHtml){
     setTimeout(()=>{ if(ifr.parentNode) document.body.removeChild(ifr); }, 1200);
   };
 }
+// Versi cetak khusus (bukan pakai renderBagan interaktif langsung) — read-only, tanpa
+// input/tombol edit, sumbernya data ASLI cat.bracket/cat.groups (hasil skor yang sudah
+// diinput manual), bukan lagi simulasi.
+function renderBaganPrint(cat){
+  let html = '';
+  if(cat.format==='groupknockout' && cat.groups.length){
+    html += `<div class="group-grid">${cat.groups.map(g=>{
+      const st = groupStandingsReal(g);
+      return `<div class="group-card"><h4>${esc(g.nama)}</h4><table>${st.map((s,i)=>
+        `<tr><td class="rk">${i+1}</td><td>${esc(s.nama)}${i<(cat.qualifyPerGroup||2)?' (Lolos)':''}</td><td class="pt">${s.points} pt</td></tr>`
+      ).join('')}</table></div>`;
+    }).join('')}</div>`;
+  }
+  if(cat.bracket.length){
+    const total = cat.bracket.length;
+    html += `<div class="bracket">${cat.bracket.map((round,r)=>`
+      <div class="bracket-round">
+        <div class="round-label">${roundLabel(total,r,cat.hasPrelim)}</div>
+        ${round.map(m=>`
+          <div class="b-match">
+            <div class="b-side ${m.winner&&m.winner===m.a?'win':''}">${esc(m.a||'Menunggu')}${m.scoreA!=null?' <b>'+m.scoreA+'</b>':''}</div>
+            <div class="divider"></div>
+            <div class="b-side ${m.winner&&m.winner===m.b?'win':''}">${esc(m.b||'Menunggu')}${m.scoreB!=null?' <b>'+m.scoreB+'</b>':''}</div>
+          </div>`).join('')}
+      </div>`).join('')}</div>`;
+    const finalMatch = cat.bracket[total-1][0];
+    if(finalMatch && finalMatch.winner) html += `<div class="champion-note">🏆 Juara: ${esc(finalMatch.winner)}</div>`;
+  }
+  return html || '<p style="color:#64748B">Belum ada data untuk dicetak.</p>';
+}
 function cetakKategori(){
   const ev = EVENTS[sport], cat = kategoriAktif();
   if(!cat){ showToast('⚠️ Tidak ada kategori untuk dicetak'); return; }
-  const bodyHtml = renderBagan(cat)
-    .replace(/onclick="[^"]*"/g,'')
-    .replace(/<button[^>]*class="remove"[^>]*>×<\/button>/g,'');
+  if(cat.stage==='setup'){ showToast('⚠️ Buat bagan/fase grup dulu sebelum mencetak'); return; }
+  const bodyHtml = renderBaganPrint(cat);
   const html = `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">
     <title>${esc(ev.nama)} — ${esc(cat.nama)}</title>
     <style>
@@ -654,7 +954,7 @@ function cetakKategori(){
       .group-note{font-size:11px;color:#64748B;margin-top:10px}
     </style></head><body>
     <h1>${esc(ev.nama)} — ${esc(cat.nama)}</h1>
-    <p>${esc(ev.tanggal||'')} · ${esc(ev.lokasi||'')} · Dicetak dari Turnamen Pro — bagan pratinjau, bukan hasil pertandingan resmi (tahap dummy)</p>
+    <p>${esc(ev.tanggal||'')} · ${esc(ev.lokasi||'')} · Dicetak dari Turnamen Pro</p>
     ${bodyHtml}
     </body></html>`;
   cetakHtml(html);
@@ -685,23 +985,23 @@ function fitFont(ctx, text, family, weight, maxWidth, startSize, minSize){
 }
 function buildShareSlidesTP(cat){
   const slides = [];
-  if(cat.format==='groupknockout'){
-    slides.push({kind:'groups', title:'Fase Grup'});
-    return slides;
+  if(cat.stage==='setup') return slides;
+  if(cat.format==='groupknockout' && cat.groups.length) slides.push({kind:'groups', title:'Fase Grup'});
+  if(cat.bracket.length){
+    const total = cat.bracket.length;
+    cat.bracket.forEach((round,r)=>{
+      const isFinal = r===total-1;
+      slides.push({kind:isFinal?'final':'round', title:roundLabel(total,r,cat.hasPrelim), r});
+    });
+    const finalMatch = cat.bracket[total-1] && cat.bracket[total-1][0];
+    if(finalMatch && finalMatch.winner) slides.push({kind:'podium', title:'Juara Turnamen'});
   }
-  const rounds = buildSampleBracket(cat.peserta);
-  const total = rounds.length;
-  rounds.forEach((round,r)=>{
-    const isFinal = r===total-1;
-    slides.push({kind:isFinal?'final':'round', title:roundLabel(total,r), r});
-  });
-  const finalMatch = rounds[total-1] && rounds[total-1][0];
-  if(finalMatch && finalMatch.winner) slides.push({kind:'podium', title:'Juara Turnamen'});
   return slides;
 }
 function shareTurnamenIG(){
   const cat = kategoriAktif();
-  if(!cat || cat.peserta.length<2){ showToast('⚠️ Tambah minimal 2 peserta di kategori ini dulu untuk share'); return; }
+  if(!cat) return;
+  if(cat.stage==='setup'){ showToast('⚠️ Buat bagan/fase grup dulu sebelum share'); return; }
   const slides = buildShareSlidesTP(cat);
   if(!slides.length){ showToast('⚠️ Belum ada data untuk dibagikan'); return; }
   _shareSlides = slides; _shareSlideIdx = 0;
@@ -814,7 +1114,7 @@ function drawSlideGroupsCanvas(){
   const y = drawShareHeaderTP(x, 'Fase Grup');
   const F = '"Plus Jakarta Sans",sans-serif';
   const cat = kategoriAktif();
-  const { groups } = buildSampleGroups(cat);
+  const groups = cat.groups;
   const gGap = 16, avail = 990 - y;
   const gH = Math.max(120, Math.min(220, Math.floor((avail-(groups.length-1)*gGap)/groups.length)));
   groups.forEach((g,gi)=>{
@@ -823,17 +1123,18 @@ function drawSlideGroupsCanvas(){
     x.lineWidth = 1.5; x.strokeStyle = '#E2E8F0'; x.stroke();
     x.textAlign = 'left'; x.font = '800 25px '+F; x.fillStyle = '#1E293B';
     x.fillText(g.nama, 84, gy+38);
-    const shown = g.standings.slice(0, Math.min(g.standings.length,4));
+    const st = groupStandingsReal(g);
+    const shown = st.slice(0, Math.min(st.length,4));
     const rowH = (gH-54) / Math.max(1,shown.length);
     shown.forEach((s,i)=>{
       const ry = gy+54+i*rowH+rowH/2;
-      const lolos = i < 2; // 2 teratas per grup — belum ada setelan "jumlah lolos" tersendiri di turnamenpro
+      const lolos = i < (cat.qualifyPerGroup||2);
       x.textAlign = 'left'; x.font = '800 21px '+F;
       x.fillStyle = lolos ? '#16A34A' : '#64748B';
       const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
       x.fillText(rank+' '+s.nama, 84, ry+6);
       x.textAlign = 'right'; x.font = '800 21px '+F; x.fillStyle = '#1E293B';
-      x.fillText(s.poin+' pt', 1000, ry+6);
+      x.fillText(s.points+' pt', 1000, ry+6);
     });
   });
   drawShareFooterTP(x);
@@ -843,8 +1144,7 @@ function drawSlideRoundCanvas(r, title){
   const x = cv.getContext('2d');
   const y = drawShareHeaderTP(x, title);
   const cat = kategoriAktif();
-  const rounds = buildSampleBracket(cat.peserta);
-  drawMatchCardsTP(x, y, rounds[r], {big:false});
+  drawMatchCardsTP(x, y, cat.bracket[r], {big:false});
   drawShareFooterTP(x);
 }
 function drawSlideFinalCanvas(r, title){
@@ -853,8 +1153,7 @@ function drawSlideFinalCanvas(r, title){
   const y = drawShareHeaderTP(x, title);
   const F = '"Plus Jakarta Sans",sans-serif';
   const cat = kategoriAktif();
-  const rounds = buildSampleBracket(cat.peserta);
-  const round = rounds[r];
+  const round = cat.bracket[r];
   x.textAlign = 'left'; x.font = '800 20px '+F; x.fillStyle = '#94A3B8';
   x.fillText('FINAL', 80, y);
   const ny = drawMatchCardsTP(x, y+16, round, {big:true});
@@ -871,8 +1170,7 @@ function drawSlidePodiumCanvas(){
   const y = drawShareHeaderTP(x, '🏆 Juara Turnamen');
   const F = '"Plus Jakarta Sans",sans-serif';
   const cat = kategoriAktif();
-  const rounds = buildSampleBracket(cat.peserta);
-  const finalRound = rounds[rounds.length-1];
+  const finalRound = cat.bracket[cat.bracket.length-1];
   const fm = finalRound[0];
   const champion = fm.winner;
   const runnerUp = fm.winner===fm.a ? fm.b : fm.a;
