@@ -81,6 +81,13 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 
 /* ── Panel kategori aktif ── */
 .kat-panel{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+/* FIX PENTING: item grid secara default punya min-width:auto — artinya lebar minimumnya
+   ikut lebar konten TER-LEBAR di dalamnya (di sini: bagan knock-out yang bisa >600px),
+   walau bagan itu sendiri sudah overflow-x:auto. Akibatnya kartu/halaman ikut melebar
+   & harus di-scroll ke samping — ini yang bikin tampilan "tidak proporsional" waktu
+   pilih Knock-out (Group Knock-out aman karena grid-nya pakai minmax()). min-width:0
+   di sini memutus rantai itu supaya .bracket-wrap yang scroll, bukan kartunya. */
+.kat-panel > div{min-width:0}
 .peserta-table{width:100%;border-collapse:collapse}
 .peserta-table td{padding:9px 4px;border-bottom:1px solid var(--border);font-size:13.5px}
 .peserta-table td.no{color:var(--muted);width:24px;font-weight:700}
@@ -106,6 +113,13 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 .bracket-wrap{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
 .bracket{display:flex;gap:40px;min-width:min-content}
 .bracket-round{display:flex;flex-direction:column;justify-content:space-around;gap:14px;min-width:180px}
+/* Kolom bagan mengecil di layar sempit — pola sama seperti bracketColWidth() di
+   tracker.html — supaya scroll ke samping yang dibutuhkan tidak berlebihan di HP. */
+@media(max-width:640px){
+  .bracket{gap:22px}
+  .bracket-round{min-width:148px}
+  .b-match{padding:8px 10px;font-size:11.5px}
+}
 .round-label{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-bottom:6px}
 .b-match{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;font-size:12.5px}
 .b-side{display:flex;justify-content:space-between;align-items:center;padding:4px 0;gap:8px}
