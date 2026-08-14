@@ -62,21 +62,25 @@ label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-b
    tiap field difokus (bikin layout "melompat" & mesti di-pinch-zoom-out manual). */
 input,select{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:16px;background:var(--bg);color:var(--text);transition:border-color .15s;min-height:44px}
 input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff}
+/* Sebagian browser (terutama Android) kasih lebar minimum intrinsik ke input tanggal
+   yang lebih besar dari box aslinya — min-width:0 mencegah itu memaksa induknya melebar. */
+input[type="date"]{min-width:0}
 
 .event-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px}
+/* Fix sama seperti .kat-panel di bawah: tanpa ini, input tanggal (yang lebar minimumnya
+   kadang lebih besar dari perkiraan) bisa memaksa kolom grid & seluruh halaman melebar
+   sampai "kepotong" di tepi layar HP — inilah penyebab kolom Tanggal offside dari layar. */
+.event-grid > div{min-width:0}
 .event-note{margin-top:14px;font-size:12px;color:var(--muted);background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:11px 14px}
 .event-note b{color:var(--text)}
 
-/* ── Kategori bar ── */
-.kategori-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
-.kat-chip{position:relative;font-size:13px;font-weight:800;padding:9px 16px;padding-right:30px;border-radius:12px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--text);transition:all .18s;touch-action:manipulation;min-height:40px}
-.kat-chip.on{background:color-mix(in srgb,var(--accent) 9%,white);border-color:var(--accent);color:var(--accent)}
-/* Tombol × visualnya 18px, tapi area tap sungguhannya diperlebar via ::before (≈32px)
-   supaya nyaman disentuh jari di HP tanpa mengubah tampilan — standar Apple/Android
-   minimal ±40px target sentuh. */
-.kat-chip .hapus{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:rgba(220,38,38,.12);color:var(--red);border:none;font-size:11px;font-weight:800;cursor:pointer;display:grid;place-items:center;line-height:1;touch-action:manipulation}
-.kat-chip .hapus::before{content:'';position:absolute;inset:-9px}
-.kat-add{font-size:13px;font-weight:800;padding:9px 16px;border-radius:12px;border:1.5px dashed var(--border);background:transparent;cursor:pointer;font-family:inherit;color:var(--muted);touch-action:manipulation;min-height:40px}
+/* ── Kategori: dropdown + hapus + tambah (terpisah, biar tombol tambah selalu kelihatan) ── */
+.kategori-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.kategori-row select{flex:1 1 180px;min-width:140px;font-weight:700;cursor:pointer}
+.kat-del-btn{flex-shrink:0;width:44px;height:44px;border-radius:11px;background:rgba(220,38,38,.08);border:1.5px solid rgba(220,38,38,.25);color:var(--red);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;touch-action:manipulation;transition:background-color .15s}
+.kat-del-btn:hover{background:rgba(220,38,38,.15)}
+.kat-del-btn:active{transform:scale(.95)}
+.kat-add{flex-shrink:0;font-size:13px;font-weight:800;padding:9px 16px;border-radius:12px;border:1.5px dashed var(--border);background:transparent;cursor:pointer;font-family:inherit;color:var(--muted);touch-action:manipulation;min-height:44px}
 .kat-add:hover{border-color:var(--accent);color:var(--accent)}
 
 /* ── Panel kategori aktif ── */
@@ -195,9 +199,9 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   <div class="card" style="margin-top:18px">
     <div class="card-title">🏆 Info Event Turnamen</div>
     <div class="event-grid">
-      <div><label>Nama Turnamen</label><input id="fNama" oninput="ubahEvent('nama',this.value)"></div>
+      <div><label>Nama Turnamen</label><input id="fNama" placeholder="mis. Turnamen Kemerdekaan HOSTMABAR" oninput="ubahEvent('nama',this.value)"></div>
       <div><label>Tanggal</label><input id="fTanggal" type="date" oninput="ubahEvent('tanggal',this.value)"></div>
-      <div><label>Lokasi</label><input id="fLokasi" oninput="ubahEvent('lokasi',this.value)"></div>
+      <div><label>Lokasi</label><input id="fLokasi" placeholder="mis. GOR Sutera Utama" oninput="ubahEvent('lokasi',this.value)"></div>
     </div>
     <div class="sport-pills" id="sportPills"></div>
     <div class="event-note">ℹ️ <b>Multi-kategori dalam 1 event</b> — beda dari mode turnamen di tracker.html yang cuma 1 kategori per sesi. Tiap kategori (mis. Ganda Putra, Ganda Putri, Campuran) punya peserta &amp; bagan sendiri, jalan paralel di event yang sama.</div>
@@ -206,19 +210,19 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   <!-- KATEGORI -->
   <div class="card">
     <div class="card-title">📂 Kategori</div>
-    <div class="kategori-bar" id="kategoriBar"></div>
+    <div class="kategori-row" id="kategoriBar"></div>
 
     <div class="kat-panel" id="katPanel"></div>
 
     <div class="aksi-row">
       <button class="btn btn-accent" onclick="cetakKategori()">🖨️ Cetak Bagan Kategori Ini</button>
-      <button class="btn btn-brand" onclick="shareStub()">📸 Share ke Instagram</button>
-      <button class="btn btn-ghost" onclick="dummyAlert('Simpan ke Cloud')">☁️ Simpan ke Cloud</button>
+      <button class="btn btn-brand" onclick="shareTurnamenIG()">📸 Share ke Instagram</button>
     </div>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:10px">💡 Untuk saat ini penyimpanan hasil dilakukan lewat <b style="color:var(--text)">Cetak</b> (simpan/print PDF) atau <b style="color:var(--text)">Share ke Instagram</b> (simpan gambar PNG) — belum ada simpan otomatis ke cloud.</p>
   </div>
 
   <div class="rule-note">
-    ℹ️ <b>Tahap dummy:</b> navigasi (ganti cabang, ganti kategori, tambah peserta, pilih format, cetak) sudah aktif. Bagan yang tampil pakai <b>data contoh</b> untuk demo tampilan — algoritma penyusunan asli (anti-rematch sesama grup, generate bagan dari peserta sungguhan) &amp; simpan-ke-cloud baru aktif di tahap berikutnya. Halaman ini <b>khusus/by request</b> — akses lewat akun HOSTMABAR yang sama (redirect dari halaman login), bukan link publik terbuka.
+    ℹ️ <b>Tahap dummy:</b> navigasi (ganti cabang, ganti kategori, tambah peserta, pilih format, cetak, share) sudah aktif dan siap diisi data asli. Bagan yang tampil begitu peserta ditambahkan adalah <b>pratinjau tampilan</b>, bukan hasil pertandingan resmi — algoritma penyusunan asli (anti-rematch sesama grup, generate bagan final) belum aktif. Karena belum tersambung cloud, hasil disimpan lewat <b>Cetak</b> atau <b>Share ke Instagram</b> dulu untuk saat ini. Halaman ini <b>khusus/by request</b> — akses lewat akun HOSTMABAR yang sama (redirect dari halaman login), bukan link publik terbuka.
   </div>
 
 </div>
@@ -236,39 +240,65 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   </div>
 </div>
 
+<!-- MODAL SHARE INSTAGRAM — pola sama seperti shareTurnamen() di tracker.html:
+     canvas 1080×1080, multi-slide (per babak + podium juara / fase grup), download PNG. -->
+<div class="modal-overlay" id="shareModalOverlay" onclick="if(event.target===this) closeShareModal()">
+  <div class="modal-box" style="max-width:460px">
+    <h3 id="shareModalTitle">📸 Share ke Instagram</h3>
+    <canvas id="shareCanvas" style="width:100%;border-radius:14px;border:1px solid var(--border);display:block;margin-top:2px"></canvas>
+    <div id="shareNav" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin-top:12px">
+      <button class="btn btn-ghost btn-sm" onclick="shareNavGo(-1)">← Sebelumnya</button>
+      <span id="shareNavLabel" style="font-size:11.5px;font-weight:800;color:var(--muted);text-align:center"></span>
+      <button class="btn btn-ghost btn-sm" onclick="shareNavGo(1)">Berikutnya →</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeShareModal()">Tutup</button>
+      <button class="btn btn-accent" onclick="downloadShareSlide()">⬇️ Download PNG</button>
+    </div>
+    <button id="shareDownloadAllBtn" class="btn btn-ghost btn-sm" style="display:none;width:100%;margin-top:8px" onclick="downloadAllShareSlides()">⬇️ Download Semua Halaman</button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">1080×1080 (1:1) — pas untuk feed Instagram, tiap babak jadi 1 halaman</p>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ═══ Meta 4 cabang (sama seperti tracker.html / mabarpro.html) ═══
 const SPORT_META = {
-  badminton:{label:'Badminton', accentVar:'--badminton', icon:'logobadminton.png'},
-  padel:{label:'Padel', accentVar:'--padel', icon:'logopadel.png'},
-  pickleball:{label:'Pickleball', accentVar:'--pickleball', icon:'logopickleball.png'},
-  tennis:{label:'Tennis', accentVar:'--tennis', icon:'logotennis.png'}
+  badminton:{label:'Badminton', accentVar:'--badminton', hex:'#0F766E', icon:'logobadminton.png'},
+  padel:{label:'Padel', accentVar:'--padel', hex:'#9333EA', icon:'logopadel.png'},
+  pickleball:{label:'Pickleball', accentVar:'--pickleball', hex:'#E11D48', icon:'logopickleball.png'},
+  tennis:{label:'Tennis', accentVar:'--tennis', hex:'#84754E', icon:'logotennis.png'}
 };
+// Logo resmi HOSTMABAR — dipreload untuk footer canvas Share Instagram (pola sama seperti
+// __hmBrandLogo di tracker.html).
+const __hmLogo = new Image();
+__hmLogo.src = 'Logohostmabarv3.png';
 
-// ═══ Data contoh per event (in-memory saja — belum tersambung Supabase, bukan data asli) ═══
+// ═══ Data event per cabang — in-memory saja (belum tersambung Supabase). Nama kategori
+// dibiarkan sebagai contoh struktur umum (boleh diganti/dihapus Koben), TAPI tidak ada
+// lagi peserta contoh — kolom peserta kosong, siap diisi data asli. ═══
 const EVENTS = {
   badminton:{
-    nama:'Turnamen Kemerdekaan HOSTMABAR', tanggal:'2026-08-24', lokasi:'GOR Sutera Utama',
+    nama:'', tanggal:'', lokasi:'',
     active:'gp',
     categories:[
-      {id:'gp', nama:'Ganda Putra', format:'knockout', peserta:['Andri/Bimo','Dedi/Farel','Guntur/Hadi','Irfan/Joko','Kevin/Lutfi','Made/Naufal','Oscar/Putra','Qori/Rizky'], numGroups:2, groupMode:'random', manualAssign:{}},
-      {id:'gpi', nama:'Ganda Putri', format:'groupknockout', peserta:['Sasha/Rina','Tia/Umi','Vina/Wulan','Xena/Yuni','Zara/Aisyah','Bela/Citra'], numGroups:2, groupMode:'manual', manualAssign:{'Sasha/Rina':0,'Tia/Umi':0,'Vina/Wulan':0,'Xena/Yuni':1,'Zara/Aisyah':1,'Bela/Citra':1}},
-      {id:'camp', nama:'Ganda Campuran', format:'knockout', peserta:['Andri/Sasha','Bimo/Tia','Dedi/Vina','Farel/Xena'], numGroups:2, groupMode:'random', manualAssign:{}}
+      {id:'gp', nama:'Ganda Putra', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}},
+      {id:'gpi', nama:'Ganda Putri', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}},
+      {id:'camp', nama:'Ganda Campuran', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}}
     ]
   },
   padel:{
-    nama:'Padel Sunday Cup', tanggal:'2026-08-30', lokasi:'Padel House Kemang', active:'duo',
-    categories:[{id:'duo', nama:'Duo Open', format:'knockout', peserta:['Raka/Bayu','Dimas/Elang','Fajar/Gilang','Hendra/Iqbal'], numGroups:2, groupMode:'random', manualAssign:{}}]
+    nama:'', tanggal:'', lokasi:'', active:'duo',
+    categories:[{id:'duo', nama:'Duo Open', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}}]
   },
   pickleball:{
-    nama:'Pickleball Community Mix', tanggal:'2026-09-06', lokasi:'GOR Cempaka', active:'mix',
-    categories:[{id:'mix', nama:'Mixed Doubles', format:'knockout', peserta:['Nadia/Oki','Putri/Qomar','Rani/Sena','Tara/Umar'], numGroups:2, groupMode:'random', manualAssign:{}}]
+    nama:'', tanggal:'', lokasi:'', active:'mix',
+    categories:[{id:'mix', nama:'Mixed Doubles', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}}]
   },
   tennis:{
-    nama:'Tennis Open Club', tanggal:'2026-09-13', lokasi:'Lapangan Tenis Senayan', active:'tunggal',
-    categories:[{id:'tunggal', nama:'Tunggal Putra', format:'knockout', peserta:['Vino','Wahyu','Xander','Yoga'], numGroups:2, groupMode:'random', manualAssign:{}}]
+    nama:'', tanggal:'', lokasi:'', active:'tunggal',
+    categories:[{id:'tunggal', nama:'Tunggal Putra', format:'knockout', peserta:[], numGroups:2, groupMode:'random', manualAssign:{}}]
   }
 };
 const TFORMATS = {
@@ -310,13 +340,6 @@ function showToast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
 }
-function dummyAlert(fitur){
-  showToast('⏳ "'+fitur+'" aktif setelah tersambung Supabase — tahap berikutnya.');
-}
-function shareStub(){
-  showToast('📸 Share Instagram multi-slide mengikuti pola tracker.html — aktif tahap berikutnya.');
-}
-
 // ═══ Ganti cabang ═══
 function gantiSport(k){
   sport = k;
@@ -342,20 +365,28 @@ function kategoriAktif(){
   const ev = EVENTS[sport];
   return ev.categories.find(c=>c.id===ev.active) || ev.categories[0];
 }
-function pilihKategori(id){ EVENTS[sport].active = id; renderKategoriBar(); renderKatPanel(); }
+function pilihKategori(id){ EVENTS[sport].active = id; renderKatPanel(); }
+// Dropdown dipilih ketimbang deretan pill: begitu kategori lebih dari 3-4, pill akan
+// wrap ke banyak baris dan makan tempat — dropdown tetap ringkas berapa pun jumlah
+// kategorinya. Tombol tambah & hapus sengaja dipisah di luar dropdown supaya tetap
+// terlihat jelas (bukan disembunyikan di dalam menu).
 function renderKategoriBar(){
   const ev = EVENTS[sport];
   const bar = document.getElementById('kategoriBar');
-  bar.innerHTML = ev.categories.map(c=>
-    `<button class="kat-chip ${c.id===ev.active?'on':''}" onclick="pilihKategori('${c.id}')">${esc(c.nama)}
-       <span class="hapus" onclick="event.stopPropagation();hapusKategori('${c.id}')" title="Hapus kategori">×</span>
-     </button>`
-  ).join('') + `<button class="kat-add" onclick="openModal('kategori')">+ Tambah Kategori</button>`;
+  const optHtml = ev.categories.map(c=>
+    `<option value="${c.id}" ${c.id===ev.active?'selected':''}>${esc(c.nama)}</option>`
+  ).join('');
+  bar.innerHTML = `
+    <select id="kategoriSelect" onchange="pilihKategori(this.value)" aria-label="Pilih kategori">${optHtml}</select>
+    <button class="kat-del-btn" onclick="hapusKategoriAktif()" title="Hapus kategori ini">🗑️</button>
+    <button class="kat-add" onclick="openModal('kategori')">+ Tambah Kategori</button>`;
 }
+function hapusKategoriAktif(){ hapusKategori(EVENTS[sport].active); }
 function hapusKategori(id){
   const ev = EVENTS[sport];
   if(ev.categories.length<=1){ showToast('⚠️ Minimal 1 kategori harus ada'); return; }
-  if(!confirm('Hapus kategori ini beserta data pesertanya?')) return;
+  const nama = ev.categories.find(c=>c.id===id)?.nama || 'ini';
+  if(!confirm('Hapus kategori "'+nama+'" beserta data pesertanya?')) return;
   ev.categories = ev.categories.filter(c=>c.id!==id);
   if(ev.active===id) ev.active = ev.categories[0].id;
   renderKategoriBar(); renderKatPanel();
@@ -375,7 +406,9 @@ function pilihFormat(fmt){
   renderKatPanel();
 }
 
-// ═══ Sample bracket generator — demo tampilan, BUKAN algoritma turnamen asli ═══
+// ═══ Generator pratinjau bagan dari peserta yang diinput — sekadar bantu visualisasi
+// struktur & tata letak bagan, BUKAN algoritma turnamen asli (menang/kalah & skor di
+// bawah ini fiktif/acak, belum pakai anti-rematch — itu aktif di tahap berikutnya). ═══
 function buildSampleBracket(pesertaAsli){
   let names = pesertaAsli.slice();
   if(names.length<2) return [];
@@ -515,7 +548,7 @@ function renderBagan(cat){
           </div>`).join('')}
       </div>`).join('')}
   </div></div>
-  ${champion?`<div class="champion-note">🏆 Contoh juara: ${esc(champion)}</div>`:''}`;
+  ${champion?`<div class="champion-note">🏆 Pratinjau juara: ${esc(champion)} <span style="font-weight:600;opacity:.75">(simulasi, bukan hasil resmi)</span></div>`:''}`;
 }
 
 function renderKatPanel(){
@@ -621,11 +654,280 @@ function cetakKategori(){
       .group-note{font-size:11px;color:#64748B;margin-top:10px}
     </style></head><body>
     <h1>${esc(ev.nama)} — ${esc(cat.nama)}</h1>
-    <p>${esc(ev.tanggal||'')} · ${esc(ev.lokasi||'')} · Dicetak dari Turnamen Pro (data contoh — tahap dummy)</p>
+    <p>${esc(ev.tanggal||'')} · ${esc(ev.lokasi||'')} · Dicetak dari Turnamen Pro — bagan pratinjau, bukan hasil pertandingan resmi (tahap dummy)</p>
     ${bodyHtml}
     </body></html>`;
   cetakHtml(html);
   showToast('🖨️ Menyiapkan cetak…');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SHARE KE INSTAGRAM — canvas multi-slide, pola & tata letak SAMA seperti
+// buildShareSlides()/renderShareSlide()/drawShareHeader() di tracker.html
+// (kartu 1080×1080, bingkai gradasi oranye-pink, logo+nama host di header,
+// footer hostmabar.com). Bedanya di sini: sumber datanya kategori aktif
+// (bukan sesi mabar), dan belum ada upload logo komunitas tersendiri —
+// dipakai warna aksen cabang sebagai pengganti logo. ═══════════════════════
+let _shareSlides = [];
+let _shareSlideIdx = 0;
+
+function rr(x,y,w,h,r,ctx){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+// Cari ukuran font terbesar yang masih muat dalam maxWidth — mencegah nama host/event
+// panjang menabrak elemen lain atau meluber keluar kanvas.
+function fitFont(ctx, text, family, weight, maxWidth, startSize, minSize){
+  let size = startSize;
+  ctx.font = weight+' '+size+'px '+family;
+  while(ctx.measureText(text).width > maxWidth && size > minSize){
+    size -= 2;
+    ctx.font = weight+' '+size+'px '+family;
+  }
+  return size;
+}
+function buildShareSlidesTP(cat){
+  const slides = [];
+  if(cat.format==='groupknockout'){
+    slides.push({kind:'groups', title:'Fase Grup'});
+    return slides;
+  }
+  const rounds = buildSampleBracket(cat.peserta);
+  const total = rounds.length;
+  rounds.forEach((round,r)=>{
+    const isFinal = r===total-1;
+    slides.push({kind:isFinal?'final':'round', title:roundLabel(total,r), r});
+  });
+  const finalMatch = rounds[total-1] && rounds[total-1][0];
+  if(finalMatch && finalMatch.winner) slides.push({kind:'podium', title:'Juara Turnamen'});
+  return slides;
+}
+function shareTurnamenIG(){
+  const cat = kategoriAktif();
+  if(!cat || cat.peserta.length<2){ showToast('⚠️ Tambah minimal 2 peserta di kategori ini dulu untuk share'); return; }
+  const slides = buildShareSlidesTP(cat);
+  if(!slides.length){ showToast('⚠️ Belum ada data untuk dibagikan'); return; }
+  _shareSlides = slides; _shareSlideIdx = 0;
+  document.getElementById('shareModalTitle').textContent = '📸 Share — '+cat.nama;
+  document.getElementById('shareNav').style.display = slides.length>1 ? 'flex' : 'none';
+  document.getElementById('shareDownloadAllBtn').style.display = slides.length>1 ? 'block' : 'none';
+  const overlay = document.getElementById('shareModalOverlay');
+  overlay.classList.add('open');
+  document.body.classList.add('modal-lock');
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+  renderShareSlide();
+}
+function shareNavGo(delta){
+  _shareSlideIdx = Math.max(0, Math.min(_shareSlides.length-1, _shareSlideIdx+delta));
+  renderShareSlide();
+}
+function renderShareSlide(){
+  const slide = _shareSlides[_shareSlideIdx];
+  if(!slide) return;
+  document.getElementById('shareNavLabel').textContent = (_shareSlideIdx+1)+' / '+_shareSlides.length+' — '+slide.title;
+  if(slide.kind==='groups') drawSlideGroupsCanvas();
+  else if(slide.kind==='round') drawSlideRoundCanvas(slide.r, slide.title);
+  else if(slide.kind==='final') drawSlideFinalCanvas(slide.r, slide.title);
+  else if(slide.kind==='podium') drawSlidePodiumCanvas();
+}
+function closeShareModal(){
+  const overlay = document.getElementById('shareModalOverlay');
+  overlay.classList.remove('show');
+  document.body.classList.remove('modal-lock');
+  setTimeout(()=>overlay.classList.remove('open'), 180);
+}
+
+// ── Header/footer bersama semua slide — persis drawShareHeader()/drawShareFooter() di
+// tracker.html, cuma sumber teksnya diganti: nama host (dari sesi login) + nama & tanggal
+// event, bukan nama komunitas + sesi mabar. ──
+function drawShareHeaderTP(x, subtitle){
+  const hex = SPORT_META[sport].hex;
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const grad = x.createLinearGradient(0,0,1080,1080);
+  grad.addColorStop(0,'#F7941D'); grad.addColorStop(1,'#E8174A');
+  const bw = 14;
+  x.fillStyle = grad; x.fillRect(0,0,1080,1080);
+  x.fillStyle = '#F8FAFC'; x.fillRect(bw,bw,1080-bw*2,1080-bw*2);
+
+  const logoCx=134, logoCy=104, logoR=54;
+  x.beginPath(); x.arc(logoCx, logoCy, logoR, 0, Math.PI*2);
+  x.fillStyle = hex; x.fill();
+
+  const ev = EVENTS[sport];
+  const hostName = (getSession().username) || 'HOSTMABAR';
+  const textX = logoCx + logoR + 28;
+  const maxTextW = 1080-bw-40-textX;
+  const nameSize = fitFont(x, hostName, F, '800', maxTextW, 38, 22);
+  x.textAlign = 'left'; x.font = '800 '+nameSize+'px '+F; x.fillStyle = '#1E293B';
+  x.fillText(hostName, textX, logoCy-4);
+  x.font = '600 19px '+F; x.fillStyle = '#64748B';
+  x.fillText((ev.nama||'Turnamen')+(ev.tanggal?' · '+ev.tanggal:''), textX, logoCy+26);
+
+  let y = logoCy + logoR + 44;
+  x.textAlign = 'center'; x.font = '800 19px '+F;
+  const chipTxt = subtitle.toUpperCase();
+  const cw = x.measureText(chipTxt).width + 46;
+  rr(540-cw/2, y, cw, 40, 20, x); x.fillStyle = hex; x.fill();
+  x.fillStyle = '#FFFFFF'; x.fillText(chipTxt, 540, y+27);
+  y += 66;
+  return y;
+}
+function drawShareFooterTP(x){
+  const fy = 1012;
+  const F = '"Plus Jakarta Sans",sans-serif';
+  x.textAlign = 'center';
+  if(__hmLogo.complete && __hmLogo.naturalWidth>0){
+    const lh = 46, lw = lh*(__hmLogo.naturalWidth/__hmLogo.naturalHeight);
+    x.drawImage(__hmLogo, 540-lw/2, fy-36, lw, lh);
+  }
+  x.font = '600 16px '+F; x.fillStyle = '#94A3B8';
+  x.fillText('hostmabar.com', 540, fy+26);
+}
+// ── Kartu match untuk slide babak/final — sama seperti drawMatchCards() di tracker.html,
+// hanya m.a/m.b di sini nama string langsung (bukan objek {name}) karena model peserta
+// turnamenpro lebih sederhana. ──
+function drawMatchCardsTP(x, y, matches, opts){
+  opts = opts || {};
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const hex = SPORT_META[sport].hex;
+  const cardH = opts.big ? 148 : 108, gap = 16, L = 80, W = 920;
+  matches.forEach((m,i)=>{
+    const ry = y + i*(cardH+gap);
+    rr(L, ry, W, cardH, 20, x); x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = opts.big ? 3 : 2; x.strokeStyle = m.winner ? hex : '#E2E8F0'; x.stroke();
+    const aLbl = m.a || '—', bLbl = m.b || '—';
+    const aWin = !!(m.winner && m.winner===m.a);
+    const bWin = !!(m.winner && m.winner===m.b);
+    const rowH = cardH/2;
+    [[aLbl,m.scoreA,aWin],[bLbl,m.scoreB,bWin]].forEach(([lbl,score,win],ri)=>{
+      const cy = ry + rowH*ri + rowH/2 + (opts.big?10:8);
+      x.textAlign = 'left'; x.font = (win?'800 ':'700 ')+(opts.big?29:23)+'px '+F;
+      x.fillStyle = win ? '#16A34A' : '#1E293B';
+      x.fillText((win?'🏆 ':'')+lbl, L+28, cy);
+      x.textAlign = 'right'; x.font = '800 '+(opts.big?31:25)+'px '+F;
+      x.fillStyle = win ? hex : '#94A3B8';
+      x.fillText(score!=null ? String(score) : '—', L+W-28, cy);
+    });
+  });
+  return y + matches.length*(cardH+gap);
+}
+function drawSlideGroupsCanvas(){
+  const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
+  const x = cv.getContext('2d');
+  const y = drawShareHeaderTP(x, 'Fase Grup');
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const cat = kategoriAktif();
+  const { groups } = buildSampleGroups(cat);
+  const gGap = 16, avail = 990 - y;
+  const gH = Math.max(120, Math.min(220, Math.floor((avail-(groups.length-1)*gGap)/groups.length)));
+  groups.forEach((g,gi)=>{
+    const gy = y + gi*(gH+gGap);
+    rr(60, gy, 960, gH, 18, x); x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = 1.5; x.strokeStyle = '#E2E8F0'; x.stroke();
+    x.textAlign = 'left'; x.font = '800 25px '+F; x.fillStyle = '#1E293B';
+    x.fillText(g.nama, 84, gy+38);
+    const shown = g.standings.slice(0, Math.min(g.standings.length,4));
+    const rowH = (gH-54) / Math.max(1,shown.length);
+    shown.forEach((s,i)=>{
+      const ry = gy+54+i*rowH+rowH/2;
+      const lolos = i < 2; // 2 teratas per grup — belum ada setelan "jumlah lolos" tersendiri di turnamenpro
+      x.textAlign = 'left'; x.font = '800 21px '+F;
+      x.fillStyle = lolos ? '#16A34A' : '#64748B';
+      const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
+      x.fillText(rank+' '+s.nama, 84, ry+6);
+      x.textAlign = 'right'; x.font = '800 21px '+F; x.fillStyle = '#1E293B';
+      x.fillText(s.poin+' pt', 1000, ry+6);
+    });
+  });
+  drawShareFooterTP(x);
+}
+function drawSlideRoundCanvas(r, title){
+  const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
+  const x = cv.getContext('2d');
+  const y = drawShareHeaderTP(x, title);
+  const cat = kategoriAktif();
+  const rounds = buildSampleBracket(cat.peserta);
+  drawMatchCardsTP(x, y, rounds[r], {big:false});
+  drawShareFooterTP(x);
+}
+function drawSlideFinalCanvas(r, title){
+  const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
+  const x = cv.getContext('2d');
+  const y = drawShareHeaderTP(x, title);
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const cat = kategoriAktif();
+  const rounds = buildSampleBracket(cat.peserta);
+  const round = rounds[r];
+  x.textAlign = 'left'; x.font = '800 20px '+F; x.fillStyle = '#94A3B8';
+  x.fillText('FINAL', 80, y);
+  const ny = drawMatchCardsTP(x, y+16, round, {big:true});
+  const fm = round[0];
+  if(fm && fm.winner){
+    x.textAlign = 'center'; x.font = '800 30px '+F; x.fillStyle = SPORT_META[sport].hex;
+    x.fillText('🏆 JUARA: '+fm.winner, 540, ny+42);
+  }
+  drawShareFooterTP(x);
+}
+function drawSlidePodiumCanvas(){
+  const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
+  const x = cv.getContext('2d');
+  const y = drawShareHeaderTP(x, '🏆 Juara Turnamen');
+  const F = '"Plus Jakarta Sans",sans-serif';
+  const cat = kategoriAktif();
+  const rounds = buildSampleBracket(cat.peserta);
+  const finalRound = rounds[rounds.length-1];
+  const fm = finalRound[0];
+  const champion = fm.winner;
+  const runnerUp = fm.winner===fm.a ? fm.b : fm.a;
+  const podium = [
+    {rank:2, name:runnerUp, h:150, bg:'#E2E8F0', txt:'#475569'},
+    {rank:1, name:champion, h:220, bg:'#FBBF24', txt:'#78350F'}
+  ];
+  const totalW = 600, gap = 24;
+  const colW = (totalW-gap)/2;
+  const startX = 540-totalW/2;
+  const baseY = 900;
+  podium.forEach((p,i)=>{
+    const colX = startX + i*(colW+gap);
+    const cx = colX + colW/2;
+    x.textAlign = 'center'; x.font = '800 22px '+F; x.fillStyle = '#1E293B';
+    x.fillText(p.name, cx, baseY-p.h-28);
+    rr(colX, baseY-p.h, colW, p.h, 14, x); x.fillStyle = p.bg; x.fill();
+    x.textAlign = 'center'; x.font = '800 48px '+F; x.fillStyle = p.txt;
+    x.fillText(String(p.rank), cx, baseY-p.h/2+17);
+  });
+  drawShareFooterTP(x);
+}
+function downloadShareSlide(){
+  const cv = document.getElementById('shareCanvas');
+  const cat = kategoriAktif();
+  const slide = _shareSlides[_shareSlideIdx];
+  const label = 'turnamenpro-'+sport+'-'+(cat?cat.nama:'kategori')+'-'+(slide?slide.title:'slide');
+  const a = document.createElement('a');
+  a.download = label.toLowerCase().replace(/\s+/g,'-')+'.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+  showToast('⬇️ Gambar tersimpan — siap post ke Instagram!');
+}
+// Unduh SEMUA halaman berurutan — bukan ZIP, cukup beberapa file PNG lewat klik <a download>
+// berantai dengan jeda kecil, sama seperti downloadAllShareSlides() di tracker.html.
+function downloadAllShareSlides(){
+  if(!_shareSlides.length) return;
+  let i = 0;
+  const cv = document.getElementById('shareCanvas');
+  const cat = kategoriAktif();
+  const step = () => {
+    if(i>=_shareSlides.length){ showToast('⬇️ Semua halaman tersimpan — siap post carousel Instagram!'); return; }
+    _shareSlideIdx = i;
+    renderShareSlide();
+    setTimeout(()=>{
+      const a = document.createElement('a');
+      const label = 'turnamenpro-'+sport+'-'+(cat?cat.nama:'kategori')+'-'+(i+1)+'-'+_shareSlides[i].title;
+      a.download = label.toLowerCase().replace(/\s+/g,'-')+'.png';
+      a.href = cv.toDataURL('image/png');
+      a.click();
+      i++;
+      setTimeout(step, 400);
+    }, 80);
+  };
+  step();
 }
 
 // ═══ Render semua ═══
