@@ -41,6 +41,7 @@ body.modal-lock{overflow:hidden}
 .logo img{height:28px;width:auto;display:block}
 .header-sub{font-size:11.5px;color:var(--muted);font-weight:600}
 .badge-khusus{font-size:10px;font-weight:800;letter-spacing:.05em;background:linear-gradient(135deg,rgba(247,148,29,.12),rgba(232,23,74,.12));border:1.5px solid rgba(247,148,29,.5);color:#B45309;padding:5px 11px;border-radius:20px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sync-badge{font-size:10.5px;font-weight:700;white-space:nowrap;color:var(--muted)}
 .top-right{margin-left:auto;display:flex;gap:10px;align-items:center;min-width:0}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:11px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;text-decoration:none;transition:transform .12s,background-color .2s,border-color .2s,color .2s;touch-action:manipulation;min-height:44px}
 .btn:hover{transform:translateY(-1px)}
@@ -181,6 +182,7 @@ footer a:hover{color:var(--accent)}
   /* Tombol atas jadi ikon-saja di layar sempit (sama seperti mabarpro.html/badminton.html)
      — sebelumnya label "Keluar" tetap tampil dan bikin header berdesak-desakan/wrap. */
   .bl{display:none}
+  .sync-badge{display:none}
   .top-right{gap:6px}
   .badge-khusus{font-size:8.5px;padding:4px 8px;max-width:108px;letter-spacing:.02em}
   .btn-sm{padding:9px 10px}
@@ -196,6 +198,7 @@ footer a:hover{color:var(--accent)}
     <div class="logo"><img src="Logohostmabarv3.png" alt="HOSTMABAR"></div>
     <div><div class="header-sub" id="namaKomunitas">Komunitas</div></div>
     <div class="top-right">
+      <span id="cloudSyncBadge" class="sync-badge"></span>
       <div class="badge-khusus">🔒 Akses Khusus</div>
       <button class="btn btn-ghost btn-sm" onclick="logout()">🚪 <span class="bl">Keluar</span></button>
     </div>
@@ -204,8 +207,30 @@ footer a:hover{color:var(--accent)}
 
 <div class="wrap">
 
-  <!-- EVENT INFO -->
+  <!-- PROFIL KOMUNITAS — logo & nama host, sama seperti card di tracker.html. Dipakai
+       di gambar Share Instagram (menyusul, setelah desain header baru disetujui) &
+       cetak PDF. Tersimpan online lewat sistem sinkronisasi yang sama. -->
   <div class="card" style="margin-top:18px">
+    <div class="card-title">🏷️ Profil Komunitas</div>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+      <div style="position:relative;flex-shrink:0">
+        <img id="commLogoPrev" alt="" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:none">
+        <div id="commLogoPh" style="width:58px;height:58px;border-radius:50%;border:2px dashed var(--border);display:grid;place-items:center;font-size:22px;background:var(--bg)">🏷️</div>
+      </div>
+      <div style="flex:1;min-width:170px">
+        <label>Nama Komunitas</label>
+        <input type="text" id="commName" placeholder="Nama komunitas kamu" oninput="updateComm()">
+      </div>
+      <div style="flex:1;min-width:170px">
+        <label>Logo Komunitas</label>
+        <input type="file" id="commLogoFile" accept="image/*" onchange="loadLogo(event)" style="padding:8px;font-size:12px">
+      </div>
+    </div>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:10px">Logo &amp; nama komunitas tersimpan online, siap dipakai di gambar Share Instagram &amp; cetak begitu desain header baru (4 komponen) disetujui.</p>
+  </div>
+
+  <!-- EVENT INFO -->
+  <div class="card">
     <div class="card-title">🏆 Info Event Turnamen</div>
     <div class="event-grid">
       <div><label>Nama Turnamen</label><input id="fNama" placeholder="mis. Turnamen Kemerdekaan HOSTMABAR" oninput="ubahEvent('nama',this.value)"></div>
@@ -297,32 +322,182 @@ function freshCategory(id, nama, format){
   return {
     id, nama, format, peserta:[], numGroups:2, groupMode:'random', manualAssign:{}, qualifyPerGroup:2,
     stage:'setup', bracket:[], groups:[], hasPrelim:false, qualPrelimCount:0, qualDirectEntries:[],
-    editing:null, editingGrup:null
+    editing:null, editingGrup:null, thirdPlace:false, thirdPlaceMatch:null, editingT3:false
   };
 }
-const EVENTS = {
-  badminton:{
-    nama:'', tanggal:'', lokasi:'',
-    active:'gp',
-    categories:[
-      freshCategory('gp','Ganda Putra','knockout'),
-      freshCategory('gpi','Ganda Putri','knockout'),
-      freshCategory('camp','Ganda Campuran','knockout')
-    ]
-  },
-  padel:{
-    nama:'', tanggal:'', lokasi:'', active:'duo',
-    categories:[freshCategory('duo','Duo Open','knockout')]
-  },
-  pickleball:{
-    nama:'', tanggal:'', lokasi:'', active:'mix',
-    categories:[freshCategory('mix','Mixed Doubles','knockout')]
-  },
-  tennis:{
-    nama:'', tanggal:'', lokasi:'', active:'tunggal',
-    categories:[freshCategory('tunggal','Tunggal Putra','knockout')]
+function freshEvents(){
+  return {
+    badminton:{
+      nama:'', tanggal:'', lokasi:'',
+      active:'gp',
+      categories:[
+        freshCategory('gp','Ganda Putra','knockout'),
+        freshCategory('gpi','Ganda Putri','knockout'),
+        freshCategory('camp','Ganda Campuran','knockout')
+      ]
+    },
+    padel:{
+      nama:'', tanggal:'', lokasi:'', active:'duo',
+      categories:[freshCategory('duo','Duo Open','knockout')]
+    },
+    pickleball:{
+      nama:'', tanggal:'', lokasi:'', active:'mix',
+      categories:[freshCategory('mix','Mixed Doubles','knockout')]
+    },
+    tennis:{
+      nama:'', tanggal:'', lokasi:'', active:'tunggal',
+      categories:[freshCategory('tunggal','Tunggal Putra','knockout')]
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PENYIMPANAN — localStorage (cache instan/offline-first, user-namespaced lewat
+// dataStorageKey() supaya tidak ada insiden data-contamination antar akun) + Supabase
+// (sumber kebenaran lintas device). Pola & nama fungsi SAMA PERSIS dengan
+// loadAppData()/saveAppData()/syncToCloud()/initCloudSync() di tracker.html — bedanya
+// tabelnya BARU: `turnamenpro_data` (prefix wajib, tidak menyentuh tracker_data/
+// profiles/cuanmabar_data milik project utama). Baris tabel: user_id (=auth.uid()),
+// payload (JSONB berisi EVENTS + commProfile), updated_at.
+// ═══════════════════════════════════════════════════════════════════
+function dataStorageKey(){
+  try{
+    const raw = localStorage.getItem('hm_session');
+    const s = raw ? JSON.parse(raw) : null;
+    const uname = (s && s.username) ? s.username : 'guest';
+    return 'turnamenpro_v1_data::' + uname;
+  }catch(e){ return 'turnamenpro_v1_data::guest'; }
+}
+function loadAppData(){
+  const empty = { EVENTS: freshEvents(), commProfile:{name:'',logoData:null} };
+  try{
+    const raw = localStorage.getItem(dataStorageKey());
+    if(!raw) return empty;
+    const parsed = JSON.parse(raw) || {};
+    const fe = freshEvents();
+    const ev = parsed.EVENTS || {};
+    Object.keys(fe).forEach(k=>{ if(ev[k]) fe[k] = ev[k]; });
+    return { EVENTS: fe, commProfile: parsed.commProfile || {name:'',logoData:null} };
+  }catch(e){
+    console.warn('Gagal load data lokal, mulai kosong:', e.message);
+    return empty;
   }
-};
+}
+function saveAppData(){
+  try{
+    localStorage.setItem(dataStorageKey(), JSON.stringify({ EVENTS, commProfile:{ name: commProfile.name, logoData: commProfile.logoData } }));
+  }catch(e){ console.warn('Gagal menyimpan data lokal:', e.message); }
+  syncToCloud();
+}
+
+const SUPA_URL = 'https://pxfpskzwkfpxslsvqbpz.supabase.co';
+const SUPA_KEY = 'sb_publishable_F0VfuDGusu23CJY8PIqMIg_AgyITitp';
+// Dibungkus try/catch (sama seperti tracker.html): kalau CDN supabase-js gagal dimuat
+// (sinyal lemah di GOR), window.supabase bisa undefined — tanpa guard ini seluruh
+// script berhenti di sini. Dengan dbSync=null, syncToCloud()/initCloudSync() otomatis
+// jatuh ke mode "Offline — data lokal" dan halaman tetap render normal dari localStorage.
+let dbSync = null;
+try {
+  dbSync = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  });
+} catch(e) {
+  console.error('Gagal inisialisasi Supabase (CDN gagal dimuat?):', e.message);
+}
+let _cloudUserId = null;
+let _cloudSyncing = false;
+let _cloudSaveTimer = null;
+const CLOUD_LOGO_MAX = 1_500_000;
+
+function showSyncBadge(msg, color){
+  const el = document.getElementById('cloudSyncBadge');
+  if(el){ el.textContent = msg; el.style.color = color || 'var(--muted)'; }
+}
+function syncToCloud(){
+  if(!_cloudUserId) return; // belum ada sesi cloud (offline / belum termuat) — cukup localStorage
+  clearTimeout(_cloudSaveTimer);
+  _cloudSaveTimer = setTimeout(async ()=>{
+    if(_cloudSyncing) return;
+    _cloudSyncing = true;
+    showSyncBadge('💾 Menyimpan online…', '#F59E0B');
+    try{
+      const logoOk = !commProfile.logoData || commProfile.logoData.length <= CLOUD_LOGO_MAX;
+      const payload = { EVENTS, commProfile: { name: commProfile.name, logoData: logoOk ? commProfile.logoData : null } };
+      const { error } = await dbSync.from('turnamenpro_data')
+        .upsert({ user_id: _cloudUserId, payload, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      if(error) throw error;
+      showSyncBadge(logoOk ? '☁️ Tersimpan online' : '☁️ Tersimpan (logo terlalu besar, hanya lokal)', logoOk ? '#16A34A' : '#F59E0B');
+    }catch(e){
+      console.warn('syncToCloud:', e.message);
+      showSyncBadge('⚠️ Gagal sync online', '#DC2626');
+    }finally{
+      _cloudSyncing = false;
+    }
+  }, 600);
+}
+function withTimeout(promise, ms){
+  return Promise.race([promise, new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')), ms))]);
+}
+// Dipanggil setelah render awal (dari data lokal) supaya UI langsung tampil cepat —
+// begitu sesi cloud & data server dapat dipastikan, UI di-refresh ulang dengan data cloud.
+async function initCloudSync(){
+  try{
+    if(!dbSync){ showSyncBadge('📶 Offline — data lokal', 'var(--muted)'); return; }
+    showSyncBadge('⏳ Sinkronisasi…', '#F59E0B');
+    let { data:{ session } } = await withTimeout(dbSync.auth.getSession(), 8000);
+    if(!session){
+      const { data: refreshed } = await withTimeout(dbSync.auth.refreshSession(), 8000);
+      session = refreshed?.session || null;
+    }
+    if(!session){ showSyncBadge('📶 Offline — data lokal', 'var(--muted)'); return; }
+    _cloudUserId = session.user.id;
+
+    const { data, error } = await dbSync
+      .from('turnamenpro_data')
+      .select('payload')
+      .eq('user_id', _cloudUserId)
+      .maybeSingle();
+    if(error) throw error;
+
+    if(data && data.payload){
+      const p = data.payload;
+      const fe = freshEvents();
+      Object.keys(fe).forEach(k=>{ if(p.EVENTS && p.EVENTS[k]) fe[k] = p.EVENTS[k]; });
+      Object.keys(EVENTS).forEach(k=>{ EVENTS[k] = fe[k]; });
+      if(p.commProfile){
+        commProfile.name = p.commProfile.name || commProfile.name;
+        if(p.commProfile.logoData){
+          commProfile.logoData = p.commProfile.logoData;
+          const img = new Image();
+          img.onload = () => { commProfile.logoImg = img; refreshCommUI(); };
+          img.src = commProfile.logoData;
+        }
+      }
+      // Cache lokal disamakan dengan versi cloud (source of truth) untuk pemakaian offline berikutnya.
+      try{ localStorage.setItem(dataStorageKey(), JSON.stringify({ EVENTS, commProfile:{name:commProfile.name, logoData:commProfile.logoData} })); }catch(e){}
+      showSyncBadge('☁️ Data online', '#16A34A');
+    } else {
+      // Akun ini belum punya baris di cloud — kirim data lokal yang ada sekarang agar baris terbentuk.
+      showSyncBadge('☁️ Data siap', '#16A34A');
+      saveAppData();
+    }
+    renderAll();
+    document.getElementById('commName').value = commProfile.name;
+    refreshCommUI();
+  }catch(e){
+    console.warn('initCloudSync:', e.message);
+    showSyncBadge('📶 Offline — data lokal', 'var(--muted)');
+  }
+}
+
+const __appData = loadAppData();
+const EVENTS = __appData.EVENTS;
+const commProfile = { name: __appData.commProfile.name || '', logoData: __appData.commProfile.logoData || null, logoImg:null };
+if(commProfile.logoData){
+  const __restoreLogo = new Image();
+  __restoreLogo.onload = () => { commProfile.logoImg = __restoreLogo; refreshCommUI(); };
+  __restoreLogo.src = commProfile.logoData;
+}
 const TFORMATS = {
   knockout:{ nama:'🏆 Knock-out', info:'Sekali kalah langsung tersingkir — cepat, cocok waktu terbatas.' },
   groupknockout:{ nama:'🥇 Group Knock-out', info:'Fase grup round-robin dulu, juara/runner-up grup lanjut ke babak gugur — lebih adil, tiap peserta pasti main beberapa kali.' }
@@ -330,7 +505,14 @@ const TFORMATS = {
 
 let sport = 'badminton';
 let modalMode = null; // 'kategori' | 'peserta'
+// Kalau data lama (localStorage/cloud) sudah punya kategori custom dengan id 'katNNN',
+// mulai dari NNN+1 tertinggi — supaya kategori baru tidak pernah tabrakan id dengan
+// yang sudah ada dari sesi sebelumnya.
 let katIdSeq = 100;
+Object.values(EVENTS).forEach(ev=> ev.categories.forEach(c=>{
+  const m = /^kat(\d+)$/.exec(c.id);
+  if(m) katIdSeq = Math.max(katIdSeq, parseInt(m[1],10)+1);
+}));
 
 function esc(s){ return String(s).replace(/</g,'&lt;'); }
 
@@ -374,12 +556,58 @@ function renderSportPills(){
 }
 
 // ═══ Event info fields ═══
-function ubahEvent(field,val){ EVENTS[sport][field] = val; }
+function ubahEvent(field,val){ EVENTS[sport][field] = val; saveAppData(); }
 function fillEventFields(){
   const ev = EVENTS[sport];
   document.getElementById('fNama').value = ev.nama;
   document.getElementById('fTanggal').value = ev.tanggal;
   document.getElementById('fLokasi').value = ev.lokasi;
+}
+
+// ═══ Profil Komunitas — logo & nama host, pola SAMA seperti commProfile/loadLogo()/
+// refreshCommUI() di tracker.html: file gambar di-resize & dikompres client-side jadi
+// base64 (bukan file terpisah di Storage) supaya gampang ikut satu payload JSONB yang
+// sama dengan data turnamen. ═══
+const LOGO_MAX_DIM = 512;      // sisi terpanjang, cukup untuk tampilan terbesar
+const LOGO_MAX_BYTES = 800000; // ~800KB base64, batas aman
+function updateComm(){
+  commProfile.name = document.getElementById('commName').value.trim() || 'Komunitas';
+  refreshCommUI();
+  saveAppData();
+}
+function loadLogo(ev){
+  const f = ev.target.files[0]; if(!f) return;
+  if(!f.type.startsWith('image/')){ showToast('⚠️ File harus berupa gambar'); ev.target.value=''; return; }
+  const rd = new FileReader();
+  rd.onload = e => {
+    const srcImg = new Image();
+    srcImg.onload = () => {
+      let { width:w, height:h } = srcImg;
+      if(w > LOGO_MAX_DIM || h > LOGO_MAX_DIM){
+        const scale = LOGO_MAX_DIM / Math.max(w,h);
+        w = Math.round(w*scale); h = Math.round(h*scale);
+      }
+      const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(srcImg, 0, 0, w, h);
+      let out = cv.toDataURL('image/png');
+      if(out.length > LOGO_MAX_BYTES) out = cv.toDataURL('image/jpeg', 0.85);
+      if(out.length > LOGO_MAX_BYTES) out = cv.toDataURL('image/jpeg', 0.6);
+      if(out.length > LOGO_MAX_BYTES){ showToast('⚠️ Logo masih terlalu besar setelah dikompres — coba gambar yang lebih sederhana'); ev.target.value=''; return; }
+      commProfile.logoData = out;
+      const img = new Image();
+      img.onload = () => { commProfile.logoImg = img; refreshCommUI(); showToast('✅ Logo komunitas terpasang!'); saveAppData(); };
+      img.src = out;
+    };
+    srcImg.onerror = () => { showToast('⚠️ Gagal membaca gambar'); };
+    srcImg.src = e.target.result;
+  };
+  rd.readAsDataURL(f);
+}
+function refreshCommUI(){
+  const has = !!commProfile.logoData;
+  const img = document.getElementById('commLogoPrev'), ph = document.getElementById('commLogoPh');
+  if(img){ img.src = has ? commProfile.logoData : ''; img.style.display = has ? 'block' : 'none'; }
+  if(ph) ph.style.display = has ? 'none' : 'grid';
 }
 
 // ═══ Kategori ═══
@@ -457,29 +685,32 @@ function roundLabel(total, idx, hasPrelim){
 // nama langsung, bukan objek {id,name}). Bagan/fase grup di bawah ini MULAI KOSONG (skor
 // null, winner null) — diisi manual per match, bukan hasil simulasi/acak lagi. ═══════════════════════
 
-// Anti-rematch sesama grup: susun ulang urutan peserta lolos supaya 2 entry dari grup yang
-// sama tidak langsung berhadapan di babak pertama babak gugur. items = [{entry, groupIdx}].
+// Anti-rematch sesama grup — port PERSIS dari susunAntiSesamaGrup() di tracker.html
+// (versi sebelumnya di sini salah: "interleave"-nya malah menaruh 2 entry grup sama
+// bersebelahan lagi — itu sebab Koben masih nemu juara grup ketemu di semifinal).
+// Algoritma yang benar: selalu ambil dari antrian-grup TERPANJANG yang BUKAN grup
+// terakhir yang baru ditaruh — dijamin entry grup sama tidak pernah bertetangga
+// langsung di bagan (selama tidak ada 1 grup yang jumlahnya lebih dari separuh total
+// peserta lolos, kasus yang praktis selalu terpenuhi karena lolos per grup sama rata).
 function susunAntiSesamaGrup(items){
+  const shuffled = shuffleArr(items);
   const byGroup = {};
-  items.forEach(it=>{ (byGroup[it.groupIdx] = byGroup[it.groupIdx]||[]).push(it); });
-  const groupKeys = shuffleArr(Object.keys(byGroup));
-  groupKeys.forEach(k=> byGroup[k] = shuffleArr(byGroup[k]));
+  shuffled.forEach(it=>{ (byGroup[it.groupIdx] = byGroup[it.groupIdx]||[]).push(it); });
+  const queues = shuffleArr(Object.keys(byGroup)).map(gid=>byGroup[gid].slice());
   const result = [];
-  let remaining = groupKeys.slice();
-  while(remaining.length){
-    for(const k of remaining.slice()){
-      const arr = byGroup[k];
-      if(arr.length) result.push(arr.shift());
-      if(!arr.length) remaining = remaining.filter(x=>x!==k);
-    }
+  let lastGroupIdx = null;
+  while(result.length < shuffled.length){
+    let pick=-1, pickLen=-1;
+    queues.forEach((q,qi)=>{
+      if(!q.length || q[0].groupIdx===lastGroupIdx) return;
+      if(q.length>pickLen){ pickLen=q.length; pick=qi; }
+    });
+    if(pick===-1) pick = queues.findIndex(q=>q.length>0); // kasus ekstrem tak terhindarkan
+    const item = queues[pick].shift();
+    result.push(item);
+    lastGroupIdx = item.groupIdx;
   }
-  // Interleave supaya entry grup yang sama tidak bertetangga langsung di bagan.
-  const n = result.length;
-  const half = Math.ceil(n/2);
-  const A = result.slice(0, half), B = result.slice(half);
-  const final = [];
-  for(let i=0;i<half;i++){ final.push(A[i]); if(B[i]) final.push(B[i]); }
-  return final.map(x=>x.entry);
+  return result.map(x=>x.entry);
 }
 
 // Bagan knock-out asli — mendukung jumlah peserta bukan pangkat 2 lewat Babak Kualifikasi
@@ -514,6 +745,8 @@ function buatKnockoutReal(cat, entries, opts){
   cat.qualPrelimCount = extra;
   cat.qualDirectEntries = directEntries;
   cat.editing = null;
+  cat.thirdPlaceMatch = null;
+  cat.editingT3 = false;
   cat.stage = 'running';
 }
 
@@ -565,7 +798,7 @@ function mulaiBagan(){
 function resetBaganKategori(){
   const cat = kategoriAktif();
   if(!confirm('Reset bagan/fase grup kategori "'+cat.nama+'"? Semua skor yang sudah diinput akan hilang (peserta tidak terhapus).')) return;
-  cat.stage='setup'; cat.bracket=[]; cat.groups=[]; cat.hasPrelim=false; cat.qualPrelimCount=0; cat.qualDirectEntries=[]; cat.editing=null; cat.editingGrup=null;
+  cat.stage='setup'; cat.bracket=[]; cat.groups=[]; cat.hasPrelim=false; cat.qualPrelimCount=0; cat.qualDirectEntries=[]; cat.editing=null; cat.editingGrup=null; cat.thirdPlaceMatch=null; cat.editingT3=false;
   renderKatPanel();
   showToast('🗑️ Bagan direset — atur ulang lalu buat lagi kapan saja');
 }
@@ -619,6 +852,24 @@ function invalidateForwardReal(cat, r, i){
     invalidateForwardReal(cat, r+1, nextIdx);
   }
 }
+// ── Perebutan Juara 3 (opsional, dicentang sebelum bagan dibuat) — begitu KEDUA match
+// semifinal sudah ada pemenangnya, siapkan match Juara 3 dari pihak yang KALAH. Kalau
+// pesertanya tidak berubah (semifinal diedit ulang tapi kalah/menangnya tetap sama),
+// skor Juara 3 yang sudah diisi TIDAK direset — port persis dari updateThirdPlaceMatch()
+// di tracker.html. ──
+function semifinalRIdxReal(cat){ return cat.bracket.length - 2; }
+function updateThirdPlaceMatchReal(cat){
+  const r = semifinalRIdxReal(cat);
+  if(r<0 || !cat.bracket[r] || cat.bracket[r].length!==2) return;
+  const [m0,m1] = cat.bracket[r];
+  if(!m0.winner || !m1.winner){ cat.thirdPlaceMatch=null; return; }
+  const loser0 = m0.winner===m0.a ? m0.b : m0.a;
+  const loser1 = m1.winner===m1.a ? m1.b : m1.a;
+  const existing = cat.thirdPlaceMatch;
+  const samePeserta = existing && existing.a && existing.b &&
+    ((existing.a===loser0 && existing.b===loser1) || (existing.a===loser1 && existing.b===loser0));
+  if(!samePeserta) cat.thirdPlaceMatch = { a:loser0, b:loser1, scoreA:null, scoreB:null, winner:null };
+}
 function simpanSkorBaganReal(r,i){
   const cat = kategoriAktif();
   const sA = parseInt(document.getElementById(`bs-r${r}-m${i}-A`).value);
@@ -635,9 +886,26 @@ function simpanSkorBaganReal(r,i){
     cat.bracket[r+1][nextIdx][pos] = m.winner;
     if(winnerChanged) invalidateForwardReal(cat, r+1, nextIdx);
   }
+  if(cat.thirdPlace && r===semifinalRIdxReal(cat)) updateThirdPlaceMatchReal(cat);
   cat.editing = null;
   renderKatPanel();
   showToast('✅ Hasil tersimpan — pemenang maju ke babak berikutnya!');
+}
+function editSkorT3Real(){ kategoriAktif().editingT3 = true; renderKatPanel(); }
+function batalEditT3Real(){ kategoriAktif().editingT3 = false; renderKatPanel(); }
+function simpanSkorT3Real(){
+  const cat = kategoriAktif();
+  const sA = parseInt(document.getElementById('t3pro-A').value);
+  const sB = parseInt(document.getElementById('t3pro-B').value);
+  if(isNaN(sA)||isNaN(sB)){ showToast('⚠️ Masukkan skor kedua peserta'); return; }
+  if(sA<0||sB<0){ showToast('⚠️ Skor tidak boleh minus'); return; }
+  if(sA===sB){ showToast('❌ Tidak boleh seri — harus ada pemenang'); return; }
+  const m = cat.thirdPlaceMatch;
+  if(!m) return;
+  m.scoreA=sA; m.scoreB=sB; m.winner = sA>sB ? m.a : m.b;
+  cat.editingT3 = false;
+  renderKatPanel();
+  showToast('✅ Hasil Juara 3 tersimpan!');
 }
 
 // Transisi fase grup → babak gugur: ambil N teratas tiap grup (qualifyPerGroup), susun
@@ -688,6 +956,7 @@ function assignManualGroup(nama, val){
   else cat.manualAssign[nama] = parseInt(val);
   // sengaja tidak render ulang seluruh panel di sini — supaya dropdown peserta lain
   // yang sedang dipilih tidak ikut ke-reset tampilannya tiap satu peserta diatur.
+  saveAppData();
 }
 function renderManualAssignList(cat){
   if(!cat.peserta.length) return `<p style="font-size:11.5px;color:var(--muted)">Tambah peserta dulu, baru atur grupnya di sini.</p>`;
@@ -790,6 +1059,39 @@ function matchCardBaganHtml(cat,r,i,m){
   }
   return `<div class="b-match">${body}</div>`;
 }
+function renderThirdPlaceHtml(cat){
+  if(!cat.thirdPlace) return '';
+  const m = cat.thirdPlaceMatch;
+  if(!m){
+    if(semifinalRIdxReal(cat)<0) return ''; // bagan terlalu kecil, tidak ada semifinal sama sekali
+    return `<div style="margin-top:14px;padding:14px;border:1.5px dashed var(--border);border-radius:12px">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:8px;text-align:center">🥉 PEREBUTAN JUARA 3</div>
+      <p style="font-size:12px;color:var(--muted);text-align:center">Menunggu kedua match semifinal selesai dulu.</p>
+    </div>`;
+  }
+  const aWin = m.winner && m.winner===m.a, bWin = m.winner && m.winner===m.b;
+  let body;
+  if(m.winner && !cat.editingT3){
+    body = `<div class="b-side ${aWin?'win':''}"><span class="nm">${esc(m.a)}${aWin?' 🥉':''}</span><span class="sc">${m.scoreA}</span></div>
+      <div class="divider"></div>
+      <div class="b-side ${bWin?'win':''}"><span class="nm">${esc(m.b)}${bWin?' 🥉':''}</span><span class="sc">${m.scoreB}</span></div>
+      <div style="text-align:right;margin-top:6px"><button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:10px;min-height:28px" onclick="editSkorT3Real()">✏️ Edit</button></div>`;
+  } else {
+    body = `<div class="b-side"><span class="nm">${esc(m.a)}</span></div>
+      <div class="divider"></div>
+      <div class="b-side"><span class="nm">${esc(m.b)}</span></div>
+      <div style="display:flex;gap:4px;align-items:center;margin-top:6px;flex-wrap:wrap">
+        <input type="number" id="t3pro-A" placeholder="0" min="0" value="${cat.editingT3&&m.scoreA!=null?m.scoreA:''}" style="width:46px;min-height:36px;padding:4px;font-size:16px;text-align:center">
+        <span style="color:var(--muted)">—</span>
+        <input type="number" id="t3pro-B" placeholder="0" min="0" value="${cat.editingT3&&m.scoreB!=null?m.scoreB:''}" style="width:46px;min-height:36px;padding:4px;font-size:16px;text-align:center">
+        <button class="btn btn-accent btn-sm" style="padding:5px 8px;min-height:34px" onclick="simpanSkorT3Real()">${cat.editingT3?'💾':'✅'}</button>
+      </div>`;
+  }
+  return `<div class="b-match" style="margin-top:14px;max-width:260px;margin-left:auto;margin-right:auto;border-color:var(--accent)">
+    <div style="font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-bottom:6px">🥉 Perebutan Juara 3</div>
+    ${body}
+  </div>`;
+}
 function renderBracketHtml(cat){
   const total = cat.bracket.length;
   const roundsHtml = cat.bracket.map((round,r)=>`
@@ -799,7 +1101,8 @@ function renderBracketHtml(cat){
     </div>`).join('');
   const finalMatch = cat.bracket[total-1] && cat.bracket[total-1][0];
   const champHtml = (finalMatch && finalMatch.winner) ? `<div class="champion-note">🏆 Juara: ${esc(finalMatch.winner)}</div>` : '';
-  return `<div class="bracket-wrap"><div class="bracket">${roundsHtml}</div></div>${champHtml}`;
+  const t3Html = renderThirdPlaceHtml(cat);
+  return `<div class="bracket-wrap"><div class="bracket">${roundsHtml}</div></div>${champHtml}${t3Html}`;
 }
 function renderBagan(cat){
   if(cat.stage==='setup'){
@@ -809,6 +1112,10 @@ function renderBagan(cat){
     const label = cat.format==='groupknockout' ? '🎲 Buat Fase Grup' : '🏆 Buat Bagan Turnamen';
     return `<div style="text-align:center;padding:22px 10px">
       <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">${cat.peserta.length} peserta terdaftar, format <b style="color:var(--text)">${TFORMATS[cat.format].nama.replace(/^\S+\s/,'')}</b> — siap dibuat. Anti-rematch sesama grup otomatis aktif untuk transisi ke babak gugur.</p>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;cursor:pointer;margin:0 auto 14px;padding:10px 12px;border:1.5px dashed var(--border);border-radius:12px;text-align:left;max-width:360px">
+        <input type="checkbox" ${cat.thirdPlace?'checked':''} onchange="kategoriAktif().thirdPlace=this.checked; saveAppData();" style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">
+        <span>🥉 Sertakan perebutan Juara 3 <span style="font-weight:600;color:var(--muted)">— dua yang kalah di semifinal saling bertanding</span></span>
+      </label>
       <button class="btn btn-accent btn-lg" onclick="mulaiBagan()">${label}</button>
     </div>`;
   }
@@ -846,6 +1153,7 @@ function renderKatPanel(){
       ${locked ? '' : renderGroupConfigUi(cat)}
       ${renderBagan(cat)}
     </div>`;
+  saveAppData();
 }
 
 // ═══ Modal tambah kategori/peserta ═══
@@ -929,6 +1237,10 @@ function renderBaganPrint(cat){
       </div>`).join('')}</div>`;
     const finalMatch = cat.bracket[total-1][0];
     if(finalMatch && finalMatch.winner) html += `<div class="champion-note">🏆 Juara: ${esc(finalMatch.winner)}</div>`;
+    if(cat.thirdPlace && cat.thirdPlaceMatch && cat.thirdPlaceMatch.winner){
+      const t3 = cat.thirdPlaceMatch;
+      html += `<div class="group-note" style="margin-top:10px;font-weight:700;color:#1E293B">🥉 Juara 3: ${esc(t3.winner)} <span style="font-weight:400;color:#64748B">(${esc(t3.a)} ${t3.scoreA}–${t3.scoreB} ${esc(t3.b)})</span></div>`;
+    }
   }
   return html || '<p style="color:#64748B">Belum ada data untuk dicetak.</p>';
 }
@@ -982,6 +1294,28 @@ function fitFont(ctx, text, family, weight, maxWidth, startSize, minSize){
     ctx.font = weight+' '+size+'px '+family;
   }
   return size;
+}
+// Gambar image "cover" (crop tengah, isi penuh kotak tujuan) — dipakai buat logo
+// komunitas di kanvas Share supaya tidak gepeng, pola sama seperti drawImageCover()
+// di tracker.html.
+function drawImageCover(ctx, img, dx, dy, dw, dh){
+  const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  if(!iw || !ih){ ctx.drawImage(img, dx, dy, dw, dh); return; }
+  const ir = iw/ih, dr = dw/dh;
+  let sx,sy,sw,sh;
+  if(ir > dr){ sh = ih; sw = ih*dr; sx = (iw-sw)/2; sy = 0; }
+  else { sw = iw; sh = iw/dr; sx = 0; sy = (ih-sh)/2; }
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+}
+// Format tanggal Indonesia singkat (mis. "14 Agt 2026") dari value <input type="date">
+// yang selalu ISO "YYYY-MM-DD" — dipakai di badge Tanggal header Share IG.
+function formatTanggalID(iso){
+  if(!iso) return '';
+  const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  const parts = iso.split('-').map(Number);
+  const y=parts[0], m=parts[1], d=parts[2];
+  if(!y||!m||!d) return iso;
+  return d+' '+bulan[m-1]+' '+y;
 }
 function buildShareSlidesTP(cat){
   const slides = [];
@@ -1037,6 +1371,10 @@ function closeShareModal(){
 // ── Header/footer bersama semua slide — persis drawShareHeader()/drawShareFooter() di
 // tracker.html, cuma sumber teksnya diganti: nama host (dari sesi login) + nama & tanggal
 // event, bukan nama komunitas + sesi mabar. ──
+// Header 4 komponen (disetujui Koben lewat dummy): 1) Logo Komunitas 2) Nama Turnamen
+// 3) Nama Kategori — dirapatkan langsung di bawah nama turnamen, bukan berjauhan —
+// 4) Tanggal sebagai badge pojok kanan atas. Chip nama babak (mis. SEMIFINAL) di
+// bawahnya TIDAK berubah dari sebelumnya.
 function drawShareHeaderTP(x, subtitle){
   const hex = SPORT_META[sport].hex;
   const F = '"Plus Jakarta Sans",sans-serif';
@@ -1046,19 +1384,48 @@ function drawShareHeaderTP(x, subtitle){
   x.fillStyle = grad; x.fillRect(0,0,1080,1080);
   x.fillStyle = '#F8FAFC'; x.fillRect(bw,bw,1080-bw*2,1080-bw*2);
 
-  const logoCx=134, logoCy=104, logoR=54;
-  x.beginPath(); x.arc(logoCx, logoCy, logoR, 0, Math.PI*2);
-  x.fillStyle = hex; x.fill();
-
   const ev = EVENTS[sport];
-  const hostName = (getSession().username) || 'HOSTMABAR';
+  const cat = kategoriAktif();
+
+  // 1) Logo Komunitas — logo asli (dari card Profil Komunitas) kalau sudah diupload,
+  // fallback lingkaran warna aksen cabang kalau belum ada (sama seperti tracker.html).
+  const logoCx=134, logoCy=104, logoR=54;
+  if(commProfile.logoImg){
+    x.save(); x.beginPath(); x.arc(logoCx, logoCy, logoR, 0, Math.PI*2); x.clip();
+    drawImageCover(x, commProfile.logoImg, logoCx-logoR, logoCy-logoR, logoR*2, logoR*2); x.restore();
+    x.beginPath(); x.arc(logoCx, logoCy, logoR, 0, Math.PI*2);
+    x.lineWidth = 4; x.strokeStyle = hex; x.stroke();
+  } else {
+    x.beginPath(); x.arc(logoCx, logoCy, logoR, 0, Math.PI*2);
+    x.fillStyle = hex; x.fill();
+  }
+
   const textX = logoCx + logoR + 28;
-  const maxTextW = 1080-bw-40-textX;
-  const nameSize = fitFont(x, hostName, F, '800', maxTextW, 38, 22);
+  const maxTextW = 1080-bw-40-textX-170; // sisakan ruang buat badge tanggal di kanan
+
+  // 2) Nama Turnamen
+  const namaTurnamen = ev.nama || 'Turnamen';
+  const nameSize = fitFont(x, namaTurnamen, F, '800', maxTextW, 38, 22);
   x.textAlign = 'left'; x.font = '800 '+nameSize+'px '+F; x.fillStyle = '#1E293B';
-  x.fillText(hostName, textX, logoCy-4);
-  x.font = '600 19px '+F; x.fillStyle = '#64748B';
-  x.fillText((ev.nama||'Turnamen')+(ev.tanggal?' · '+ev.tanggal:''), textX, logoCy+26);
+  x.fillText(namaTurnamen, textX, logoCy-14);
+
+  // 3) Nama Kategori — dirapatkan (gap ~42px), bukan berjauhan seperti versi sebelumnya
+  const katSize = fitFont(x, cat.nama, F, '700', maxTextW, 24, 16);
+  x.font = '700 '+katSize+'px '+F; x.fillStyle = hex;
+  x.fillText(cat.nama, textX, logoCy+28);
+
+  // 4) Tanggal — badge pojok kanan atas
+  if(ev.tanggal){
+    const badgeTxt = formatTanggalID(ev.tanggal);
+    x.font = '700 20px '+F;
+    const btw = x.measureText(badgeTxt).width;
+    const bx2 = 1080-bw-40;
+    rr(bx2-btw-40, logoCy-46, btw+40, 40, 20, x);
+    x.fillStyle = '#FFFFFF'; x.fill();
+    x.lineWidth = 1.5; x.strokeStyle = '#CBD5E1'; x.stroke();
+    x.textAlign = 'center'; x.fillStyle = '#475569';
+    x.fillText(badgeTxt, bx2-btw/2-20, logoCy-46+27);
+  }
 
   let y = logoCy + logoR + 44;
   x.textAlign = 'center'; x.font = '800 19px '+F;
@@ -1069,16 +1436,14 @@ function drawShareHeaderTP(x, subtitle){
   y += 66;
   return y;
 }
+// Footer: logo HOSTMABAR tetap ada, teks "hostmabar.com" dihilangkan (disetujui Koben).
 function drawShareFooterTP(x){
   const fy = 1012;
-  const F = '"Plus Jakarta Sans",sans-serif';
   x.textAlign = 'center';
   if(__hmLogo.complete && __hmLogo.naturalWidth>0){
-    const lh = 46, lw = lh*(__hmLogo.naturalWidth/__hmLogo.naturalHeight);
-    x.drawImage(__hmLogo, 540-lw/2, fy-36, lw, lh);
+    const lh = 42, lw = lh*(__hmLogo.naturalWidth/__hmLogo.naturalHeight);
+    x.drawImage(__hmLogo, 540-lw/2, fy-21, lw, lh);
   }
-  x.font = '600 16px '+F; x.fillStyle = '#94A3B8';
-  x.fillText('hostmabar.com', 540, fy+26);
 }
 // ── Kartu match untuk slide babak/final — sama seperti drawMatchCards() di tracker.html,
 // hanya m.a/m.b di sini nama string langsung (bukan objek {name}) karena model peserta
@@ -1150,17 +1515,26 @@ function drawSlideRoundCanvas(r, title){
 function drawSlideFinalCanvas(r, title){
   const cv = document.getElementById('shareCanvas'); cv.width=1080; cv.height=1080;
   const x = cv.getContext('2d');
-  const y = drawShareHeaderTP(x, title);
-  const F = '"Plus Jakarta Sans",sans-serif';
   const cat = kategoriAktif();
+  const hasT3 = !!(cat.thirdPlace && cat.thirdPlaceMatch && cat.thirdPlaceMatch.winner);
+  const y = drawShareHeaderTP(x, hasT3 ? 'Final & Juara 3' : title);
+  const F = '"Plus Jakarta Sans",sans-serif';
   const round = cat.bracket[r];
   x.textAlign = 'left'; x.font = '800 20px '+F; x.fillStyle = '#94A3B8';
   x.fillText('FINAL', 80, y);
-  const ny = drawMatchCardsTP(x, y+16, round, {big:true});
+  let ny = drawMatchCardsTP(x, y+16, round, {big:true});
   const fm = round[0];
   if(fm && fm.winner){
     x.textAlign = 'center'; x.font = '800 30px '+F; x.fillStyle = SPORT_META[sport].hex;
     x.fillText('🏆 JUARA: '+fm.winner, 540, ny+42);
+    ny += 74;
+  } else {
+    ny += 24;
+  }
+  if(hasT3){
+    x.textAlign='left'; x.font='800 20px '+F; x.fillStyle='#94A3B8';
+    x.fillText('PEREBUTAN JUARA 3', 80, ny);
+    drawMatchCardsTP(x, ny+16, [cat.thirdPlaceMatch], {big:false});
   }
   drawShareFooterTP(x);
 }
@@ -1174,11 +1548,14 @@ function drawSlidePodiumCanvas(){
   const fm = finalRound[0];
   const champion = fm.winner;
   const runnerUp = fm.winner===fm.a ? fm.b : fm.a;
-  const podium = [
-    {rank:2, name:runnerUp, h:150, bg:'#E2E8F0', txt:'#475569'},
-    {rank:1, name:champion, h:220, bg:'#FBBF24', txt:'#78350F'}
-  ];
-  const totalW = 600, gap = 24;
+  const third = (cat.thirdPlace && cat.thirdPlaceMatch && cat.thirdPlaceMatch.winner) ? cat.thirdPlaceMatch.winner : null;
+  const podium = third
+    ? [ {rank:2, name:runnerUp, h:150, bg:'#E2E8F0', txt:'#475569'},
+        {rank:1, name:champion, h:220, bg:'#FBBF24', txt:'#78350F'},
+        {rank:3, name:third, h:105, bg:'#F0C4A0', txt:'#7C4A24'} ]
+    : [ {rank:2, name:runnerUp, h:150, bg:'#E2E8F0', txt:'#475569'},
+        {rank:1, name:champion, h:220, bg:'#FBBF24', txt:'#78350F'} ];
+  const totalW = 880, gap = 24;
   const colW = (totalW-gap)/2;
   const startX = 540-totalW/2;
   const baseY = 900;
@@ -1238,7 +1615,10 @@ function renderAll(){
 }
 
 initHeaderFromSession();
+document.getElementById('commName').value = commProfile.name;
 renderAll();
+refreshCommUI();
+initCloudSync(); // paint cepat dari localStorage dulu, lalu disamakan dengan data cloud begitu sesi terverifikasi
 </script>
 </body>
 </html>
