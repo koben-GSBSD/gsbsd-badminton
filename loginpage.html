@@ -308,7 +308,13 @@ async function doLogin(which){
 
     // STEP 4: Simpan sesi ke localStorage — key 'hm_session' dibaca oleh
     // session guard di semua halaman app (sama seperti produksi)
+    // `id` (user.id asli dari Supabase Auth, immutable) ditambahkan 2026-08-16
+    // (audit keamanan) supaya tracker.html/turnamenpro.html bisa namespace cache
+    // lokal per-akun pakai UID, bukan username yang bisa diedit user sendiri di
+    // localStorage — lihat dataStorageKey() di kedua file itu. Field lama tetap
+    // dipertahankan semua, murni tambahan.
     const sessionPayload = {
+      id       : userId,
       username : profile.username_komunitas,
       paket    : profile.paket_langganan,
       redirect : profile.redirect_url,
