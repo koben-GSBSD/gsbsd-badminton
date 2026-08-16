@@ -269,6 +269,19 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 .modal-actions{display:flex;gap:10px}
 .modal-actions .btn{flex:1}
 
+/* ── Popup pilihan Mode Turnamen: Single Kategori (sistem existing, tidak
+   berubah) vs Multi Kategori (redirect ke turnamenpro.html, khusus Pro). ── */
+.tp-pilihan-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+.tp-pilihan-card{background:var(--bg);border:1.5px solid var(--border);border-radius:16px;padding:20px 16px;text-align:center;cursor:pointer;font-family:inherit;transition:all .15s}
+.tp-pilihan-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 18px rgba(30,41,59,.08)}
+.tp-pilihan-icon{font-size:32px;margin-bottom:8px}
+.tp-pilihan-title{font-size:15px;font-weight:800;margin-bottom:6px}
+.tp-pilihan-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px;min-height:52px}
+.tp-pilihan-tag{display:inline-block;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:99px;background:color-mix(in srgb,var(--accent) 10%,white);color:var(--accent)}
+.tp-pilihan-card.locked{opacity:.75}
+.tp-pilihan-card.locked .tp-pilihan-tag{background:rgba(220,38,38,.1);color:#DC2626}
+@media(max-width:520px){.tp-pilihan-grid{grid-template-columns:1fr}.tp-pilihan-desc{min-height:0}}
+
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--text);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;transition:transform .25s;z-index:110;max-width:92vw;text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
@@ -437,7 +450,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
       </div>
       <div class="session-id" id="sessionInfo"></div>
       <div style="border-top:1px dashed var(--border);margin:16px 0 12px"></div>
-      <button id="turnamenBtn" class="btn btn-sm btn-secondary" style="width:100%;background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.25);color:#B91C1C" onclick="openTurnamenModal()">🥇 Mode Turnamen — Coba Sekarang dan Jadi Pemenang!</button>
+      <button id="turnamenBtn" class="btn btn-sm btn-secondary" style="width:100%;background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.25);color:#B91C1C" onclick="openTurnamenPilihanModal()">🥇 Mode Turnamen — Coba Sekarang dan Jadi Pemenang!</button>
     </div>
   </div>
 
@@ -655,6 +668,35 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
   </div>
 </div>
 
+<!-- PILIH MODE TURNAMEN: Single Kategori (sistem existing) vs Multi Kategori
+     (redirect ke turnamenpro.html, khusus Pro). Ini pintu masuk TUNGGAL Mode
+     Turnamen — dipicu dari turnamenBtn di halaman ini MAUPUN dari tombol
+     "Buat Turnamen" di dashboard.html lewat deep-link ?turnamen=1 (lihat
+     paling bawah file ini), supaya perilakunya konsisten di 2 halaman. -->
+<div class="modal-overlay" id="turnamenPilihanModalOverlay" onclick="closeTurnamenPilihanModal(event)">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h2>🥇 Pilih Mode Turnamen</h2>
+      <button class="modal-close" onclick="closeTurnamenPilihanModal()">✕</button>
+    </div>
+    <div class="tp-pilihan-grid">
+      <button type="button" class="tp-pilihan-card" onclick="pilihTurnamenSingle()">
+        <div class="tp-pilihan-icon">🥇</div>
+        <div class="tp-pilihan-title">Single Kategori</div>
+        <div class="tp-pilihan-desc">Bagan gugur untuk 1 kategori (mis. Ganda Campuran) — sistem yang sudah kamu pakai selama ini, tidak berubah.</div>
+        <div class="tp-pilihan-tag">Trial &amp; Pro</div>
+      </button>
+      <button type="button" class="tp-pilihan-card" id="tpMultiCard" onclick="pilihTurnamenMulti()">
+        <div class="tp-pilihan-icon">🏆</div>
+        <div class="tp-pilihan-title">Multi Kategori</div>
+        <div class="tp-pilihan-desc">Satu event, beberapa kategori sekaligus (mis. Ganda Putra + Ganda Putri) — di Turnamen Pro.</div>
+        <div class="tp-pilihan-tag" id="tpMultiTag">Khusus Pro</div>
+      </button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px">Catatan: data pemain di Turnamen Pro (Multi Kategori) terpisah dari Data Member di sini — perlu diisi ulang di sana.</p>
+  </div>
+</div>
+
 <!-- TURNAMEN MODAL (opsional, jarang dipakai — khusus Ganda, tidak mengganggu 4 tab utama) -->
 <div class="modal-overlay" id="turnamenModalOverlay" onclick="closeTurnamenModal(event)">
   <div class="modal" style="max-width:640px;max-height:86vh;overflow-y:auto">
@@ -722,6 +764,50 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
+// SECURITY GUARD — proteksi halaman, sama pola dengan sistem live
+// (mabarprov2.html). Cek sesi lokal 'hm_session' sebelum halaman
+// dipakai; belum login / sesi kedaluwarsa → redirect ke loginpage.html.
+// DIPINDAH ke PALING ATAS script (2026-08-16, temuan audit keamanan):
+// sebelumnya guard ini ada di PALING BAWAH file, setelah loadAppData(),
+// render, dan initCloudSync() sudah jalan duluan — artinya UI tracker
+// sempat ter-render (bahkan bisa dipakai) sebelum redirect diperiksa,
+// dan kalau ada error tak terduga di kode manapun SEBELUM baris ini,
+// guard tidak akan pernah dieksekusi sama sekali (tracker.html jadi bisa
+// diakses langsung via URL tanpa lewat loginpage.html). Sekarang identik
+// posisinya dengan dashboard.html/turnamenpro.html: baris PERTAMA yang
+// dieksekusi di script ini.
+// ═══════════════════════════════════════════════════════════════════
+(function proteksiHalaman(){
+  try{
+    const raw = localStorage.getItem('hm_session');
+    if(!raw){ window.location.replace('loginpage.html'); return; }
+    const s = JSON.parse(raw);
+    if(!s || !s.loginAt){ window.location.replace('loginpage.html'); return; }
+    if(s.expiresAt && Date.now() > s.expiresAt){
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html'); return;
+    }
+    // Logout paksa lintas hari kalender (2026-08-16, audit keamanan): lihat
+    // catatan lebih lengkap di turnamenpro.html — intinya, sesi 8 jam bisa
+    // nyebrang tengah malam kalau login-nya sore/malam; ini menjamin tanggal
+    // kalender berganti = sesi langsung diakhiri, jadi besok pasti mendarat di
+    // loginpage.html (re-validasi tanggal_kedaluarsa dari server). Lapisan
+    // UX tambahan, bukan pengganti proteksi server-side.
+    if(new Date(s.loginAt).toDateString() !== new Date().toDateString()){
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html'); return;
+    }
+    setTimeout(()=>{
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html');
+    }, new Date().setHours(24,0,0,0) - Date.now());
+  }catch(e){ window.location.replace('loginpage.html'); }
+})();
+
+// ═══════════════════════════════════════════════════════════════════
 // LEVEL CONFIG (upgrade dari mabarprov2 — sama persis)
 // ═══════════════════════════════════════════════════════════════════
 const LEVELS = [
@@ -745,7 +831,7 @@ function openLevelPopover(ev, name){
   const pop = document.getElementById('levelPopover');
   const cur = (state.players.find(p=>p.name===name) || MEMBERS.find(m=>m.name===name) || {}).level;
   pop.innerHTML = LEVELS.map(l=>
-    `<button type="button" class="slot-item" onclick="applyLevelPopover('${esc(name)}','${l.code}')">
+    `<button type="button" class="slot-item" onclick="applyLevelPopover('${escJs(name)}','${l.code}')">
        <span class="level-badge ${l.cls}">${l.code}</span>${l.label}${l.code===cur?' ✓':''}
      </button>`).join('');
   const r = ev.currentTarget.getBoundingClientRect();
@@ -882,12 +968,19 @@ function normalizeMedalist(st){
 }
 const today = new Date().toISOString().split('T')[0];
 
+// Diperkuat 2026-08-16 (audit keamanan): namespace cache lokal sekarang pakai
+// user.id (UID Supabase Auth, immutable, dikirim loginpage.html) kalau tersedia
+// — bukan username, yang tersimpan di localStorage sehingga BISA diedit user
+// sendiri lewat DevTools. Fallback ke username tetap ada supaya sesi lama yang
+// login SEBELUM perubahan ini (belum ada field 'id') tidak mendadak "kehilangan"
+// cache lokalnya — begitu sesi itu natural expire (maks 8 jam) & user login
+// ulang, otomatis dapat 'id' dan pindah ke skema baru dengan sendirinya.
 function dataStorageKey(){
   try{
     const raw = localStorage.getItem('hm_session');
     const s = raw ? JSON.parse(raw) : null;
-    const uname = (s && s.username) ? s.username : 'guest';
-    return 'hostmabar_v3_data::' + uname;
+    const key = (s && s.id) ? s.id : ((s && s.username) ? s.username : 'guest');
+    return 'hostmabar_v3_data::' + key;
   }catch(e){ return 'hostmabar_v3_data::guest'; }
 }
 function loadAppData(){
@@ -1087,7 +1180,16 @@ let state = stateBySport[sport];
 let tournament = tournamentBySport[sport];
 let fmt = null;
 let pairMode = 'manual';
-function esc(s){return String(s).replace(/'/g,"\\'");}
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// escJs(): khusus untuk value yang disisipkan ke dalam string JS ber-kutip-satu
+// DI DALAM atribut onclick="...('...')"..." (dua lapis: JS string literal + atribut
+// HTML). Browser men-decode entity HTML pada atribut DULU baru menjalankan JS-nya,
+// jadi escaping HTML-entity biasa (esc()) TIDAK cukup di sini — perlu escape backslash
+// & kutip-satu untuk lapis JS, baru di-HTML-escape untuk lapis atributnya.
+function escJs(s){
+  const jsSafe = String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return jsSafe.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 function pairKey(a,b){return [a,b].sort().join('|');}
 
 // ── GANTI CABANG ──
@@ -1168,7 +1270,7 @@ function generateNext(){
   setSlotValue('b1',tB[0].name);
   setSlotValue('b2',tB[1].name);
   document.getElementById('genPreview').innerHTML =
-    `<b>${tA[0].name} & ${tA[1].name}</b> vs <b>${tB[0].name} & ${tB[1].name}</b> — form terisi, tinggal main & catat skor`;
+    `<b>${esc(tA[0].name)} & ${esc(tA[1].name)}</b> vs <b>${esc(tB[0].name)} & ${esc(tB[1].name)}</b> — form terisi, tinggal main & catat skor`;
   showToast('🎲 Match '+PAIR_MODES[pairMode].nama.replace(/^\S+ /,'')+' dibuat!');
 }
 
@@ -1210,8 +1312,8 @@ function renderMemberPicker(){
   if(!list.length){ el.innerHTML='<span style="color:var(--muted);font-size:12.5px">'+(q?'Tidak ketemu — tambah sebagai member baru di bawah':'Semua member sudah masuk sesi 👍')+'</span>'; return; }
   el.innerHTML = list.map(m=>{
     const st=mStatus(m);
-    return `<button class="m-chip" onclick="toggleHadir('${esc(m.name)}')" title="${st.t} · terakhir ${mLast(m)}">
-      <span class="st-dot ${st.cls}"></span>${m.name}
+    return `<button class="m-chip" onclick="toggleHadir('${escJs(m.name)}')" title="${st.t} · terakhir ${mLast(m)}">
+      <span class="st-dot ${st.cls}"></span>${esc(m.name)}
       <span class="level-badge ${levelCls(m.level)}">${m.level}</span>+</button>`;
   }).join('') + (sisa>0 ? `<span style="align-self:center;font-size:11.5px;color:var(--muted);font-weight:700">+${sisa} member lagi — ketik di kolom cari</span>` : '');
 }
@@ -1254,10 +1356,10 @@ function renderPlayerList(){
     <tbody>${sorted.map((p,i)=>`
       <tr>
         <td style="color:var(--muted);font-weight:700">${i+1}</td>
-        <td style="font-weight:700">${p.name}</td>
-        <td><span class="level-badge editable ${levelCls(p.level)}" onclick="openLevelPopover(event,'${esc(p.name)}')" title="Klik untuk ubah level">${p.level}</span>
+        <td style="font-weight:700">${esc(p.name)}</td>
+        <td><span class="level-badge editable ${levelCls(p.level)}" onclick="openLevelPopover(event,'${escJs(p.name)}')" title="Klik untuk ubah level">${p.level}</span>
             <span style="font-size:11px;color:var(--muted);margin-left:4px">${levelLabel(p.level)}</span></td>
-        <td style="text-align:right"><button class="remove" onclick="removePlayer('${esc(p.name)}')">×</button></td>
+        <td style="text-align:right"><button class="remove" onclick="removePlayer('${escJs(p.name)}')">×</button></td>
       </tr>`).join('')}</tbody></table>`;
 }
 // ── MATCH: slot picker pemain (cari + list di bawahnya) — pengganti <select>
@@ -1309,7 +1411,7 @@ function renderSlotList(id){
     if(!grouped[l.code].length)return;
     html+=`<div class="slot-group-label">${l.code} · ${l.label}</div>`;
     grouped[l.code].forEach(p=>{
-      html+=`<button type="button" class="slot-item" onclick="selectSlotPlayer('${id}','${esc(p.name)}')">${p.name}<span class="level-badge ${levelCls(p.level)}">${p.level}</span></button>`;
+      html+=`<button type="button" class="slot-item" onclick="selectSlotPlayer('${id}','${escJs(p.name)}')">${esc(p.name)}<span class="level-badge ${levelCls(p.level)}">${p.level}</span></button>`;
     });
   });
   listEl.innerHTML = html;
@@ -1470,7 +1572,7 @@ function renderLeaderboard(){
     const tie=tieSet.has(i);
     return `<tr style="${tie?'background:rgba(247,148,29,.05)':''}">
       <td style="font-size:17px">${ri(i)}</td>
-      <td><div class="player-name">${s.name} ${s.level?`<span class="level-badge ${levelCls(s.level)}" style="margin-left:4px">${s.level}</span>`:''}</div>
+      <td><div class="player-name">${esc(s.name)} ${s.level?`<span class="level-badge ${levelCls(s.level)}" style="margin-left:4px">${s.level}</span>`:''}</div>
         <div class="win-rate">${s.played>0?Math.round(s.wins/s.played*100):0}% win${tie?' · <span style="color:var(--orange);font-size:10px;font-weight:800">TIE</span>':''}</div></td>
       <td class="right"><span class="stat-chip">${s.played}</span></td>
       <td class="right"><span class="stat-chip" style="color:var(--green)">${s.wins}</span></td>
@@ -1510,11 +1612,11 @@ function renderMemberTab(){
     <tbody>${rows.map((x,i)=>`
       <tr>
         <td style="color:var(--muted);font-weight:700">${i+1}</td>
-        <td style="font-weight:700;white-space:nowrap">${x.m.name} <span class="level-badge editable ${levelCls(x.m.level)}" onclick="openLevelPopover(event,'${esc(x.m.name)}')" title="Klik untuk ubah level">${x.m.level}</span></td>
+        <td style="font-weight:700;white-space:nowrap">${esc(x.m.name)} <span class="level-badge editable ${levelCls(x.m.level)}" onclick="openLevelPopover(event,'${escJs(x.m.name)}')" title="Klik untuk ubah level">${x.m.level}</span></td>
         <td><span class="st-badge ${x.st.cls}">${x.st.t}</span></td>
         <td style="font-weight:800">${x.m.hadir.length}<span style="font-size:10.5px;color:var(--muted);font-weight:600"> sesi</span></td>
         <td style="font-size:12px;color:var(--muted)">${new Date(mLast(x.m)).toLocaleDateString('id-ID')}</td>
-        <td style="text-align:right"><button class="remove" onclick="removeMember('${esc(x.m.name)}')" title="Hapus member permanen">×</button></td>
+        <td style="text-align:right"><button class="remove" onclick="removeMember('${escJs(x.m.name)}')" title="Hapus member permanen">×</button></td>
       </tr>`).join('')}</tbody></table>`;
 }
 function removeMember(name){
@@ -1666,7 +1768,7 @@ function renderManualGroupList(){
       const cur = tournament.manualAssign[e.id];
       const optHtml = opts.map(i=>`<option value="${i}" ${cur===i?'selected':''}>${groupLabel(i)}</option>`).join('');
       return `<div class="row" style="align-items:center;margin-bottom:6px">
-        <span style="flex:1;font-size:12.5px;font-weight:700">${e.name}</span>
+        <span style="flex:1;font-size:12.5px;font-weight:700">${esc(e.name)}</span>
         <select style="flex:0 0 130px" onchange="assignManualGroup(${e.id},this.value)">
           <option value="">— Pilih Grup —</option>${optHtml}
         </select>
@@ -1681,7 +1783,7 @@ function renderTEntriesList(){
     return;
   }
   el.innerHTML = `<div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-bottom:8px">PESERTA TERDAFTAR (${tournament.entries.length})</div>` +
-    tournament.entries.map((e,i)=>`<div class="t-entry-row"><span>${i+1}. ${e.name}</span><button class="remove" onclick="removeTEntry(${e.id})">×</button></div>`).join('');
+    tournament.entries.map((e,i)=>`<div class="t-entry-row"><span>${i+1}. ${esc(e.name)}</span><button class="remove" onclick="removeTEntry(${e.id})">×</button></div>`).join('');
 }
 
 // ── Animasi random 5 detik sebelum bagan/grup ditampilkan ──
@@ -1845,11 +1947,11 @@ function thirdPlaceHtml(){
   const bWin = m.winner && m.winner.name===m.b.name;
   let body;
   if(m.winner && !tournament.editingT3){
-    body = `<div class="match-slot ${aWin?'winner':''}">${m.a.name}${aWin?' 🥉':''} <b>${m.scoreA}</b></div>
-            <div class="match-slot ${bWin?'winner':''}">${m.b.name}${bWin?' 🥉':''} <b>${m.scoreB}</b></div>
+    body = `<div class="match-slot ${aWin?'winner':''}">${esc(m.a.name)}${aWin?' 🥉':''} <b>${m.scoreA}</b></div>
+            <div class="match-slot ${bWin?'winner':''}">${esc(m.b.name)}${bWin?' 🥉':''} <b>${m.scoreB}</b></div>
             <div style="text-align:right;margin-top:6px"><button class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:10.5px" onclick="editSkorJuara3()">✏️ Edit Skor</button></div>`;
   } else {
-    body = `<div class="match-slot">${m.a.name}</div><div class="match-slot">${m.b.name}</div>
+    body = `<div class="match-slot">${esc(m.a.name)}</div><div class="match-slot">${esc(m.b.name)}</div>
       <div class="match-score-row">
         <input type="number" id="t3-A" placeholder="0" min="0" value="${tournament.editingT3&&m.scoreA!=null?m.scoreA:''}">
         <span style="color:var(--muted)">—</span>
@@ -1989,7 +2091,7 @@ function renderBracket(){
   }
   function byeCardHtml(pos, entry){
     return `<div class="match-card bye-card" data-round="0" data-pos="${pos}">
-      <div class="match-slot" style="color:var(--text)">🎫 ${entry.name}</div>
+      <div class="match-slot" style="color:var(--text)">🎫 ${esc(entry.name)}</div>
       <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-top:2px">Bye — langsung lolos ke babak berikutnya</div>
     </div>`;
   }
@@ -2012,8 +2114,8 @@ function renderBracket(){
   if(finalMatch && finalMatch.winner){
     tournament.stage='done';
     const j3 = (tournament.thirdPlace && tournament.thirdPlaceMatch && tournament.thirdPlaceMatch.winner)
-      ? `<div style="margin-top:6px;font-size:12.5px">🥉 Juara 3: <b>${tournament.thirdPlaceMatch.winner.name}</b></div>` : '';
-    el.innerHTML += `<div class="alert" style="margin-top:14px;text-align:center;font-size:15px">🏆 <b>${finalMatch.winner.name}</b> Juara ${SPORT_CONFIG[sport].label}!${j3}</div>`;
+      ? `<div style="margin-top:6px;font-size:12.5px">🥉 Juara 3: <b>${esc(tournament.thirdPlaceMatch.winner.name)}</b></div>` : '';
+    el.innerHTML += `<div class="alert" style="margin-top:14px;text-align:center;font-size:15px">🏆 <b>${esc(finalMatch.winner.name)}</b> Juara ${SPORT_CONFIG[sport].label}!${j3}</div>`;
   }
   el.innerHTML += thirdPlaceHtml();
   requestAnimationFrame(layoutBracket);
@@ -2082,7 +2184,7 @@ function renderGroupStage(){
     const tieSet = new Set();
     for(let i=0;i<st.length-1;i++) if(st[i].points===st[i+1].points){ tieSet.add(i); tieSet.add(i+1); }
     return `<div class="group-block">
-      <div class="card-title">${g.name}</div>
+      <div class="card-title">${esc(g.name)}</div>
       <div style="overflow-x:auto"><table class="lb-table"><thead><tr>
         <th>#</th><th>Peserta</th><th class="right">MP</th><th class="right">W</th><th class="right">L</th><th class="right">Pts</th><th class="right">+/−</th>
       </tr></thead><tbody>${st.map((s,i)=>{
@@ -2092,7 +2194,7 @@ function renderGroupStage(){
         const lolos = i < tournament.qualifyPerGroup;
         return `<tr style="${tie?'background:rgba(247,148,29,.06)':''}">
           <td style="font-size:15px">${ri(i)}</td>
-          <td><div style="font-weight:800">${s.name}${lolos?' <span style="font-size:9.5px;font-weight:800;color:var(--green)">● LOLOS</span>':''}</div>
+          <td><div style="font-weight:800">${esc(s.name)}${lolos?' <span style="font-size:9.5px;font-weight:800;color:var(--green)">● LOLOS</span>':''}</div>
             ${tie?'<div style="font-size:10px;color:var(--orange);font-weight:800">TIE — cek +/−</div>':''}</td>
           <td class="right"><span class="stat-chip">${s.played}</span></td>
           <td class="right"><span class="stat-chip" style="color:var(--green)">${s.wins}</span></td>
@@ -2107,7 +2209,7 @@ function renderGroupStage(){
       ${g.matches.map((m,mi)=>{
         const isEditing = tournament.editingGrup && tournament.editingGrup.gi===gi && tournament.editingGrup.mi===mi;
         if(m.winner && !isEditing){
-          return `<div class="match-slot"><span>${m.a.name} <span style="color:var(--muted)">vs</span> ${m.b.name}</span>
+          return `<div class="match-slot"><span>${esc(m.a.name)} <span style="color:var(--muted)">vs</span> ${esc(m.b.name)}</span>
             <span style="display:flex;align-items:center;gap:8px">
               <b style="color:var(--accent)">${m.scoreA}—${m.scoreB}</b>
               <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:10px" onclick="editSkorGrup(${gi},${mi})">✏️</button>
@@ -2115,7 +2217,7 @@ function renderGroupStage(){
           </div>`;
         }
         return `<div class="match-score-row" style="justify-content:space-between">
-          <span style="font-size:12.5px;font-weight:700">${m.a.name} <span style="color:var(--muted)">vs</span> ${m.b.name}</span>
+          <span style="font-size:12.5px;font-weight:700">${esc(m.a.name)} <span style="color:var(--muted)">vs</span> ${esc(m.b.name)}</span>
           <span style="display:flex;gap:6px;align-items:center">
             <input type="number" id="gs-g${gi}-m${mi}-A" placeholder="0" min="0" value="${isEditing?m.scoreA:''}">
             <span style="color:var(--muted)">—</span>
@@ -2268,7 +2370,7 @@ function bracketPrintHtml(){
     let byeHtml = '';
     if(r===0 && tournament.hasPrelim){
       byeHtml = tournament.qualDirectEntries.map(e=>
-        `<div class="p-card p-bye">🎫 ${e.name}<div class="p-byenote">Bye — langsung lolos</div></div>`).join('');
+        `<div class="p-card p-bye">🎫 ${esc(e.name)}<div class="p-byenote">Bye — langsung lolos</div></div>`).join('');
     }
     return `<div class="p-col"><div class="p-roundlabel">${roundName(totalRounds,r,tournament.hasPrelim)}</div>${cardsHtml}${byeHtml}</div>`;
   }).join('');
@@ -2309,8 +2411,8 @@ function printTurnamen(){
     ${bracketCss}
     @media print{ body{padding:10px} }
   </style></head><body>
-    <h1>${commProfile.name} — ${title}</h1>
-    <div class="sub">${state.session.name||'Sesi Turnamen'} · ${state.session.date||''}</div>
+    <h1>${esc(commProfile.name)} — ${title}</h1>
+    <div class="sub">${esc(state.session.name||'Sesi Turnamen')} · ${state.session.date||''}</div>
     ${content}
   </body></html>`);
 }
@@ -2351,6 +2453,36 @@ function switchTab(name,btn){
   if(name==='match')populateSelects();
   if(name==='leaderboard')renderLeaderboard();
   if(name==='member')renderMemberTab();
+}
+// ── Popup pilihan Mode Turnamen (Single vs Multi Kategori) — pintu masuk
+// TUNGGAL Mode Turnamen, dipicu turnamenBtn di sini & deep-link ?turnamen=1
+// dari dashboard.html (lihat paling bawah file ini). Single Kategori = sistem
+// existing tidak berubah (Trial & Pro). Multi Kategori = redirect ke
+// turnamenpro.html, khusus Pro (turnamenpro.html sendiri JUGA punya
+// pengecekan paket ini — supaya batasannya tidak bisa dilewati lewat URL).
+function isProPlan(){ return getPaket().includes('pro'); }
+function openTurnamenPilihanModal(){
+  const pro = isProPlan();
+  const card = document.getElementById('tpMultiCard');
+  const tag = document.getElementById('tpMultiTag');
+  card.classList.toggle('locked', !pro);
+  tag.textContent = pro ? 'Pro ✓' : '🔒 Khusus Pro';
+  document.getElementById('turnamenPilihanModalOverlay').classList.add('open');
+}
+function closeTurnamenPilihanModal(e){
+  if(e && e.target!==document.getElementById('turnamenPilihanModalOverlay')) return;
+  document.getElementById('turnamenPilihanModalOverlay').classList.remove('open');
+}
+function pilihTurnamenSingle(){
+  closeTurnamenPilihanModal();
+  openTurnamenModal();
+}
+function pilihTurnamenMulti(){
+  if(!isProPlan()){
+    showToast('🔒 Multi Kategori khusus Mabar Pro — upgrade untuk membuka fitur ini');
+    return;
+  }
+  location.href = 'turnamenpro.html?sport=' + sport;
 }
 // Turnamen: modal terpisah (bukan tab utama) — opsional, khusus Ganda, jarang dipakai
 function openTurnamenModal(){
@@ -2510,7 +2642,7 @@ function renderMedalist(){
     <td class="right"><span class="stat-chip" style="background:#F1F5F9;color:#475569">${r.silver}</span></td>
     <td class="right"><span class="stat-chip" style="background:#FFEDD5;color:#9A3412">${r.bronze}</span></td>
     <td class="right"><span class="stat-chip pts-chip">${r.total}</span></td>
-    <td style="text-align:right"><button class="remove" onclick="removeMedalistEntry('${esc(r.name)}')" title="Hapus catatan medali ini">×</button></td>
+    <td style="text-align:right"><button class="remove" onclick="removeMedalistEntry('${escJs(r.name)}')" title="Hapus catatan medali ini">×</button></td>
   </tr>`).join('')}
   </tbody></table></div>
   <div class="lb-note">${_medalistPeriod ? 'Periode '+BULAN_ID[_medalistPeriod.month-1]+' '+_medalistPeriod.year : 'Kumulatif dari semua sesi '+SPORT_CONFIG[sport].label+' yang sudah ditutup'} · diurutkan seperti tabel medali Olimpiade (🥇 lebih dulu, baru 🥈 lalu 🥉)</div>`;
@@ -2529,12 +2661,12 @@ function dummy(f){alert('Ini dummy — "'+f+'" memakai fungsi yang sudah ada di 
 function __commHeaderHtml(){
   const logoHtml = commProfile.logoData
     ? `<img class="clogo" src="${commProfile.logoData}">`
-    : `<div class="clogo-ph">${(commProfile.name||'H').charAt(0).toUpperCase()}</div>`;
+    : `<div class="clogo-ph">${esc((commProfile.name||'H').charAt(0).toUpperCase())}</div>`;
   return `<div class="headrow">
     ${logoHtml}
     <div>
-      <h1>${commProfile.name||'HOSTMABAR'}</h1>
-      <div class="meta">${state.session.name||'Sesi Mabar'} · ${state.session.date||''}</div>
+      <h1>${esc(commProfile.name||'HOSTMABAR')}</h1>
+      <div class="meta">${esc(state.session.name||'Sesi Mabar')} · ${state.session.date||''}</div>
       <span class="chip"><img src="${SPORT_CONFIG[sport].icon}" style="width:13px;height:13px;object-fit:contain;vertical-align:-2px;margin-right:2px"> ${SPORT_CONFIG[sport].label}</span>
     </div>
   </div>`;
@@ -2550,7 +2682,7 @@ function __lbTableHtml(){
     const winPct = s.played ? Math.round(s.wins/s.played*100) : 0;
     return `<tr class="${medalCls(i)}">
       <td>${rankBadge(i)}</td>
-      <td class="pname">${s.name}<div class="winpct">${winPct}% win</div></td>
+      <td class="pname">${esc(s.name)}<div class="winpct">${winPct}% win</div></td>
       <td class="right">${s.played}</td>
       <td class="right" style="color:#16A34A;font-weight:700">${s.wins}</td>
       <td class="right" style="color:#DC2626;font-weight:700">${s.losses}</td>
@@ -3279,7 +3411,7 @@ if(new URLSearchParams(location.search).get('turnamen')==='1'){
   if(isPlusPlan()){
     showToast('🔒 Mode Turnamen khusus paket Mabar Pro — upgrade untuk membuka fitur ini');
   } else {
-    openTurnamenModal();
+    openTurnamenPilihanModal();
   }
 }
 
@@ -3345,24 +3477,6 @@ function logout(){
   }catch(e){ window.location.href = 'loginpage.html'; }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// SECURITY GUARD — proteksi halaman, sama pola dengan sistem live
-// (mabarprov2.html). Cek sesi lokal 'hm_session' sebelum halaman
-// dipakai; belum login / sesi kedaluwarsa → redirect ke loginpage.html.
-// ═══════════════════════════════════════════════════════════════════
-(function proteksiHalaman(){
-  try{
-    const raw = localStorage.getItem('hm_session');
-    if(!raw){ window.location.replace('loginpage.html'); return; }
-    const s = JSON.parse(raw);
-    if(!s || !s.loginAt){ window.location.replace('loginpage.html'); return; }
-    if(s.expiresAt && Date.now() > s.expiresAt){
-      localStorage.removeItem('hm_session');
-      localStorage.removeItem('hm_komunitas');
-      window.location.replace('loginpage.html'); return;
-    }
-  }catch(e){ window.location.replace('loginpage.html'); }
-})();
 </script>
 </body>
 </html>
