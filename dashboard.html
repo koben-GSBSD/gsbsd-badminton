@@ -50,6 +50,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .stat.kas a{font-size:11px;color:var(--cyan);font-weight:700;text-decoration:none}
 
 /* ── Sport tabs ── */
+.section-label{font-size:12.5px;font-weight:800;color:var(--muted);letter-spacing:.02em;margin-bottom:9px}
 .sport-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
 .sport-tab{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;text-align:left;font-family:inherit;transition:all .15s;border-bottom:4px solid var(--border)}
 .sport-tab .st-top{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px}
@@ -63,6 +64,11 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 /* ── Panels ── */
 .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+/* Kolom kiri berisi 2 kartu bertumpuk (sesi + Mode Turnamen) — sebelumnya
+   ditumpuk dalam <div> polos tanpa jarak sehingga kartu Mode Turnamen
+   menempel langsung ke kartu di atasnya. gap di sini menyamakan jarak
+   vertikal dengan gap antar-kolom .grid (16px). */
+.col-stack{display:flex;flex-direction:column;gap:16px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px}
 .card-title{font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .session-live{border-top:4px solid var(--accent)}
@@ -155,6 +161,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
   </div>
 
   <!-- SPORT TABS -->
+  <div class="section-label">Pilih Cabang Olahraga:</div>
   <div class="sport-tabs" id="sportTabs"></div>
 
   <!-- MAIN PANEL -->
@@ -370,7 +377,7 @@ function renderPanel() {
 
   if (s.active) {
     panel.innerHTML = `
-      <div>
+      <div class="col-stack">
         <div class="card session-live">
           <div class="sess-head">
             <div class="pulse"></div>
@@ -403,7 +410,7 @@ function renderPanel() {
       </div>`;
   } else {
     panel.innerHTML = `
-      <div>
+      <div class="col-stack">
         <div class="card">
           <div class="empty-sess">
             <div class="big"><img src="${s.icon}" alt=""></div>
