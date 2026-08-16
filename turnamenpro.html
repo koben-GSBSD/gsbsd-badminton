@@ -300,6 +300,56 @@ footer a:hover{color:var(--accent)}
 <div class="toast" id="toast"></div>
 
 <script>
+// ═══════════════════════════════════════════════════════════════════
+// SECURITY GUARD — sama pola dengan proteksiHalaman() di tracker.html/
+// dashboard.html: cek sesi lokal 'hm_session' SEBELUM data apa pun dimuat;
+// belum login/sesi kedaluwarsa → loginpage.html. DITAMBAH: Turnamen Pro
+// (Multi Kategori) KHUSUS paket Pro — dicek DI SINI JUGA (bukan cuma di
+// titik klik popup Mode Turnamen di tracker.html/dashboard.html) supaya
+// batasan paketnya tidak bisa dilewati hanya dengan ketik/bookmark URL
+// halaman ini langsung. Trial/Plus yang lolos ke sini dibalikkan ke
+// dashboard.html (bukan pesan error di tempat — halaman ini sendiri
+// belum dimuat sama sekali di titik ini).
+// ═══════════════════════════════════════════════════════════════════
+(function proteksiHalaman(){
+  try{
+    const raw = localStorage.getItem('hm_session');
+    if(!raw){ window.location.replace('loginpage.html'); return; }
+    const s = JSON.parse(raw);
+    if(!s || !s.loginAt){ window.location.replace('loginpage.html'); return; }
+    if(s.expiresAt && Date.now() > s.expiresAt){
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html'); return;
+    }
+    // Logout paksa lintas hari kalender (2026-08-16, audit keamanan): sesi 8 jam
+    // (expiresAt) bisa "nyebrang" tengah malam kalau login-nya sore/malam (mis.
+    // login 20:00 → expiresAt 04:00 BESOK). Kalau langganan expired pas tengah
+    // malam, tanpa ini user masih pegang akses sampai jam 04:00. Cek tanggal
+    // kalender di sini menjamin: begitu tanggal berganti, sesi langsung diakhiri
+    // — reload/navigasi apa pun besok PASTI mendarat di loginpage.html, yang
+    // re-validasi tanggal_kedaluarsa dari server. Timer di bawah menjamin hal
+    // sama untuk tab yang dibiarkan terbuka tanpa reload sampai lewat tengah
+    // malam. Ini lapisan UX/kenyamanan tambahan — BUKAN pengganti proteksi
+    // server-side (RLS), karena hm_session tetap data client yang bisa diedit.
+    if(new Date(s.loginAt).toDateString() !== new Date().toDateString()){
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html'); return;
+    }
+    setTimeout(()=>{
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html');
+    }, new Date().setHours(24,0,0,0) - Date.now());
+    const paket = String(s.paket||'').toLowerCase();
+    if(!paket.includes('pro')){
+      window.location.replace('dashboard.html');
+      return;
+    }
+  }catch(e){ window.location.replace('loginpage.html'); }
+})();
+
 // ═══ Meta 4 cabang (sama seperti tracker.html / mabarpro.html) ═══
 const SPORT_META = {
   badminton:{label:'Badminton', accentVar:'--badminton', hex:'#0F766E', icon:'logobadminton.png'},
@@ -360,12 +410,16 @@ function freshEvents(){
 // profiles/cuanmabar_data milik project utama). Baris tabel: user_id (=auth.uid()),
 // payload (JSONB berisi EVENTS + commProfile), updated_at.
 // ═══════════════════════════════════════════════════════════════════
+// Diperkuat 2026-08-16 (audit keamanan) — sama seperti tracker.html: namespace
+// cache lokal sekarang pakai user.id (UID Supabase Auth, immutable) kalau
+// tersedia, fallback ke username untuk sesi lama yang belum re-login sejak
+// perubahan ini (self-heal otomatis, maks 8 jam).
 function dataStorageKey(){
   try{
     const raw = localStorage.getItem('hm_session');
     const s = raw ? JSON.parse(raw) : null;
-    const uname = (s && s.username) ? s.username : 'guest';
-    return 'turnamenpro_v1_data::' + uname;
+    const key = (s && s.id) ? s.id : ((s && s.username) ? s.username : 'guest');
+    return 'turnamenpro_v1_data::' + key;
   }catch(e){ return 'turnamenpro_v1_data::guest'; }
 }
 function loadAppData(){
@@ -503,7 +557,15 @@ const TFORMATS = {
   groupknockout:{ nama:'🥇 Group Knock-out', info:'Fase grup round-robin dulu, juara/runner-up grup lanjut ke babak gugur — lebih adil, tiap peserta pasti main beberapa kali.' }
 };
 
+// Baca ?sport=... dari URL (dikirim tracker.html/dashboard.html saat redirect Multi
+// Kategori) supaya turnamenpro.html langsung buka & bertone warna cabang yang sedang
+// dipakai user, bukan selalu default Badminton. Divalidasi terhadap SPORT_META supaya
+// param URL sembarangan/rusak tidak bisa bikin sport jadi nilai tak dikenal.
 let sport = 'badminton';
+try{
+  const qSport = new URLSearchParams(window.location.search).get('sport');
+  if(qSport && SPORT_META[qSport]) sport = qSport;
+}catch(e){}
 let modalMode = null; // 'kategori' | 'peserta'
 // Kalau data lama (localStorage/cloud) sudah punya kategori custom dengan id 'katNNN',
 // mulai dari NNN+1 tertinggi — supaya kategori baru tidak pernah tabrakan id dengan
@@ -514,7 +576,9 @@ Object.values(EVENTS).forEach(ev=> ev.categories.forEach(c=>{
   if(m) katIdSeq = Math.max(katIdSeq, parseInt(m[1],10)+1);
 }));
 
-function esc(s){ return String(s).replace(/</g,'&lt;'); }
+// Diperkuat 2026-08-16 (audit keamanan) — sebelumnya cuma escape '<'. Sekarang
+// HTML-entity escape penuh (&<>"'), konsisten dengan esc() di dashboard.html.
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ═══ Sesi login (hm_session) — pola sama dengan mabarpro.html/badminton.html ═══
 function getSession(){
