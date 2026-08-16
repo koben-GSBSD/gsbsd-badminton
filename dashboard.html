@@ -190,6 +190,22 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
       localStorage.removeItem('hm_komunitas');
       window.location.replace('loginpage.html'); return;
     }
+    // Logout paksa lintas hari kalender (2026-08-16, audit keamanan): lihat
+    // catatan lebih lengkap di turnamenpro.html — intinya, sesi 8 jam bisa
+    // nyebrang tengah malam kalau login-nya sore/malam; ini menjamin tanggal
+    // kalender berganti = sesi langsung diakhiri, jadi besok pasti mendarat di
+    // loginpage.html (re-validasi tanggal_kedaluarsa dari server). Lapisan
+    // UX tambahan, bukan pengganti proteksi server-side.
+    if(new Date(s.loginAt).toDateString() !== new Date().toDateString()){
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html'); return;
+    }
+    setTimeout(()=>{
+      localStorage.removeItem('hm_session');
+      localStorage.removeItem('hm_komunitas');
+      window.location.replace('loginpage.html');
+    }, new Date().setHours(24,0,0,0) - Date.now());
   }catch(e){ window.location.replace('loginpage.html'); }
 })();
 
