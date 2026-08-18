@@ -816,8 +816,12 @@ function buatKnockoutReal(cat, entries, opts){
 
 // Fase grup asli — round-robin di dalam tiap grup, mode random (acak & bagi rata) atau
 // manual (pakai cat.manualAssign yang sudah diatur host). Semua match dibuat KOSONG.
+// Jumlah Grup minimal 1 (2026-08-16, permintaan Koben) — dengan 1 grup, SEMUA peserta
+// main round-robin bareng dalam satu grup, lalu N teratas (Lolos per Grup) lanjut ke
+// babak gugur. susunAntiSesamaGrup() sudah aman untuk kasus 1 grup (fallback-nya
+// otomatis jalan kalau tidak ada grup lain untuk dihindari — lihat komentar di sana).
 function buatGroupStageReal(cat, entries, numGroups){
-  numGroups = Math.max(2, Math.min(numGroups, Math.max(2, Math.floor(entries.length/2))));
+  numGroups = Math.max(1, Math.min(numGroups, Math.max(1, Math.floor(entries.length/2))));
   const groups = Array.from({length:numGroups}, (_,i)=>({nama:'Grup '+String.fromCharCode(65+i), entries:[], matches:[]}));
   if(cat.groupMode==='manual'){
     entries.forEach(e=>{
@@ -1000,7 +1004,9 @@ function setGroupMode(mode){
 }
 function ubahNumGroups(val){
   const cat = kategoriAktif();
-  cat.numGroups = Math.max(2, Math.min(8, parseInt(val)||2));
+  // Minimal 1 grup (2026-08-16) — 1 grup = semua peserta round-robin bareng, tanpa
+  // fase gugur antar-grup. Lihat catatan lengkap di buatGroupStageReal().
+  cat.numGroups = Math.max(1, Math.min(8, parseInt(val)||2));
   if(cat.groupMode==='manual'){
     Object.keys(cat.manualAssign).forEach(nama=>{
       if(cat.manualAssign[nama] >= cat.numGroups) delete cat.manualAssign[nama];
@@ -1044,7 +1050,7 @@ function renderGroupConfigUi(cat){
   const isManual = cat.groupMode==='manual';
   return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
     <div style="display:flex;gap:10px;margin-bottom:12px">
-      <div style="flex:1"><label>Jumlah Grup</label><input type="number" min="2" max="8" value="${cat.numGroups||2}" onchange="ubahNumGroups(this.value)"></div>
+      <div style="flex:1"><label>Jumlah Grup</label><input type="number" min="1" max="8" value="${cat.numGroups||2}" onchange="ubahNumGroups(this.value)"></div>
       <div style="flex:1"><label>Lolos per Grup</label><input type="number" min="1" max="4" value="${cat.qualifyPerGroup||2}" onchange="ubahQualifyPerGroup(this.value)"></div>
     </div>
     <div class="fmt-row" style="margin-bottom:${isManual?'12px':'0'}">
